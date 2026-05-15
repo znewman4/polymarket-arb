@@ -1,0 +1,3 @@
+# Placeholder for per-strategy config (sizing, thresholds, risk limits).
+# Empty in Phase 0–3. Populated when strategies are added in Phase 4+.
+strategies: {}

@@ -1,0 +1,25 @@
+{
+  "counts": {
+    "accepted_relationships_loaded": 96,
+    "analysis_only_outcome_spaces": 3,
+    "candidates_accepted_for_simulation": 0,
+    "complete_outcome_spaces": 0,
+    "gross_violations_found": 0,
+    "net_violations_after_costs": 0,
+    "outcome_spaces_loaded": 3,
+    "outcome_spaces_with_aligned_price_series": 3,
+    "outcome_spaces_with_price_history": 3,
+    "ticks_evaluated": 1132,
+    "trades_executed": 0
+  },
+  "rejections": {
+    "alignment_failed": 0,
+    "cash_limit": 0,
+    "incomplete_or_unknown_outcome_space": 1132,
+    "missing_price_history": 0,
+    "net_edge_below_threshold": 0,
+    "unsupported_trade_structure": 0
+  },
+  "run_id": "codex_category_bundle_20260511",
+  "strategy": "category_bundle"
+}

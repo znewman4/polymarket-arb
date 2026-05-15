@@ -1,0 +1,173 @@
+{% extends "base.html" %}
+
+{% block title %}Category Bundle Report — {{ run_id }}{% endblock %}
+{% block title_heading %}Category Bundle Report: {{ run_id }}{% endblock %}
+
+{% block content %}
+
+<div class="summary-grid">
+  <div class="summary-card">
+    <div class="value">{{ metrics.get('outcome_spaces_scanned', 0) }}</div>
+    <div class="label">Outcome Spaces</div>
+  </div>
+  <div class="summary-card">
+    <div class="value">{{ metrics.get('complete_outcome_spaces', 0) }}</div>
+    <div class="label">Complete Bundles</div>
+  </div>
+  <div class="summary-card">
+    <div class="value">{{ metrics.get('analysis_only_outcome_spaces', 0) }}</div>
+    <div class="label">Analysis Only</div>
+  </div>
+  <div class="summary-card">
+    <div class="value">{{ metrics.get('opportunities_found', 0) }}</div>
+    <div class="label">Opportunities</div>
+  </div>
+  <div class="summary-card">
+    <div class="value">{{ metrics.get('trades_executed', 0) }}</div>
+    <div class="label">Bundle Trades</div>
+  </div>
+  <div class="summary-card">
+    <div class="value">{{ metrics.get('net_pnl_usdc', '0') }}</div>
+    <div class="label">Net PnL (USDC)</div>
+  </div>
+</div>
+
+<h2>Credibility Verdict</h2>
+<div style="font-size:2em; font-weight:bold; color:{{ credibility_color }}; padding:12px 0;">
+  {{ credibility_label | upper }}
+</div>
+<p>{{ credibility_rationale }}</p>
+
+<h2>Strategy Funnel Audit</h2>
+{% if funnel_counts %}
+<table class="report-table">
+<thead><tr><th>Stage</th><th>Count</th></tr></thead>
+<tbody>
+{% for key, value in funnel_counts.items() %}
+<tr><td>{{ key }}</td><td>{{ value }}</td></tr>
+{% endfor %}
+</tbody>
+</table>
+{% if funnel_rejections %}
+<h3>Funnel Rejections</h3>
+<table class="report-table">
+<thead><tr><th>Reason</th><th>Count</th></tr></thead>
+<tbody>
+{% for key, value in funnel_rejections.items() %}
+<tr><td>{{ key }}</td><td>{{ value }}</td></tr>
+{% endfor %}
+</tbody>
+</table>
+{% endif %}
+{% else %}
+<p class="empty-state">No funnel audit artifact found for this run.</p>
+{% endif %}
+
+<h2>Hard-arb Eligible Complete Bundles</h2>
+{% if complete_bundles %}
+<table class="report-table">
+<thead><tr>
+  <th>Outcome Space</th><th>Candidates</th><th>Known Total</th>
+  <th>Sum YES</th><th>Sum NO</th><th>Best Basket</th><th>Net Edge</th>
+</tr></thead>
+<tbody>
+{% for row in complete_bundles %}
+<tr>
+  <td>{{ row.display_name }}</td>
+  <td>{{ row.candidate_count }}</td>
+  <td>{{ row.known_total_candidates }}</td>
+  <td>{{ row.sum_yes_prices }}</td>
+  <td>{{ row.sum_no_prices }}</td>
+  <td>{{ row.best_executable_basket }}</td>
+  <td>{{ row.net_edge_after_costs }}</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+{% else %}
+<p class="empty-state">No configured-complete bundles were found.</p>
+{% endif %}
+
+<h2>Interesting But Incomplete/Uncertain Bundles</h2>
+{% if analysis_only_bundles %}
+<table class="report-table">
+<thead><tr>
+  <th>Outcome Space</th><th>Candidates</th><th>Known Total</th>
+  <th>Completeness</th><th>Warning</th><th>Best Basket</th><th>Reason</th>
+</tr></thead>
+<tbody>
+{% for row in analysis_only_bundles %}
+<tr>
+  <td>{{ row.display_name }}</td>
+  <td>{{ row.candidate_count }}</td>
+  <td>{{ row.known_total_candidates }}</td>
+  <td>{{ row.completeness_status }}</td>
+  <td>{{ row.missing_candidate_warning }}</td>
+  <td>{{ row.best_executable_basket }}</td>
+  <td>{{ row.rejection_reason }}</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+{% else %}
+<p class="empty-state">No incomplete or uncertain bundles were found.</p>
+{% endif %}
+
+<h2>Accepted Opportunities</h2>
+{% if accepted_opportunities %}
+<table class="report-table">
+<thead><tr>
+  <th>Signal Time</th><th>Outcome Space</th><th>Basket</th>
+  <th>Sum YES</th><th>Sum NO</th><th>Net Edge</th>
+</tr></thead>
+<tbody>
+{% for row in accepted_opportunities %}
+<tr>
+  <td>{{ row.signal_ts_ms }}</td>
+  <td>{{ row.display_name }}</td>
+  <td>{{ row.best_executable_basket }}</td>
+  <td>{{ row.sum_yes_prices }}</td>
+  <td>{{ row.sum_no_prices }}</td>
+  <td>{{ row.net_edge_after_costs }}</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+{% else %}
+<p class="empty-state">No bundle opportunities were accepted for simulation.</p>
+{% endif %}
+
+<h2>Example Trades</h2>
+{% if example_trades %}
+<table class="report-table">
+<thead><tr>
+  <th>Basket</th><th>Candidate</th><th>Token ID</th>
+  <th>Fill Price</th><th>Shares</th><th>Notional</th>
+</tr></thead>
+<tbody>
+{% for t in example_trades %}
+<tr>
+  <td>{{ t.basket }}</td>
+  <td>{{ t.candidate }}</td>
+  <td>{{ t.token_id[:12] }}...</td>
+  <td>{{ t.fill_price }}</td>
+  <td>{{ t.shares }}</td>
+  <td>{{ t.notional_usdc }}</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+{% else %}
+<p class="empty-state">No simulated trades.</p>
+{% endif %}
+
+<h2>Downloads</h2>
+<ul>
+  <li><a href="metrics.json">metrics.json</a></li>
+  {% if has_funnel_file %}<li><a href="funnel_audit.json">Funnel audit (JSON)</a></li>{% endif %}
+  <li><a href="bundle_scan.csv">Bundle scan (CSV)</a></li>
+  {% if has_opportunities_file %}<li><a href="bundle_opportunities.csv">Bundle opportunities (CSV)</a></li>{% endif %}
+  <li><a href="trades.csv">Trades (CSV)</a></li>
+</ul>
+
+{% endblock %}

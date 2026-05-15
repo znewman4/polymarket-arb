@@ -1,0 +1,165 @@
+manual_rules:
+  - context_rule_id: nba_world_championship_conference_v1
+    context_space_id: nba_championship_conference_progression
+    context_type: sports_progression
+    rule_type: championship_implies_conference
+    rule_family: world_context
+    confidence: 0.9
+    needs_manual_review: true
+    human_review_status: approved
+    rule_json:
+      implication: narrow_implies_broad
+      narrow_subtype: team_wins_championship
+      broad_subtype: team_wins_conference
+      relationship_subtype: championship_implies_conference
+      deterministic: true
+    quoted_evidence:
+      - source: manual_curated
+        quote: "NBA champion must win its conference playoff path before the NBA Finals."
+    source:
+      title: "Manual NBA progression rule"
+      url: "manual://nba_championship_conference_progression"
+      domain: "manual"
+      publisher: "local_curated"
+      source_type: manual_context
+      source_tier: 1
+
+  - context_rule_id: nba_terms_same_scope_v1
+    context_space_id: nba_championship_conference_progression
+    context_type: sports_progression
+    rule_type: market_terms_same_league_scope
+    rule_family: market_terms
+    confidence: 0.75
+    needs_manual_review: true
+    human_review_status: approved
+    rule_json:
+      required_terms:
+        - same_league
+        - same_season
+        - same_team
+      deterministic: true
+    quoted_evidence:
+      - source: manual_curated
+        quote: "Use only matching Polymarket NBA markets with same league, season, and team scope."
+    source:
+      title: "Manual NBA market terms rule"
+      url: "manual://nba_market_terms"
+      domain: "manual"
+      publisher: "local_curated"
+      source_type: manual_terms
+      source_tier: 1
+
+  - context_rule_id: epl_world_exact_topn_v1
+    context_space_id: premier_league_finish_position
+    context_type: ranking_top_n
+    rule_type: exact_finish_implies_top_n
+    rule_family: world_context
+    confidence: 0.9
+    needs_manual_review: true
+    human_review_status: approved
+    rule_json:
+      implication: exact_position_implies_top_n
+      relationship_subtype: exact_finish_implies_top_n
+      deterministic: true
+    quoted_evidence:
+      - source: manual_curated
+        quote: "A team finishing exactly third also finishes inside the top four."
+    source:
+      title: "Manual EPL ranking rule"
+      url: "manual://premier_league_finish_position"
+      domain: "manual"
+      publisher: "local_curated"
+      source_type: manual_context
+      source_tier: 1
+
+  - context_rule_id: epl_world_exact_exclusive_v1
+    context_space_id: premier_league_finish_position
+    context_type: ranking_top_n
+    rule_type: exact_finish_positions_mutually_exclusive
+    rule_family: world_context
+    confidence: 0.9
+    needs_manual_review: true
+    human_review_status: approved
+    rule_json:
+      implication: exact_positions_mutually_exclusive
+      deterministic: true
+    quoted_evidence:
+      - source: manual_curated
+        quote: "A team cannot finish in two different exact league positions in the same season."
+    source:
+      title: "Manual EPL exact-position rule"
+      url: "manual://premier_league_exact_positions"
+      domain: "manual"
+      publisher: "local_curated"
+      source_type: manual_context
+      source_tier: 1
+
+  - context_rule_id: epl_terms_same_scope_v1
+    context_space_id: premier_league_finish_position
+    context_type: ranking_top_n
+    rule_type: market_terms_exact_finish_scope
+    rule_family: market_terms
+    confidence: 0.75
+    needs_manual_review: true
+    human_review_status: approved
+    rule_json:
+      required_terms:
+        - same_league
+        - same_season
+        - same_team
+        - exact_finish_or_top_n
+      deterministic: true
+    quoted_evidence:
+      - source: manual_curated
+        quote: "Use only matching Polymarket finish markets with same league, season, and team scope."
+    source:
+      title: "Manual EPL market terms rule"
+      url: "manual://premier_league_market_terms"
+      domain: "manual"
+      publisher: "local_curated"
+      source_type: manual_terms
+      source_tier: 1
+
+  - context_rule_id: us_nomination_general_not_deterministic_v1
+    context_space_id: us_2028_presidential_nomination_general
+    context_type: election_dependency
+    rule_type: nomination_general_not_deterministic
+    rule_family: invalidating
+    confidence: 0.9
+    needs_manual_review: true
+    human_review_status: approved
+    rule_json:
+      relationship_subtype: nomination_to_general_dependency
+      deterministic_trade_allowed: false
+    quoted_evidence:
+      - source: manual_curated
+        quote: "Winning a party nomination is not the same proposition as winning the general election."
+    source:
+      title: "Manual nomination/general dependency rule"
+      url: "manual://us_2028_nomination_general"
+      domain: "manual"
+      publisher: "local_curated"
+      source_type: manual_context
+      source_tier: 1
+
+  - context_rule_id: same_reference_not_tradeable_v1
+    context_space_id: same_reference_clock_before_gta_vi
+    context_type: same_reference_temporal
+    rule_type: shared_reference_not_tradeable
+    rule_family: invalidating
+    confidence: 0.9
+    needs_manual_review: true
+    human_review_status: approved
+    rule_json:
+      relationship_subtype: same_reference_clock_only
+      deterministic_trade_allowed: false
+    quoted_evidence:
+      - source: manual_curated
+        quote: "Sharing a reference event does not make two independent markets complements."
+    source:
+      title: "Manual same-reference clock rule"
+      url: "manual://same_reference_clock"
+      domain: "manual"
+      publisher: "local_curated"
+      source_type: manual_context
+      source_tier: 1

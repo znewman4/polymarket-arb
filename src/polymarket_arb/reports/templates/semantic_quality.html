@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+
+{% block title %}Semantic Quality Report{% endblock %}
+{% block title_heading %}Semantic Quality Report{% endblock %}
+
+{% block content %}
+
+<h2>Summary</h2>
+<div class="summary-grid">
+  <div class="summary-card"><div class="value">{{ stats.total_semantics }}</div><div class="label">Semantics Rows</div></div>
+  <div class="summary-card"><div class="value">{{ stats.scored_rows }}</div><div class="label">Scored Rows</div></div>
+  <div class="summary-card"><div class="value">{{ stats.total_implications }}</div><div class="label">Total Implications</div></div>
+  <div class="summary-card"><div class="value">{{ stats.needs_review }}</div><div class="label">Needs Review</div></div>
+  <div class="summary-card"><div class="value">{{ "%.3f"|format(stats.avg_semantic_confidence) }}</div><div class="label">Avg Confidence</div></div>
+  <div class="summary-card"><div class="value">{{ "%.3f"|format(stats.avg_ambiguity_score) }}</div><div class="label">Avg Ambiguity</div></div>
+</div>
+
+<h2>Semantic Confidence Distribution</h2>
+{% if chart_confidence_hist %}
+<img class="chart-img" src="{{ chart_confidence_hist }}" alt="Semantic confidence distribution">
+{% else %}
+<p class="empty-state">No data.</p>
+{% endif %}
+
+<h2>Ambiguity Score Distribution</h2>
+{% if chart_ambiguity_hist %}
+<img class="chart-img" src="{{ chart_ambiguity_hist }}" alt="Ambiguity score distribution">
+{% else %}
+<p class="empty-state">No data.</p>
+{% endif %}
+
+<h2>Ambiguity Flag Frequency</h2>
+{% if chart_flag_bar %}
+<img class="chart-img" src="{{ chart_flag_bar }}" alt="Ambiguity flag frequency">
+{% endif %}
+
+<h2>Markets Flagged for Review</h2>
+{% if review_html %}
+{{ review_html | safe }}
+{% else %}
+<p class="empty-state">No markets flagged for review.</p>
+{% endif %}
+
+<h2>All Semantics Rows</h2>
+{% if semantics_html %}
+{{ semantics_html | safe }}
+{% else %}
+<p class="empty-state">No semantics rows — run <code>nlp extract-market-semantics</code> first.</p>
+{% endif %}
+
+<h2>Rulebook Evaluations</h2>
+{% if evaluations_html %}
+{{ evaluations_html | safe }}
+{% else %}
+<p class="empty-state">No rulebook evaluations — run <code>nlp score-semantics</code> first.</p>
+{% endif %}
+
+<h2>Sample Implications</h2>
+{% if implications_html %}
+{{ implications_html | safe }}
+{% else %}
+<p class="empty-state">No implications — run <code>nlp extract-implications</code> first.</p>
+{% endif %}
+
+{% endblock %}

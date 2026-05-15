@@ -1,0 +1,119 @@
+rulebook_id: "relationship_v2"
+rulebook_version: 2
+description: "Type-specific relationship rules. Different families have different gates; mutually_exclusive_category and temporal types bypass global entity threshold."
+
+score_weights:
+  entity_match: 0.20
+  time_scope_match: 0.20
+  resolution_criteria_match: 0.20
+  threshold_relation: 0.10
+  outcome_space_match: 0.15
+  terms_match: 0.15
+
+hard_gates:
+  # Default gates — overridable per-type via ignore_min_entity_match
+  min_entity_match: 0.50
+  min_time_scope_match: 0.50
+  forbid_embedding_only: true
+  require_token_ids_when_strategy_eligible: true
+
+soft_gates:
+  min_resolution_criteria_match: 0.60
+  min_final_confidence_for_accept: 0.60
+  manual_review_band: [0.40, 0.60]
+
+type_rules:
+  nested_a_implies_b:
+    requires_threshold_relation: true
+    requires_same_variable: true
+    requires_same_entity: true
+    requires_overlapping_time_scope: true
+
+  nested_b_implies_a:
+    requires_threshold_relation: true
+    requires_same_variable: true
+    requires_same_entity: true
+    requires_overlapping_time_scope: true
+
+  contradiction:
+    requires_same_entity: true
+    requires_overlapping_time_scope: true
+    requires_same_event_space: true
+    requires_mutually_impossible_yes_conditions: true
+
+  same_entity_exclusive:
+    # Renamed from old "mutually_exclusive" — requires same entity
+    requires_same_entity: true
+    requires_overlapping_time_scope: true
+
+  mutually_exclusive_category:
+    # New: different candidates, same competition/event
+    require_same_outcome_space: true
+    require_different_candidates: true
+    require_same_winner_predicate: true
+    require_same_or_compatible_time_scope: true
+    ignore_min_entity_match: true
+    min_event_match: 0.75
+    min_terms_match: 0.60
+
+  temporal_before:
+    requires_extractable_event_atoms: true
+    requires_terms_compatible: true
+    allow_different_entities: true
+    min_reference_event_match: 0.65
+    unresolved_reference_event_penalty: 0.15
+    long_horizon_penalty: 0.10
+    ignore_min_entity_match: true
+
+  temporal_after:
+    requires_extractable_event_atoms: true
+    requires_terms_compatible: true
+    allow_different_entities: true
+    min_reference_event_match: 0.65
+    unresolved_reference_event_penalty: 0.15
+    long_horizon_penalty: 0.10
+    ignore_min_entity_match: true
+
+  inverse_temporal_order:
+    # A before B + B before A: cannot both be true
+    requires_same_two_events: true
+    requires_opposite_ordering: true
+    requires_terms_compatible: true
+    ignore_min_entity_match: true
+
+  temporal_transitive_dependency:
+    requires_three_event_chain: true
+    requires_terms_compatible: true
+    ignore_min_entity_match: true
+
+  same_reference_clock:
+    # Multiple markets share same reference event clock (e.g. "before GTA VI")
+    requires_shared_reference_event: true
+    ignore_min_entity_match: true
+
+ambiguity_penalties:
+  semantics_ambiguity_flag_present: 0.10
+  needs_manual_review_either_market: 0.20
+  low_semantic_confidence_either_market: 0.10
+
+rejection_codes:
+  - missing_semantics
+  - entity_mismatch
+  - time_scope_mismatch
+  - resolution_criteria_mismatch
+  - threshold_direction_wrong
+  - embedding_only_match
+  - identical_market_pair
+  - missing_token_ids
+  - non_binary_outcomes_unsupported
+  - manual_review_band
+  - ambiguity_too_high
+  - outcome_space_mismatch
+  - same_candidate
+  - winner_predicate_mismatch
+  - missing_event_atoms
+  - terms_incompatible
+  - ordering_not_inverse
+  - reference_event_mismatch
+  - not_three_event_chain
+  - no_shared_reference_event

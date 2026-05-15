@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Relationship Candidates Report</title>
+<style>
+  body { font-family: monospace; font-size: 13px; margin: 20px; background: #fafafa; color: #222; }
+  h1 { font-size: 1.4em; border-bottom: 2px solid #333; padding-bottom: 6px; }
+  h2 { font-size: 1.15em; margin-top: 2em; border-bottom: 1px solid #aaa; padding-bottom: 4px; }
+  h3 { font-size: 1em; margin-top: 1.5em; }
+  .summary-grid { display: flex; flex-wrap: wrap; gap: 12px; margin: 1em 0; }
+  .summary-card { background: #fff; border: 1px solid #ccc; border-radius: 4px;
+                  padding: 12px 18px; min-width: 140px; text-align: center; }
+  .summary-card .value { font-size: 1.8em; font-weight: bold; color: #1a73e8; }
+  .summary-card .label { font-size: 0.85em; color: #555; }
+  table.report-table { border-collapse: collapse; width: 100%; margin: 0.5em 0; }
+  table.report-table th { background: #333; color: #fff; padding: 5px 8px; text-align: left;
+                           position: sticky; top: 0; }
+  table.report-table td { padding: 4px 8px; border-bottom: 1px solid #ddd; }
+  table.report-table tr:nth-child(even) { background: #f5f5f5; }
+  .status-pass { color: #2e7d32; font-weight: bold; }
+  .status-warn { color: #e65100; font-weight: bold; }
+  .status-fail { color: #c62828; font-weight: bold; }
+  .chart-img { max-width: 100%; height: auto; margin: 0.5em 0; }
+  .empty-state { color: #888; font-style: italic; padding: 1em; }
+  footer { margin-top: 3em; font-size: 0.8em; color: #888; border-top: 1px solid #ddd; padding-top: 8px; }
+</style>
+</head>
+<body>
+
+<h1>Relationship Candidates Report</h1>
+<p style="color:#666">Generated: 2026-05-11T10:13:55Z</p>
+
+
+
+<div class="summary-grid">
+  <div class="summary-card">
+    <div class="value">12</div>
+    <div class="label">Total Candidates</div>
+  </div>
+  <div class="summary-card">
+    <div class="value" style="color:#2e7d32">0</div>
+    <div class="label">Accepted</div>
+  </div>
+  <div class="summary-card">
+    <div class="value" style="color:#c62828">12</div>
+    <div class="label">Rejected</div>
+  </div>
+  <div class="summary-card">
+    <div class="value" style="color:#e65100">0</div>
+    <div class="label">Manual Review</div>
+  </div>
+  <div class="summary-card">
+    <div class="value">rejected</div>
+    <div class="label">Top Type</div>
+  </div>
+</div>
+
+<h2>Counts by Relationship Type</h2>
+
+<table class="report-table">
+<thead><tr><th>Type</th><th>Count</th></tr></thead>
+<tbody>
+
+<tr><td>rejected</td><td>12</td></tr>
+
+</tbody>
+</table>
+
+<img class="chart-img" src="chart_types.png" alt="Relationship Type Counts">
+
+
+
+<h2>Rejection Reason Counts</h2>
+
+<table class="report-table">
+<thead><tr><th>Reason</th><th>Count</th></tr></thead>
+<tbody>
+
+<tr><td>entity_mismatch</td><td>12</td></tr>
+
+<tr><td>time_scope_mismatch</td><td>4</td></tr>
+
+</tbody>
+</table>
+
+<img class="chart-img" src="chart_rejections.png" alt="Rejection Reasons">
+
+
+
+<h2>Confidence Distribution</h2>
+
+<img class="chart-img" src="chart_confidence.png" alt="Confidence Distribution">
+
+
+<h2>Top Accepted Nesting Candidates</h2>
+
+<p class="empty-state">No accepted nesting candidates.</p>
+
+
+<h2>Top Accepted Contradiction / Inverse Candidates</h2>
+
+<p class="empty-state">No accepted contradiction or inverse candidates.</p>
+
+
+<h2>Examples: Rejected same_topic_no_trade Pairs</h2>
+
+<table class="dataframe report-table">
+  <thead>
+    <tr style="text-align: right;">
+      <th>relationship_id</th>
+      <th>market_id_a</th>
+      <th>market_id_b</th>
+      <th>type</th>
+      <th>status</th>
+      <th>question_a</th>
+      <th>question_b</th>
+      <th>final_confidence</th>
+      <th>entity_score</th>
+      <th>time_score</th>
+      <th>threshold</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>264e1eeed6a160fb8c1849d99ff66811</td>
+      <td>553824</td>
+      <td>553843</td>
+      <td>rejected</td>
+      <td>rejected</td>
+      <td>Will the Carolina Hurricanes win the 2026 NHL Stanley Cup?</td>
+      <td>Will the Philadelphia Flyers win the 2026 NHL Stanley Cup?</td>
+      <td>0.4447</td>
+      <td>0.100</td>
+      <td>1.0</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>72dfea6c8c946bedf26721c01c36b1ec</td>
+      <td>540817</td>
+      <td>540818</td>
+      <td>rejected</td>
+      <td>rejected</td>
+      <td>New Rihanna Album before GTA VI?</td>
+      <td>New Playboi Carti Album before GTA VI?</td>
+      <td>0.3414</td>
+      <td>0.060</td>
+      <td>1.0</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>89a863c1cf646768f1b8190c5d87a57e</td>
+      <td>553828</td>
+      <td>553849</td>
+      <td>rejected</td>
+      <td>rejected</td>
+      <td>Will the Colorado Avalanche win the 2026 NHL Stanley Cup?</td>
+      <td>Will the Montreal Canadiens win the 2026 NHL Stanley Cup?</td>
+      <td>0.3066</td>
+      <td>0.100</td>
+      <td>1.0</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>fb5efc7f0a76767bc42249cea73627b0</td>
+      <td>540818</td>
+      <td>540819</td>
+      <td>rejected</td>
+      <td>rejected</td>
+      <td>New Playboi Carti Album before GTA VI?</td>
+      <td>Will Jesus Christ return before GTA VI?</td>
+      <td>0.2720</td>
+      <td>0.100</td>
+      <td>1.0</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>b9b55135fac0d7b9a1d4af4a8a3b10e2</td>
+      <td>540817</td>
+      <td>540819</td>
+      <td>rejected</td>
+      <td>rejected</td>
+      <td>New Rihanna Album before GTA VI?</td>
+      <td>Will Jesus Christ return before GTA VI?</td>
+      <td>0.2718</td>
+      <td>0.060</td>
+      <td>1.0</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>7e744c2e05cddc43704cf818f2aa327d</td>
+      <td>540819</td>
+      <td>540844</td>
+      <td>rejected</td>
+      <td>rejected</td>
+      <td>Will Jesus Christ return before GTA VI?</td>
+      <td>Will bitcoin hit $1m before GTA VI?</td>
+      <td>0.2637</td>
+      <td>0.100</td>
+      <td>1.0</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>3cd0206d7a630a2ed1d7e52faa324562</td>
+      <td>540818</td>
+      <td>540844</td>
+      <td>rejected</td>
+      <td>rejected</td>
+      <td>New Playboi Carti Album before GTA VI?</td>
+      <td>Will bitcoin hit $1m before GTA VI?</td>
+      <td>0.2557</td>
+      <td>0.100</td>
+      <td>1.0</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>ab030b85211f18c92d425a08d8339255</td>
+      <td>540817</td>
+      <td>540844</td>
+      <td>rejected</td>
+      <td>rejected</td>
+      <td>New Rihanna Album before GTA VI?</td>
+      <td>Will bitcoin hit $1m before GTA VI?</td>
+      <td>0.2466</td>
+      <td>0.060</td>
+      <td>1.0</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>388e523392a91d7082c2a2988cf15f16</td>
+      <td>540817</td>
+      <td>540881</td>
+      <td>rejected</td>
+      <td>rejected</td>
+      <td>New Rihanna Album before GTA VI?</td>
+      <td>GTA VI released before June 2026?</td>
+      <td>0.2161</td>
+      <td>0.425</td>
+      <td>0.4</td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>4896d82fe2e5f62452175f41e65b5a69</td>
+      <td>540819</td>
+      <td>540881</td>
+      <td>rejected</td>
+      <td>rejected</td>
+      <td>Will Jesus Christ return before GTA VI?</td>
+      <td>GTA VI released before June 2026?</td>
+      <td>0.1588</td>
+      <td>0.150</td>
+      <td>0.4</td>
+      <td></td>
+    </tr>
+  </tbody>
+</table>
+
+
+<h2>Examples: Manual Review Pairs</h2>
+
+<p class="empty-state">No manual-review pairs.</p>
+
+
+<h2>Validation</h2>
+<p>No-thinking check: <span class="status-pass">PASS</span></p>
+
+<h2>Downloads</h2>
+<ul>
+  <li><a href="relationships.csv">All relationships (CSV)</a></li>
+  <li><a href="accepted_relationships.csv">Accepted relationships (CSV)</a></li>
+  <li><a href="rejected_relationships.csv">Rejected relationships (CSV)</a></li>
+  <li><a href="manual_review_relationships.csv">Manual review (CSV)</a></li>
+</ul>
+
+
+<footer>polymarket-arb — research only, no trading</footer>
+</body>
+</html>

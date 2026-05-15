@@ -1,0 +1,14 @@
+{
+  "reviewed_context_valid": {
+    "by_market": {
+      "553856": 2,
+      "564210": 2
+    },
+    "by_context_space": {
+      "nba_championship_conference_progression": 4
+    },
+    "largest_market_share": 0.5,
+    "largest_context_space_share": 1.0,
+    "concentration_flag": true
+  }
+}

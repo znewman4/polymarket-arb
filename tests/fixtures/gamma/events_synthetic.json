@@ -1,0 +1,30 @@
+[
+  {
+    "id": "evt_001",
+    "ticker": "EXAMPLE-2026",
+    "slug": "example-event-2026",
+    "title": "Example Event 2026",
+    "description": "An event with a few markets nested inside.",
+    "startDate": "2026-01-01T00:00:00Z",
+    "endDate": "2026-12-31T00:00:00Z",
+    "markets": [
+      {"id": "1001"},
+      {"id": "1002"}
+    ],
+    "tags": [
+      {"id": "t1", "label": "politics", "slug": "politics"},
+      {"id": "t2", "label": "test", "slug": "test"}
+    ]
+  },
+  {
+    "id": "evt_002",
+    "ticker": null,
+    "slug": "minimal-event",
+    "title": "Minimal Event",
+    "description": null,
+    "startDate": null,
+    "endDate": null,
+    "markets": [],
+    "tags": []
+  }
+]

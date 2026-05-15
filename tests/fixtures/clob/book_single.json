@@ -1,0 +1,15 @@
+{
+  "market": "0xcondition",
+  "asset_id": "token-yes",
+  "timestamp": "2026-05-09T12:00:00Z",
+  "bids": [
+    { "price": "0.48", "size": "1000" },
+    { "price": "0.47", "size": "2500" }
+  ],
+  "asks": [
+    { "price": "0.52", "size": "800" },
+    { "price": "0.53", "size": "1500" }
+  ],
+  "tick_size": "0.01",
+  "hash": "0xabc123"
+}

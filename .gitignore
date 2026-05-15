@@ -1,0 +1,45 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+htmlcov/
+.coverage
+.coverage.*
+
+# Virtualenv
+.venv/
+venv/
+
+# Local env / secrets
+.env
+.env.*
+!.env.example
+
+# Editor
+.vscode/
+.idea/
+*.swp
+
+# Project-local
+data/
+data/raw/
+data/normalised/
+data/account/
+data/derived/
+data/logs/
+data/debug/
+data/runs/
+data/backtests/
+!data/**/.gitkeep
+data/.killswitch
+data/.live_approved_*
+*.parquet
+
+# Allow configs (no secrets), forbid local overrides
+configs/*.local.yaml

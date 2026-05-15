@@ -1,0 +1,14 @@
+services:
+  cli:
+    build: .
+    image: polymarket-arb:dev
+    container_name: polymarket-arb-cli
+    environment:
+      - POLYMARKET_ARB_ENV=dev
+      - POLYMARKET_ARB_ORDERS_ALLOWED=false
+    volumes:
+      - ./data:/app/data
+      - ./configs:/app/configs
+    # Default command is `healthcheck`; override per-invocation:
+    #   docker compose run --rm cli list-markets
+    command: ["healthcheck"]

@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Relationship Candidates Report</title>
+<style>
+  body { font-family: monospace; font-size: 13px; margin: 20px; background: #fafafa; color: #222; }
+  h1 { font-size: 1.4em; border-bottom: 2px solid #333; padding-bottom: 6px; }
+  h2 { font-size: 1.15em; margin-top: 2em; border-bottom: 1px solid #aaa; padding-bottom: 4px; }
+  h3 { font-size: 1em; margin-top: 1.5em; }
+  .summary-grid { display: flex; flex-wrap: wrap; gap: 12px; margin: 1em 0; }
+  .summary-card { background: #fff; border: 1px solid #ccc; border-radius: 4px;
+                  padding: 12px 18px; min-width: 140px; text-align: center; }
+  .summary-card .value { font-size: 1.8em; font-weight: bold; color: #1a73e8; }
+  .summary-card .label { font-size: 0.85em; color: #555; }
+  table.report-table { border-collapse: collapse; width: 100%; margin: 0.5em 0; }
+  table.report-table th { background: #333; color: #fff; padding: 5px 8px; text-align: left;
+                           position: sticky; top: 0; }
+  table.report-table td { padding: 4px 8px; border-bottom: 1px solid #ddd; }
+  table.report-table tr:nth-child(even) { background: #f5f5f5; }
+  .status-pass { color: #2e7d32; font-weight: bold; }
+  .status-warn { color: #e65100; font-weight: bold; }
+  .status-fail { color: #c62828; font-weight: bold; }
+  .chart-img { max-width: 100%; height: auto; margin: 0.5em 0; }
+  .empty-state { color: #888; font-style: italic; padding: 1em; }
+  footer { margin-top: 3em; font-size: 0.8em; color: #888; border-top: 1px solid #ddd; padding-top: 8px; }
+</style>
+</head>
+<body>
+
+<h1>Relationship Candidates Report</h1>
+<p style="color:#666">Generated: 2026-05-11T10:05:07Z</p>
+
+
+
+<div class="summary-grid">
+  <div class="summary-card">
+    <div class="value">0</div>
+    <div class="label">Total Candidates</div>
+  </div>
+  <div class="summary-card">
+    <div class="value" style="color:#2e7d32">0</div>
+    <div class="label">Accepted</div>
+  </div>
+  <div class="summary-card">
+    <div class="value" style="color:#c62828">0</div>
+    <div class="label">Rejected</div>
+  </div>
+  <div class="summary-card">
+    <div class="value" style="color:#e65100">0</div>
+    <div class="label">Manual Review</div>
+  </div>
+  <div class="summary-card">
+    <div class="value">N/A</div>
+    <div class="label">Top Type</div>
+  </div>
+</div>
+
+<h2>Counts by Relationship Type</h2>
+
+<p class="empty-state">No candidates generated yet. Run <code>polymarket-arb relationships generate</code> first.</p>
+
+
+<h2>Rejection Reason Counts</h2>
+
+<p class="empty-state">No rejections.</p>
+
+
+<h2>Confidence Distribution</h2>
+
+<p class="empty-state">No confidence data available.</p>
+
+
+<h2>Top Accepted Nesting Candidates</h2>
+
+<p class="empty-state">No accepted nesting candidates.</p>
+
+
+<h2>Top Accepted Contradiction / Inverse Candidates</h2>
+
+<p class="empty-state">No accepted contradiction or inverse candidates.</p>
+
+
+<h2>Examples: Rejected same_topic_no_trade Pairs</h2>
+
+<p class="empty-state">No same_topic_no_trade rejections in sample.</p>
+
+
+<h2>Examples: Manual Review Pairs</h2>
+
+<p class="empty-state">No manual-review pairs.</p>
+
+
+<h2>Validation</h2>
+<p>No-thinking check: <span class="status-pass">PASS</span></p>
+
+<h2>Downloads</h2>
+<ul>
+  <li><a href="relationships.csv">All relationships (CSV)</a></li>
+  <li><a href="accepted_relationships.csv">Accepted relationships (CSV)</a></li>
+  <li><a href="rejected_relationships.csv">Rejected relationships (CSV)</a></li>
+  <li><a href="manual_review_relationships.csv">Manual review (CSV)</a></li>
+</ul>
+
+
+<footer>polymarket-arb — research only, no trading</footer>
+</body>
+</html>

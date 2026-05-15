@@ -1,0 +1,16 @@
+# Conservative known-total metadata for N-way category bundle analysis.
+# Only groups listed here may be considered strategy_allowed by default.
+
+outcome_spaces:
+  2026_nhl_stanley_cup:
+    name: "2026 NHL Stanley Cup winner"
+    known_total_candidates: 32
+    aliases:
+      - nhl_stanley_cup_2026
+      - 2026_nhl_stanley_cup_winner
+  2026_nba_champion:
+    name: "2026 NBA champion"
+    known_total_candidates: 30
+    aliases:
+      - nba_championship_2026
+      - 2026_nba_championship

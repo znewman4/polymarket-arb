@@ -1,0 +1,13 @@
+rulebook_id: "implication"
+rulebook_version: 1
+description: "Single-market implication confidence scoring v1."
+type_weights:
+  necessary_for_yes: 0.8
+  sufficient_for_yes: 0.9
+  necessary_for_no: 0.75
+  sufficient_for_no: 0.85
+  evidence_updates_yes: 0.55
+  evidence_updates_no: 0.55
+  ambiguity_warning: 0.25
+ambiguity_penalty_weight: 0.5
+review_threshold: 0.5

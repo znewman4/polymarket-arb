@@ -1,0 +1,2 @@
+issue,severity,file_or_command,recommended_fix,blocking_credible_backtest
+Diagnostic comparison is positive but not credible evidence,info,post_rule_approval_diagnostic,Use it only to prioritize data/context fixes; do not headline it.,False

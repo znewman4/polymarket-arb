@@ -1,0 +1,13 @@
+relationship_id,market_id_a,market_id_b,type,family,status,strategy_eligibility,question_a,question_b,final_confidence,entity_score,time_score,threshold,candidate_a,candidate_b,shared_event
+264e1eeed6a160fb8c1849d99ff66811,553824,553843,rejected,,rejected,unknown,Will the Carolina Hurricanes win the 2026 NHL Stanley Cup?,Will the Philadelphia Flyers win the 2026 NHL Stanley Cup?,0.4447,0.1,1.0,,,,
+72dfea6c8c946bedf26721c01c36b1ec,540817,540818,rejected,,rejected,unknown,New Rihanna Album before GTA VI?,New Playboi Carti Album before GTA VI?,0.3414,0.06,1.0,,,,
+89a863c1cf646768f1b8190c5d87a57e,553828,553849,rejected,,rejected,unknown,Will the Colorado Avalanche win the 2026 NHL Stanley Cup?,Will the Montreal Canadiens win the 2026 NHL Stanley Cup?,0.3066,0.1,1.0,,,,
+fb5efc7f0a76767bc42249cea73627b0,540818,540819,rejected,,rejected,unknown,New Playboi Carti Album before GTA VI?,Will Jesus Christ return before GTA VI?,0.272,0.1,1.0,,,,
+b9b55135fac0d7b9a1d4af4a8a3b10e2,540817,540819,rejected,,rejected,unknown,New Rihanna Album before GTA VI?,Will Jesus Christ return before GTA VI?,0.2718,0.06,1.0,,,,
+7e744c2e05cddc43704cf818f2aa327d,540819,540844,rejected,,rejected,unknown,Will Jesus Christ return before GTA VI?,Will bitcoin hit $1m before GTA VI?,0.2637,0.1,1.0,,,,
+3cd0206d7a630a2ed1d7e52faa324562,540818,540844,rejected,,rejected,unknown,New Playboi Carti Album before GTA VI?,Will bitcoin hit $1m before GTA VI?,0.2557,0.1,1.0,,,,
+ab030b85211f18c92d425a08d8339255,540817,540844,rejected,,rejected,unknown,New Rihanna Album before GTA VI?,Will bitcoin hit $1m before GTA VI?,0.2466,0.06,1.0,,,,
+388e523392a91d7082c2a2988cf15f16,540817,540881,rejected,,rejected,unknown,New Rihanna Album before GTA VI?,GTA VI released before June 2026?,0.2161,0.425,0.4,,,,
+4896d82fe2e5f62452175f41e65b5a69,540819,540881,rejected,,rejected,unknown,Will Jesus Christ return before GTA VI?,GTA VI released before June 2026?,0.1588,0.15,0.4,,,,
+4e48362725756304216e7c9ddbbe1b8d,540818,540881,rejected,,rejected,unknown,New Playboi Carti Album before GTA VI?,GTA VI released before June 2026?,0.1557,0.15,0.4,,,,
+907a0b689888f9ce8df9e4ac0efdc69e,540844,540881,rejected,,rejected,unknown,Will bitcoin hit $1m before GTA VI?,GTA VI released before June 2026?,0.1467,0.15,0.4,,,,

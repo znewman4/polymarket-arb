@@ -1,0 +1,306 @@
+context_spaces:
+  nba_championship_conference_progression:
+    display_name: "NBA championship and conference progression"
+    context_type: sports_progression
+    completeness_class: partition_subset
+    source_requirements:
+      min_source_tier_for_strict: 1
+      allowed_source_tiers: [1, 2, 3]
+      preferred_domains: ["nba.com"]
+    required_world_rule_types:
+      - championship_implies_conference
+    required_market_terms_rule_types:
+      - market_terms_same_league_scope
+      - market_terms_same_season_scope
+    allowed_strategy_lanes:
+      - strict_context_valid
+      - reviewed_context_valid
+      - exploratory_context_unreviewed
+      - analysis_only
+    deterministic_implications:
+      - "NBA Finals winner implies winner of that team's conference playoff path."
+    deterministic_exclusions: []
+    human_review_required: true
+    notes: "Strict lane also requires Polymarket terms for both markets to align on league, season, and resolution treatment."
+
+  premier_league_finish_position:
+    display_name: "Premier League exact finish and top-N finish"
+    context_type: ranking_top_n
+    completeness_class: partition_subset
+    source_requirements:
+      min_source_tier_for_strict: 1
+      allowed_source_tiers: [1, 2, 3]
+      preferred_domains: ["premierleague.com"]
+    required_world_rule_types:
+      - exact_finish_implies_top_n
+      - exact_finish_positions_mutually_exclusive
+    required_market_terms_rule_types:
+      - market_terms_same_league_scope
+      - market_terms_same_season_scope
+      - market_terms_exact_finish_scope
+    allowed_strategy_lanes:
+      - strict_context_valid
+      - reviewed_context_valid
+      - exploratory_context_unreviewed
+      - analysis_only
+    deterministic_implications:
+      - "Exact finish position N implies top M when N <= M."
+      - "Two different exact finish positions for the same team and season are mutually exclusive."
+    deterministic_exclusions: []
+    human_review_required: true
+    notes: "Ranking rules are deterministic only if markets share the same league, season, and table definition."
+
+  us_2028_presidential_nomination_general:
+    display_name: "2028 US presidential nomination and general election dependency"
+    context_type: election_dependency
+    completeness_class: open_world
+    source_requirements:
+      min_source_tier_for_strict: 1
+      allowed_source_tiers: [1, 2, 3]
+      preferred_domains: ["fec.gov"]
+    required_world_rule_types:
+      - nomination_general_not_deterministic
+    required_market_terms_rule_types:
+      - market_terms_same_candidate_scope
+    allowed_strategy_lanes:
+      - analysis_only
+      - exploratory_context_unreviewed
+    deterministic_implications: []
+    deterministic_exclusions:
+      - "Party nomination and general election victory are not pairwise contradictions."
+      - "Party nomination alone is not sufficient for general election victory."
+    human_review_required: true
+    notes: "Use as a downgrade/analysis context unless market terms explicitly define a deterministic implication."
+
+  colombia_2026_presidential_election:
+    display_name: "2026 Colombian presidential first round and final outcome"
+    context_type: election_runoff
+    completeness_class: open_world
+    source_requirements:
+      min_source_tier_for_strict: 1
+      allowed_source_tiers: [1, 2, 3]
+      preferred_domains: []
+    required_world_rule_types:
+      - first_round_general_not_deterministic
+    required_market_terms_rule_types:
+      - market_terms_same_election_scope
+    allowed_strategy_lanes:
+      - analysis_only
+      - exploratory_context_unreviewed
+    deterministic_implications: []
+    deterministic_exclusions:
+      - "First-round winner is not automatically the final winner unless terms and election rules prove no runoff or threshold condition."
+    human_review_required: true
+    notes: "Default to review or exploratory only."
+
+  balance_of_power_combinations:
+    display_name: "Balance of power exhaustive combinations"
+    context_type: complete_outcome_space
+    completeness_class: known_complete
+    source_requirements:
+      min_source_tier_for_strict: 1
+      allowed_source_tiers: [1, 2, 3]
+      preferred_domains: ["polymarket.com"]
+    required_world_rule_types:
+      - balance_of_power_partition
+    required_market_terms_rule_types:
+      - market_terms_complete_partition
+    allowed_strategy_lanes:
+      - strict_context_valid
+      - reviewed_context_valid
+      - exploratory_context_unreviewed
+    deterministic_implications:
+      - "A complete set of mutually exclusive balance-of-power combinations partitions the outcome space."
+    deterministic_exclusions: []
+    human_review_required: true
+    notes: "Strict only if Polymarket terms list or imply all combinations."
+
+  next_james_bond:
+    display_name: "Next James Bond candidate market"
+    context_type: partial_candidate_list
+    completeness_class: open_world
+    source_requirements:
+      min_source_tier_for_strict: 1
+      allowed_source_tiers: [1, 2, 3]
+      preferred_domains: ["polymarket.com"]
+    required_world_rule_types:
+      - partial_candidate_list
+    required_market_terms_rule_types:
+      - market_terms_resolution_source
+    allowed_strategy_lanes:
+      - analysis_only
+      - exploratory_context_unreviewed
+    deterministic_implications: []
+    deterministic_exclusions:
+      - "Observed candidate markets are not exhaustive by default."
+    human_review_required: true
+    notes: "Requires market-specific resolution source and candidate list handling."
+
+  # ── Deterministic template spaces ──────────────────────────────────────────
+  # These generalise the domain-specific spaces above. Templates in
+  # configs/deterministic_templates/templates_v1.yaml route matching pairs here.
+
+  sports_championship_conference_progression:
+    display_name: "Sports championship implies conference/league title (all sports)"
+    context_type: sports_progression
+    completeness_class: partition_subset
+    source_requirements:
+      min_source_tier_for_strict: 1
+      allowed_source_tiers: [1, 2, 3]
+      preferred_domains: []
+    required_world_rule_types:
+      - championship_implies_conference
+    required_market_terms_rule_types: []
+    allowed_strategy_lanes:
+      - strict_context_valid
+      - reviewed_context_valid
+      - exploratory_context_unreviewed
+      - analysis_only
+    deterministic_implications:
+      - "Champion must win their conference/league bracket path. Structural necessity of knockout formats."
+    deterministic_exclusions: []
+    human_review_required: false
+    notes: "Applies to any knockout sport (NBA, NHL, NFL, EPL knockout, etc.)."
+
+  sports_ranking_finish_position:
+    display_name: "Sports exact finish position and top-N finish (all leagues)"
+    context_type: ranking_top_n
+    completeness_class: partition_subset
+    source_requirements:
+      min_source_tier_for_strict: 1
+      allowed_source_tiers: [1, 2, 3]
+      preferred_domains: []
+    required_world_rule_types:
+      - exact_finish_implies_top_n
+      - exact_finish_positions_mutually_exclusive
+    required_market_terms_rule_types: []
+    allowed_strategy_lanes:
+      - strict_context_valid
+      - reviewed_context_valid
+      - exploratory_context_unreviewed
+      - analysis_only
+    deterministic_implications:
+      - "Exact finish N implies top M for all M >= N."
+      - "Two distinct exact positions for the same team and season are mutually exclusive."
+    deterministic_exclusions: []
+    human_review_required: false
+    notes: "Applies to any league with a final standings table."
+
+  threshold_nesting:
+    display_name: "Price/value threshold monotone nesting"
+    context_type: threshold_nesting
+    completeness_class: partition_subset
+    source_requirements:
+      min_source_tier_for_strict: 1
+      allowed_source_tiers: [1, 2, 3]
+      preferred_domains: []
+    required_world_rule_types:
+      - threshold_monotone_nesting
+    required_market_terms_rule_types:
+      - market_terms_threshold_scope
+    allowed_strategy_lanes:
+      - strict_context_valid
+      - reviewed_context_valid
+      - exploratory_context_unreviewed
+      - analysis_only
+    deterministic_implications:
+      - "If price hits level H, it has passed all levels L < H. Higher threshold implies lower threshold."
+    deterministic_exclusions: []
+    human_review_required: false
+    notes: >
+      Requires same asset, same resolution window. Both markets must be
+      monotone threshold markets on the same underlying.
+
+  date_time_nesting:
+    display_name: "Temporal threshold monotone nesting (event-before-date)"
+    context_type: date_time_nesting
+    completeness_class: partition_subset
+    source_requirements:
+      min_source_tier_for_strict: 1
+      allowed_source_tiers: [1, 2, 3]
+      preferred_domains: []
+    required_world_rule_types:
+      - date_monotone_nesting
+    required_market_terms_rule_types:
+      - market_terms_date_scope
+    allowed_strategy_lanes:
+      - strict_context_valid
+      - reviewed_context_valid
+      - exploratory_context_unreviewed
+      - analysis_only
+    deterministic_implications:
+      - "Event before earlier date implies event before all later dates. Temporal monotonicity."
+    deterministic_exclusions: []
+    human_review_required: false
+    notes: "Requires same event and same resolution source. Different date thresholds only."
+
+  sports_title_competition_mutual_exclusion:
+    display_name: "Sports title competition — different teams mutually exclusive"
+    context_type: sports_mutual_exclusion
+    completeness_class: partition_subset
+    source_requirements:
+      min_source_tier_for_strict: 1
+      allowed_source_tiers: [1, 2, 3]
+      preferred_domains: []
+    required_world_rule_types:
+      - single_winner_competition_mutual_exclusion
+    required_market_terms_rule_types: []
+    allowed_strategy_lanes:
+      - strict_context_valid
+      - reviewed_context_valid
+      - exploratory_context_unreviewed
+      - analysis_only
+    deterministic_implications:
+      - "In a single-winner competition, different teams winning are mutually exclusive."
+    deterministic_exclusions: []
+    human_review_required: false
+    notes: >
+      Applies to any competition where exactly one team wins (World Cup, Stanley Cup,
+      Champions League, etc.). Both markets must resolve on the same competition.
+
+  electoral_mutual_exclusion:
+    display_name: "Same-election candidate mutual exclusion"
+    context_type: electoral_mutual_exclusion
+    completeness_class: partition_subset
+    source_requirements:
+      min_source_tier_for_strict: 1
+      allowed_source_tiers: [1, 2, 3]
+      preferred_domains: []
+    required_world_rule_types:
+      - primary_candidates_mutually_exclusive
+    required_market_terms_rule_types:
+      - market_terms_same_election_scope
+    allowed_strategy_lanes:
+      - reviewed_context_valid
+      - exploratory_context_unreviewed
+      - analysis_only
+    deterministic_implications:
+      - "In a single-winner election, different candidates winning are mutually exclusive."
+    deterministic_exclusions:
+      - "Does not apply across different elections or different parties."
+    human_review_required: false
+    notes: >
+      Applies to same-party, same-election candidate markets. Requires shared_event
+      to confirm both markets resolve on the same race. Does not cover open primaries
+      where multiple candidates could advance.
+
+  same_reference_clock_before_gta_vi:
+    display_name: "Markets sharing a before-GTA-VI reference clock"
+    context_type: same_reference_temporal
+    completeness_class: known_partial
+    source_requirements:
+      min_source_tier_for_strict: 1
+      allowed_source_tiers: [1, 2, 3]
+      preferred_domains: ["polymarket.com"]
+    required_world_rule_types:
+      - shared_reference_not_tradeable
+    required_market_terms_rule_types:
+      - market_terms_temporal_complement
+    allowed_strategy_lanes:
+      - analysis_only
+      - exploratory_context_unreviewed
+    deterministic_implications: []
+    deterministic_exclusions:
+      - "Shared reference event alone does not create a tradable relation."
+    human_review_required: true
+    notes: "Only paired inverse/complement terms can create deterministic temporal trades."

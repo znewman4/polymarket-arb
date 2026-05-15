@@ -1,0 +1,22 @@
+{
+  "analysis_only_outcome_spaces": 3,
+  "candidates_accepted": 0,
+  "complete_outcome_spaces": 0,
+  "credibility_label": "data_insufficient",
+  "credibility_rationale": "No complete category bundle opportunities passed price, completeness, and net-edge gates.",
+  "ending_cash_usdc": "10000.0",
+  "ending_equity_usdc": "10000.0",
+  "generated_at": "2026-05-11T17:55:32Z",
+  "gross_pnl_usdc": "0.0",
+  "leg_trades_executed": 0,
+  "net_pnl_usdc": "0.0",
+  "opportunities_found": 0,
+  "outcome_spaces_scanned": 3,
+  "run_id": "codex_category_bundle_20260511",
+  "starting_cash_usdc": "10000.0",
+  "strategy_name": "category_bundle",
+  "total_fees_usdc": "0",
+  "total_return_pct": 0.0,
+  "total_slippage_usdc": "0",
+  "trades_executed": 0
+}

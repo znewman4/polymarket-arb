@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}Context Strategy Backtest{% endblock %}
+{% block content %}
+<h1>Context Strategy Backtest</h1>
+<p class="subtitle">run {{ run_id }}</p>
+
+<div class="summary-grid">
+  <div class="summary-card"><div class="value">{{ metrics.credibility_label }}</div><div class="label">Credibility</div></div>
+  <div class="summary-card"><div class="value">{{ metrics.strict_reviewed_trades_executed }}</div><div class="label">Strict + Reviewed Trades</div></div>
+  <div class="summary-card"><div class="value">{{ "%.2f"|format(metrics.strict_reviewed_net_pnl_usdc) }}</div><div class="label">Strict + Reviewed PnL</div></div>
+  <div class="summary-card"><div class="value">{{ no_lookahead.violations }}</div><div class="label">Lookahead Violations</div></div>
+</div>
+<p>{{ metrics.credibility_rationale }}</p>
+
+<h2>Lane Comparison</h2>
+<table class="report-table">
+  <thead><tr><th>Lane</th><th>Trades</th><th>Net PnL</th><th>Credibility</th><th>Artifact Dir</th></tr></thead>
+  <tbody>
+  {% for lane in lane_summaries %}
+    <tr>
+      <td>{{ lane.lane.replace("_", " ") | title }}</td>
+      <td>{{ lane.metrics.trades_executed }}</td>
+      <td>{{ lane.metrics.net_pnl_usdc }}</td>
+      <td>{{ lane.metrics.credibility_label }}</td>
+      <td>{{ lane.artifact_dir }}</td>
+    </tr>
+  {% endfor %}
+  </tbody>
+</table>
+
+<h2>Strict Trades</h2>
+{% if strict_table %}{{ strict_table | safe }}{% else %}<p class="empty-state">No strict trades.</p>{% endif %}
+
+<h2>Reviewed Trades</h2>
+{% if reviewed_table %}{{ reviewed_table | safe }}{% else %}<p class="empty-state">No reviewed trades.</p>{% endif %}
+
+<h2>Exploratory Trades</h2>
+{% if exploratory_table %}{{ exploratory_table | safe }}{% else %}<p class="empty-state">No exploratory trades.</p>{% endif %}
+
+<h2>Analysis-Only Relationships</h2>
+{% if analysis_only_table %}{{ analysis_only_table | safe }}{% else %}<p class="empty-state">No analysis-only relationships.</p>{% endif %}
+
+<h2>Rejected Candidates</h2>
+{% if rejected_table %}{{ rejected_table | safe }}{% else %}<p class="empty-state">No rejected candidates.</p>{% endif %}
+
+<h2>Sensitivity Grid</h2>
+{% if sensitivity_table %}{{ sensitivity_table | safe }}{% else %}<p class="empty-state">No sensitivity grid.</p>{% endif %}
+
+<h2>Null Baseline</h2>
+<pre>{{ null_metrics }}</pre>
+
+<h2>Concentration</h2>
+<pre>{{ concentration }}</pre>
+{% endblock %}

@@ -1,0 +1,4888 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Classification Audit</title>
+<style>
+  body { font-family: monospace; font-size: 13px; margin: 20px; background: #fafafa; color: #222; }
+  h1 { font-size: 1.4em; border-bottom: 2px solid #333; padding-bottom: 6px; }
+  h2 { font-size: 1.15em; margin-top: 2em; border-bottom: 1px solid #aaa; padding-bottom: 4px; }
+  h3 { font-size: 1em; margin-top: 1.5em; }
+  .summary-grid { display: flex; flex-wrap: wrap; gap: 12px; margin: 1em 0; }
+  .summary-card { background: #fff; border: 1px solid #ccc; border-radius: 4px;
+                  padding: 12px 18px; min-width: 140px; text-align: center; }
+  .summary-card .value { font-size: 1.8em; font-weight: bold; color: #1a73e8; }
+  .summary-card .label { font-size: 0.85em; color: #555; }
+  table.report-table { border-collapse: collapse; width: 100%; margin: 0.5em 0; }
+  table.report-table th { background: #333; color: #fff; padding: 5px 8px; text-align: left;
+                           position: sticky; top: 0; }
+  table.report-table td { padding: 4px 8px; border-bottom: 1px solid #ddd; }
+  table.report-table tr:nth-child(even) { background: #f5f5f5; }
+  .status-pass { color: #2e7d32; font-weight: bold; }
+  .status-warn { color: #e65100; font-weight: bold; }
+  .status-fail { color: #c62828; font-weight: bold; }
+  .chart-img { max-width: 100%; height: auto; margin: 0.5em 0; }
+  .empty-state { color: #888; font-style: italic; padding: 1em; }
+  footer { margin-top: 3em; font-size: 0.8em; color: #888; border-top: 1px solid #ddd; padding-top: 8px; }
+</style>
+</head>
+<body>
+
+<h1>Classification Audit</h1>
+<p style="color:#666">Generated: 2026-05-12T08:32:31Z</p>
+
+
+
+<div class="summary-grid">
+
+  <div class="summary-card">
+    <div class="value">5166</div>
+    <div class="label">Total Candidate Pairs</div>
+  </div>
+
+  <div class="summary-card">
+    <div class="value">90</div>
+    <div class="label">Accepted Strategy Eligible</div>
+  </div>
+
+  <div class="summary-card">
+    <div class="value">4</div>
+    <div class="label">Accepted Strategy Ineligible</div>
+  </div>
+
+  <div class="summary-card">
+    <div class="value">76</div>
+    <div class="label">Manual Review</div>
+  </div>
+
+  <div class="summary-card">
+    <div class="value">4996</div>
+    <div class="label">Rejected</div>
+  </div>
+
+  <div class="summary-card">
+    <div class="value">9</div>
+    <div class="label">Same Topic Only</div>
+  </div>
+
+  <div class="summary-card">
+    <div class="value">84</div>
+    <div class="label">Mixed Subtype</div>
+  </div>
+
+  <div class="summary-card">
+    <div class="value">13</div>
+    <div class="label">Same Reference Only</div>
+  </div>
+
+</div>
+
+<h2>Charts</h2>
+
+  <img class="chart-img" src="chart_family.png" alt="chart_family.png">
+
+  <img class="chart-img" src="chart_subtype.png" alt="chart_subtype.png">
+
+  <img class="chart-img" src="chart_validation.png" alt="chart_validation.png">
+
+  <img class="chart-img" src="chart_strategy.png" alt="chart_strategy.png">
+
+  <img class="chart-img" src="chart_rejections.png" alt="chart_rejections.png">
+
+  <img class="chart-img" src="chart_confidence.png" alt="chart_confidence.png">
+
+
+<h2>Relationship Family Counts</h2>
+<table class="report-table">
+<thead><tr><th>Family</th><th>Count</th></tr></thead>
+<tbody>
+
+<tr><td>unknown</td><td>2699</td></tr>
+
+<tr><td>mutual_exclusion</td><td>2341</td></tr>
+
+<tr><td>mixed_subtype</td><td>84</td></tr>
+
+<tr><td>contradiction</td><td>16</td></tr>
+
+<tr><td>same_reference_only</td><td>13</td></tr>
+
+<tr><td>rejected</td><td>10</td></tr>
+
+<tr><td>temporal</td><td>2</td></tr>
+
+<tr><td>inverse</td><td>1</td></tr>
+
+</tbody>
+</table>
+
+<h2>Relationship Subtype Counts</h2>
+<table class="report-table">
+<thead><tr><th>Subtype</th><th>Count</th></tr></thead>
+<tbody>
+
+<tr><td>same_topic_no_trade</td><td>2658</td></tr>
+
+<tr><td>candidate_wins_nomination</td><td>1412</td></tr>
+
+<tr><td>candidate_winner_same_election</td><td>706</td></tr>
+
+<tr><td>next_actor_announced</td><td>105</td></tr>
+
+<tr><td>first_round_winner</td><td>94</td></tr>
+
+<tr><td>candidate_to_party_dependency</td><td>72</td></tr>
+
+<tr><td>nomination_to_general_dependency</td><td>33</td></tr>
+
+<tr><td>team_wins_championship</td><td>24</td></tr>
+
+<tr><td>rejected</td><td>21</td></tr>
+
+<tr><td>first_round_to_general_dependency</td><td>15</td></tr>
+
+<tr><td>same_reference_clock_only</td><td>13</td></tr>
+
+<tr><td>album_release_before_reference_vs_movie_release_before_reference</td><td>8</td></tr>
+
+<tr><td>team_exact_finish_position_vs_team_top_n_finish</td><td>3</td></tr>
+
+<tr><td>mixed_party_nomination</td><td>1</td></tr>
+
+<tr><td>party_winner_same_election</td><td>1</td></tr>
+
+</tbody>
+</table>
+
+<h2>Accepted Strategy Eligible</h2>
+<table class="dataframe report-table">
+  <thead>
+    <tr style="text-align: right;">
+      <th>relationship_id</th>
+      <th>market_id_a</th>
+      <th>market_id_b</th>
+      <th>question_a</th>
+      <th>question_b</th>
+      <th>relationship_type</th>
+      <th>relationship_family</th>
+      <th>relationship_subtype</th>
+      <th>outcome_space_id</th>
+      <th>outcome_subtype_a</th>
+      <th>outcome_subtype_b</th>
+      <th>entity_type_a</th>
+      <th>entity_type_b</th>
+      <th>stage_a</th>
+      <th>stage_b</th>
+      <th>candidate_a</th>
+      <th>candidate_b</th>
+      <th>party_a</th>
+      <th>party_b</th>
+      <th>team_a</th>
+      <th>team_b</th>
+      <th>validation_status</th>
+      <th>strategy_eligibility_status</th>
+      <th>strategy_family</th>
+      <th>mixed_subtype_reason</th>
+      <th>strategy_eligible_reason</th>
+      <th>rejection_reasons_json</th>
+      <th>strategy_exclusion_reasons_json</th>
+      <th>final_confidence</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>0bfed1102544c0b5c1004e56ae114d57</td>
+      <td>559664</td>
+      <td>559678</td>
+      <td>Will Raphael Warnock win the 2028 Democratic presidential nomination?</td>
+      <td>Will Liz Cheney win the 2028 Democratic presidential nomination?</td>
+      <td>mutually_exclusive_category</td>
+      <td>mutual_exclusion</td>
+      <td>candidate_wins_nomination</td>
+      <td>2028_democrats_presidential_nomination</td>
+      <td>candidate_wins_nomination</td>
+      <td>candidate_wins_nomination</td>
+      <td>candidate</td>
+      <td>candidate</td>
+      <td>nomination</td>
+      <td>nomination</td>
+      <td>Raphael Warnock</td>
+      <td>Liz Cheney</td>
+      <td>Democrats</td>
+      <td>Democrats</td>
+      <td>None</td>
+      <td>None</td>
+      <td>accepted</td>
+      <td>eligible</td>
+      <td>pairwise_mutual_exclusion</td>
+      <td></td>
+      <td>same outcome subtype/stage/scope with different options</td>
+      <td>[]</td>
+      <td>[]</td>
+      <td>0.7</td>
+    </tr>
+    <tr>
+      <td>ace30584469cff3f09dd38f9eecd90a6</td>
+      <td>559664</td>
+      <td>559669</td>
+      <td>Will Raphael Warnock win the 2028 Democratic presidential nomination?</td>
+      <td>Will Rahm Emanuel win the 2028 Democratic presidential nomination?</td>
+      <td>mutually_exclusive_category</td>
+      <td>mutual_exclusion</td>
+      <td>candidate_wins_nomination</td>
+      <td>2028_democrats_presidential_nomination</td>
+      <td>candidate_wins_nomination</td>
+      <td>candidate_wins_nomination</td>
+      <td>candidate</td>
+      <td>candidate</td>
+      <td>nomination</td>
+      <td>nomination</td>
+      <td>Raphael Warnock</td>
+      <td>Rahm Emanuel</td>
+      <td>Democrats</td>
+      <td>Democrats</td>
+      <td>None</td>
+      <td>None</td>
+      <td>accepted</td>
+      <td>eligible</td>
+      <td>pairwise_mutual_exclusion</td>
+      <td></td>
+      <td>same outcome subtype/stage/scope with different options</td>
+      <td>[]</td>
+      <td>[]</td>
+      <td>0.7</td>
+    </tr>
+    <tr>
+      <td>564f960768d45b186a84130de4871749</td>
+      <td>559664</td>
+      <td>559683</td>
+      <td>Will Raphael Warnock win the 2028 Democratic presidential nomination?</td>
+      <td>Will George Clooney win the 2028 Democratic presidential nomination?</td>
+      <td>mutually_exclusive_category</td>
+      <td>mutual_exclusion</td>
+      <td>candidate_wins_nomination</td>
+      <td>2028_democrats_presidential_nomination</td>
+      <td>candidate_wins_nomination</td>
+      <td>candidate_wins_nomination</td>
+      <td>candidate</td>
+      <td>candidate</td>
+      <td>nomination</td>
+      <td>nomination</td>
+      <td>Raphael Warnock</td>
+      <td>George Clooney</td>
+      <td>Democrats</td>
+      <td>Democrats</td>
+      <td>None</td>
+      <td>None</td>
+      <td>accepted</td>
+      <td>eligible</td>
+      <td>pairwise_mutual_exclusion</td>
+      <td></td>
+      <td>same outcome subtype/stage/scope with different options</td>
+      <td>[]</td>
+      <td>[]</td>
+      <td>0.7</td>
+    </tr>
+    <tr>
+      <td>ca5e0568d88d8605a101fc658242c8ad</td>
+      <td>559664</td>
+      <td>559684</td>
+      <td>Will Raphael Warnock win the 2028 Democratic presidential nomination?</td>
+      <td>Will Chelsea Clinton win the 2028 Democratic presidential nomination?</td>
+      <td>mutually_exclusive_category</td>
+      <td>mutual_exclusion</td>
+      <td>candidate_wins_nomination</td>
+      <td>2028_democrats_presidential_nomination</td>
+      <td>candidate_wins_nomination</td>
+      <td>candidate_wins_nomination</td>
+      <td>candidate</td>
+      <td>candidate</td>
+      <td>nomination</td>
+      <td>nomination</td>
+      <td>Raphael Warnock</td>
+      <td>Chelsea Clinton</td>
+      <td>Democrats</td>
+      <td>Democrats</td>
+      <td>None</td>
+      <td>None</td>
+      <td>accepted</td>
+      <td>eligible</td>
+      <td>pairwise_mutual_exclusion</td>
+      <td></td>
+      <td>same outcome subtype/stage/scope with different options</td>
+      <td>[]</td>
+      <td>[]</td>
+      <td>0.7</td>
+    </tr>
+    <tr>
+      <td>7438ea39d26c0db70da672b8ac9a40ee</td>
+      <td>559664</td>
+      <td>559686</td>
+      <td>Will Raphael Warnock win the 2028 Democratic presidential nomination?</td>
+      <td>Will Dwayne 'The Rock' Johnson win the 2028 Democratic presidential nomination?</td>
+      <td>mutually_exclusive_category</td>
+      <td>mutual_exclusion</td>
+      <td>candidate_wins_nomination</td>
+      <td>2028_democrats_presidential_nomination</td>
+      <td>candidate_wins_nomination</td>
+      <td>candidate_wins_nomination</td>
+      <td>candidate</td>
+      <td>candidate</td>
+      <td>nomination</td>
+      <td>nomination</td>
+      <td>Raphael Warnock</td>
+      <td>Dwayne 'The Rock' Johnson</td>
+      <td>Democrats</td>
+      <td>Democrats</td>
+      <td>None</td>
+      <td>None</td>
+      <td>accepted</td>
+      <td>eligible</td>
+      <td>pairwise_mutual_exclusion</td>
+      <td></td>
+      <td>same outcome subtype/stage/scope with different options</td>
+      <td>[]</td>
+      <td>[]</td>
+      <td>0.7</td>
+    </tr>
+    <tr>
+      <td>af68d0af70b54b60f50e5393ce03a3a5</td>
+      <td>559664</td>
+      <td>559690</td>
+      <td>Will Raphael Warnock win the 2028 Democratic presidential nomination?</td>
+      <td>Will Kim Kardashian win the 2028 Democratic presidential nomination?</td>
+      <td>mutually_exclusive_category</td>
+      <td>mutual_exclusion</td>
+      <td>candidate_wins_nomination</td>
+      <td>2028_democrats_presidential_nomination</td>
+      <td>candidate_wins_nomination</td>
+      <td>candidate_wins_nomination</td>
+      <td>candidate</td>
+      <td>candidate</td>
+      <td>nomination</td>
+      <td>nomination</td>
+      <td>Raphael Warnock</td>
+      <td>Kim Kardashian</td>
+      <td>Democrats</td>
+      <td>Democrats</td>
+      <td>None</td>
+      <td>None</td>
+      <td>accepted</td>
+      <td>eligible</td>
+      <td>pairwise_mutual_exclusion</td>
+      <td></td>
+      <td>same outcome subtype/stage/scope with different options</td>
+      <td>[]</td>
+      <td>[]</td>
+      <td>0.7</td>
+    </tr>
+    <tr>
+      <td>0fcbe59d2ac276232bbc27a7f804b8de</td>
+      <td>559664</td>
+      <td>559695</td>
+      <td>Will Raphael Warnock win the 2028 Democratic presidential nomination?</td>
+      <td>Will James Talarico win the 2028 Democratic presidential nomination?</td>
+      <td>mutually_exclusive_category</td>
+      <td>mutual_exclusion</td>
+      <td>candidate_wins_nomination</td>
+      <td>2028_democrats_presidential_nomination</td>
+      <td>candidate_wins_nomination</td>
+      <td>candidate_wins_nomination</td>
+      <td>candidate</td>
+      <td>candidate</td>
+      <td>nomination</td>
+      <td>nomination</td>
+      <td>Raphael Warnock</td>
+      <td>James Talarico</td>
+      <td>Democrats</td>
+      <td>Democrats</td>
+      <td>None</td>
+      <td>None</td>
+      <td>accepted</td>
+      <td>eligible</td>
+      <td>pairwise_mutual_exclusion</td>
+      <td></td>
+      <td>same outcome subtype/stage/scope with different options</td>
+      <td>[]</td>
+      <td>[]</td>
+      <td>0.7</td>
+    </tr>
+    <tr>
+      <td>859bc13ab36f7fca964f0ea61522074c</td>
+      <td>559666</td>
+      <td>559692</td>
+      <td>Will Tim Walz win the 2028 Democratic presidential nomination?</td>
+      <td>Will Jasmine Crockett win the 2028 Democratic presidential nomination?</td>
+      <td>mutually_exclusive_category</td>
+      <td>mutual_exclusion</td>
+      <td>candidate_wins_nomination</td>
+      <td>2028_democrats_presidential_nomination</td>
+      <td>candidate_wins_nomination</td>
+      <td>candidate_wins_nomination</td>
+      <td>candidate</td>
+      <td>candidate</td>
+      <td>nomination</td>
+      <td>nomination</td>
+      <td>Tim Walz</td>
+      <td>Jasmine Crockett</td>
+      <td>Democrats</td>
+      <td>Democrats</td>
+      <td>None</td>
+      <td>None</td>
+      <td>accepted</td>
+      <td>eligible</td>
+      <td>pairwise_mutual_exclusion</td>
+      <td></td>
+      <td>same outcome subtype/stage/scope with different options</td>
+      <td>[]</td>
+      <td>[]</td>
+      <td>0.7</td>
+    </tr>
+    <tr>
+      <td>5134e660bb5820009f39cbcc77b7a862</td>
+      <td>559667</td>
+      <td>559692</td>
+      <td>Will Michelle Obama win the 2028 Democratic presidential nomination?</td>
+      <td>Will Jasmine Crockett win the 2028 Democratic presidential nomination?</td>
+      <td>mutually_exclusive_category</td>
+      <td>mutual_exclusion</td>
+      <td>candidate_wins_nomination</td>
+      <td>2028_democrats_presidential_nomination</td>
+      <td>candidate_wins_nomination</td>
+      <td>candidate_wins_nomination</td>
+      <td>candidate</td>
+      <td>candidate</td>
+      <td>nomination</td>
+      <td>nomination</td>
+      <td>Michelle Obama</td>
+      <td>Jasmine Crockett</td>
+      <td>Democrats</td>
+      <td>Democrats</td>
+      <td>None</td>
+      <td>None</td>
+      <td>accepted</td>
+      <td>eligible</td>
+      <td>pairwise_mutual_exclusion</td>
+      <td></td>
+      <td>same outcome subtype/stage/scope with different options</td>
+      <td>[]</td>
+      <td>[]</td>
+      <td>0.7</td>
+    </tr>
+    <tr>
+      <td>05048c6a01073b8d2448433c13af79da</td>
+      <td>559669</td>
+      <td>559692</td>
+      <td>Will Rahm Emanuel win the 2028 Democratic presidential nomination?</td>
+      <td>Will Jasmine Crockett win the 2028 Democratic presidential nomination?</td>
+      <td>mutually_exclusive_category</td>
+      <td>mutual_exclusion</td>
+      <td>candidate_wins_nomination</td>
+      <td>2028_democrats_presidential_nomination</td>
+      <td>candidate_wins_nomination</td>
+      <td>candidate_wins_nomination</td>
+      <td>candidate</td>
+      <td>candidate</td>
+      <td>nomination</td>
+      <td>nomination</td>
+      <td>Rahm Emanuel</td>
+      <td>Jasmine Crockett</td>
+      <td>Democrats</td>
+      <td>Democrats</td>
+      <td>None</td>
+      <td>None</td>
+      <td>accepted</td>
+      <td>eligible</td>
+      <td>pairwise_mutual_exclusion</td>
+      <td></td>
+      <td>same outcome subtype/stage/scope with different options</td>
+      <td>[]</td>
+      <td>[]</td>
+      <td>0.7</td>
+    </tr>
+    <tr>
+      <td>dbb06d0e3c89d56636e56b49f77fc571</td>
+      <td>559671</td>
+      <td>559692</td>
+      <td>Will Zohran Mamdani win the 2028 Democratic presidential nomination?</td>
+      <td>Will Jasmine Crockett win the 2028 Democratic presidential nomination?</td>
+      <td>mutually_exclusive_category</td>
+      <td>mutual_exclusion</td>
+      <td>candidate_wins_nomination</td>
+      <td>2028_democrats_presidential_nomination</td>
+      <td>candidate_wins_nomination</td>
+      <td>candidate_wins_nomination</td>
+      <td>candidate</td>
+      <td>candidate</td>
+      <td>nomination</td>
+      <td>nomination</td>
+      <td>Zohran Mamdani</td>
+      <td>Jasmine Crockett</td>
+      <td>Democrats</td>
+      <td>Democrats</td>
+      <td>None</td>
+      <td>None</td>
+      <td>accepted</td>
+      <td>eligible</td>
+      <td>pairwise_mutual_exclusion</td>
+      <td></td>
+      <td>same outcome subtype/stage/scope with different options</td>
+      <td>[]</td>
+      <td>[]</td>
+      <td>0.7</td>
+    </tr>
+    <tr>
+      <td>28151abeecb04b8cb68b4d5eab75cc1c</td>
+      <td>559677</td>
+      <td>559692</td>
+      <td>Will Hillary Clinton win the 2028 Democratic presidential nomination?</td>
+      <td>Will Jasmine Crockett win the 2028 Democratic presidential nomination?</td>
+      <td>mutually_exclusive_category</td>
+      <td>mutual_exclusion</td>
+      <td>candidate_wins_nomination</td>
+      <td>2028_democrats_presidential_nomination</td>
+      <td>candidate_wins_nomination</td>
+      <td>candidate_wins_nomination</td>
+      <td>candidate</td>
+      <td>candidate</td>
+      <td>nomination</td>
+      <td>nomination</td>
+      <td>Hillary Clinton</td>
+      <td>Jasmine Crockett</td>
+      <td>Democrats</td>
+      <td>Democrats</td>
+      <td>None</td>
+      <td>None</td>
+      <td>accepted</td>
+      <td>eligible</td>
+      <td>pairwise_mutual_exclusion</td>
+      <td></td>
+      <td>same outcome subtype/stage/scope with different options</td>
+      <td>[]</td>
+      <td>[]</td>
+      <td>0.7</td>
+    </tr>
+    <tr>
+      <td>f24596fb1ec1a83297a0862c02ff357e</td>
+      <td>559678</td>
+      <td>559692</td>
+      <td>Will Liz Cheney win the 2028 Democratic presidential nomination?</td>
+      <td>Will Jasmine Crockett win the 2028 Democratic presidential nomination?</td>
+      <td>mutually_exclusive_category</td>
+      <td>mutual_exclusion</td>
+      <td>candidate_wins_nomination</td>
+      <td>2028_democrats_presidential_nomination</td>
+      <td>candidate_wins_nomination</td>
+      <td>candidate_wins_nomination</td>
+      <td>candidate</td>
+      <td>candidate</td>
+      <td>nomination</td>
+      <td>nomination</td>
+      <td>Liz Cheney</td>
+      <td>Jasmine Crockett</td>
+      <td>Democrats</td>
+      <td>Democrats</td>
+      <td>None</td>
+      <td>None</td>
+      <td>accepted</td>
+      <td>eligible</td>
+      <td>pairwise_mutual_exclusion</td>
+      <td></td>
+      <td>same outcome subtype/stage/scope with different options</td>
+      <td>[]</td>
+      <td>[]</td>
+      <td>0.7</td>
+    </tr>
+    <tr>
+      <td>9cbd03a0734a8d75a0b1b450e85203a4</td>
+      <td>559681</td>
+      <td>559692</td>
+      <td>Will LeBron James win the 2028 Democratic presidential nomination?</td>
+      <td>Will Jasmine Crockett win the 2028 Democratic presidential nomination?</td>
+      <td>mutually_exclusive_category</td>
+      <td>mutual_exclusion</td>
+      <td>candidate_wins_nomination</td>
+      <td>2028_democrats_presidential_nomination</td>
+      <td>candidate_wins_nomination</td>
+      <td>candidate_wins_nomination</td>
+      <td>candidate</td>
+      <td>candidate</td>
+      <td>nomination</td>
+      <td>nomination</td>
+      <td>LeBron James</td>
+      <td>Jasmine Crockett</td>
+      <td>Democrats</td>
+      <td>Democrats</td>
+      <td>None</td>
+      <td>None</td>
+      <td>accepted</td>
+      <td>eligible</td>
+      <td>pairwise_mutual_exclusion</td>
+      <td></td>
+      <td>same outcome subtype/stage/scope with different options</td>
+      <td>[]</td>
+      <td>[]</td>
+      <td>0.7</td>
+    </tr>
+    <tr>
+      <td>b784416ed3192365346a0902d9d73c9d</td>
+      <td>559683</td>
+      <td>559692</td>
+      <td>Will George Clooney win the 2028 Democratic presidential nomination?</td>
+      <td>Will Jasmine Crockett win the 2028 Democratic presidential nomination?</td>
+      <td>mutually_exclusive_category</td>
+      <td>mutual_exclusion</td>
+      <td>candidate_wins_nomination</td>
+      <td>2028_democrats_presidential_nomination</td>
+      <td>candidate_wins_nomination</td>
+      <td>candidate_wins_nomination</td>
+      <td>candidate</td>
+      <td>candidate</td>
+      <td>nomination</td>
+      <td>nomination</td>
+      <td>George Clooney</td>
+      <td>Jasmine Crockett</td>
+      <td>Democrats</td>
+      <td>Democrats</td>
+      <td>None</td>
+      <td>None</td>
+      <td>accepted</td>
+      <td>eligible</td>
+      <td>pairwise_mutual_exclusion</td>
+      <td></td>
+      <td>same outcome subtype/stage/scope with different options</td>
+      <td>[]</td>
+      <td>[]</td>
+      <td>0.7</td>
+    </tr>
+    <tr>
+      <td>4871e4cd6ee664e30e46190db9475530</td>
+      <td>559684</td>
+      <td>559692</td>
+      <td>Will Chelsea Clinton win the 2028 Democratic presidential nomination?</td>
+      <td>Will Jasmine Crockett win the 2028 Democratic presidential nomination?</td>
+      <td>mutually_exclusive_category</td>
+      <td>mutual_exclusion</td>
+      <td>candidate_wins_nomination</td>
+      <td>2028_democrats_presidential_nomination</td>
+      <td>candidate_wins_nomination</td>
+      <td>candidate_wins_nomination</td>
+      <td>candidate</td>
+      <td>candidate</td>
+      <td>nomination</td>
+      <td>nomination</td>
+      <td>Chelsea Clinton</td>
+      <td>Jasmine Crockett</td>
+      <td>Democrats</td>
+      <td>Democrats</td>
+      <td>None</td>
+      <td>None</td>
+      <td>accepted</td>
+      <td>eligible</td>
+      <td>pairwise_mutual_exclusion</td>
+      <td></td>
+      <td>same outcome subtype/stage/scope with different options</td>
+      <td>[]</td>
+      <td>[]</td>
+      <td>0.7</td>
+    </tr>
+    <tr>
+      <td>eadd61d12be09cbdd90fc72eaef32a08</td>
+      <td>559686</td>
+      <td>559692</td>
+      <td>Will Dwayne 'The Rock' Johnson win the 2028 Democratic presidential nomination?</td>
+      <td>Will Jasmine Crockett win the 2028 Democratic presidential nomination?</td>
+      <td>mutually_exclusive_category</td>
+      <td>mutual_exclusion</td>
+      <td>candidate_wins_nomination</td>
+      <td>2028_democrats_presidential_nomination</td>
+      <td>candidate_wins_nomination</td>
+      <td>candidate_wins_nomination</td>
+      <td>candidate</td>
+      <td>candidate</td>
+      <td>nomination</td>
+      <td>nomination</td>
+      <td>Dwayne 'The Rock' Johnson</td>
+      <td>Jasmine Crockett</td>
+      <td>Democrats</td>
+      <td>Democrats</td>
+      <td>None</td>
+      <td>None</td>
+      <td>accepted</td>
+      <td>eligible</td>
+      <td>pairwise_mutual_exclusion</td>
+      <td></td>
+      <td>same outcome subtype/stage/scope with different options</td>
+      <td>[]</td>
+      <td>[]</td>
+      <td>0.7</td>
+    </tr>
+    <tr>
+      <td>2001a82f88ffc8b2313b1fcdde2dec9c</td>
+      <td>559690</td>
+      <td>559692</td>
+      <td>Will Kim Kardashian win the 2028 Democratic presidential nomination?</td>
+      <td>Will Jasmine Crockett win the 2028 Democratic presidential nomination?</td>
+      <td>mutually_exclusive_category</td>
+      <td>mutual_exclusion</td>
+      <td>candidate_wins_nomination</td>
+      <td>2028_democrats_presidential_nomination</td>
+      <td>candidate_wins_nomination</td>
+      <td>candidate_wins_nomination</td>
+      <td>candidate</td>
+      <td>candidate</td>
+      <td>nomination</td>
+      <td>nomination</td>
+      <td>Kim Kardashian</td>
+      <td>Jasmine Crockett</td>
+      <td>Democrats</td>
+      <td>Democrats</td>
+      <td>None</td>
+      <td>None</td>
+      <td>accepted</td>
+      <td>eligible</td>
+      <td>pairwise_mutual_exclusion</td>
+      <td></td>
+      <td>same outcome subtype/stage/scope with different options</td>
+      <td>[]</td>
+      <td>[]</td>
+      <td>0.7</td>
+    </tr>
+    <tr>
+      <td>9faaaf2f86fa9f07f52ab0d8104958bc</td>
+      <td>559692</td>
+      <td>559695</td>
+      <td>Will Jasmine Crockett win the 2028 Democratic presidential nomination?</td>
+      <td>Will James Talarico win the 2028 Democratic presidential nomination?</td>
+      <td>mutually_exclusive_category</td>
+      <td>mutual_exclusion</td>
+      <td>candidate_wins_nomination</td>
+      <td>2028_democrats_presidential_nomination</td>
+      <td>candidate_wins_nomination</td>
+      <td>candidate_wins_nomination</td>
+      <td>candidate</td>
+      <td>candidate</td>
+      <td>nomination</td>
+      <td>nomination</td>
+      <td>Jasmine Crockett</td>
+      <td>James Talarico</td>
+      <td>Democrats</td>
+      <td>Democrats</td>
+      <td>None</td>
+      <td>None</td>
+      <td>accepted</td>
+      <td>eligible</td>
+      <td>pairwise_mutual_exclusion</td>
+      <td></td>
+      <td>same outcome subtype/stage/scope with different options</td>
+      <td>[]</td>
+      <td>[]</td>
+      <td>0.7</td>
+    </tr>
+    <tr>
+      <td>bafa9186cf31c7b689dd1a21d6ad0ca7</td>
+      <td>561229</td>
+      <td>561251</td>
+      <td>Will JD Vance win the 2028 US Presidential Election?</td>
+      <td>Will LeBron James win the 2028 US Presidential Election?</td>
+      <td>mutually_exclusive_category</td>
+      <td>mutual_exclusion</td>
+      <td>candidate_winner_same_election</td>
+      <td>2028_us_presidential_election_candidate_winner</td>
+      <td>candidate_winner_same_election</td>
+      <td>candidate_winner_same_election</td>
+      <td>candidate</td>
+      <td>candidate</td>
+      <td>general_election</td>
+      <td>general_election</td>
+      <td>JD Vance</td>
+      <td>LeBron James</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>accepted</td>
+      <td>eligible</td>
+      <td>pairwise_mutual_exclusion</td>
+      <td></td>
+      <td>same outcome subtype/stage/scope with different options</td>
+      <td>[]</td>
+      <td>[]</td>
+      <td>0.7</td>
+    </tr>
+    <tr>
+      <td>650e8994dc7fe89d6e5b2002a4067ecf</td>
+      <td>561230</td>
+      <td>561251</td>
+      <td>Will Gavin Newsom win the 2028 US Presidential Election?</td>
+      <td>Will LeBron James win the 2028 US Presidential Election?</td>
+      <td>mutually_exclusive_category</td>
+      <td>mutual_exclusion</td>
+      <td>candidate_winner_same_election</td>
+      <td>2028_us_presidential_election_candidate_winner</td>
+      <td>candidate_winner_same_election</td>
+      <td>candidate_winner_same_election</td>
+      <td>candidate</td>
+      <td>candidate</td>
+      <td>general_election</td>
+      <td>general_election</td>
+      <td>Gavin Newsom</td>
+      <td>LeBron James</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>accepted</td>
+      <td>eligible</td>
+      <td>pairwise_mutual_exclusion</td>
+      <td></td>
+      <td>same outcome subtype/stage/scope with different options</td>
+      <td>[]</td>
+      <td>[]</td>
+      <td>0.7</td>
+    </tr>
+    <tr>
+      <td>5dacef314ca1a59a7c76808cdfe90651</td>
+      <td>561231</td>
+      <td>561251</td>
+      <td>Will Alexandria Ocasio-Cortez win the 2028 US Presidential Election?</td>
+      <td>Will LeBron James win the 2028 US Presidential Election?</td>
+      <td>mutually_exclusive_category</td>
+      <td>mutual_exclusion</td>
+      <td>candidate_winner_same_election</td>
+      <td>2028_us_presidential_election_candidate_winner</td>
+      <td>candidate_winner_same_election</td>
+      <td>candidate_winner_same_election</td>
+      <td>candidate</td>
+      <td>candidate</td>
+      <td>general_election</td>
+      <td>general_election</td>
+      <td>Alexandria Ocasio-Cortez</td>
+      <td>LeBron James</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>accepted</td>
+      <td>eligible</td>
+      <td>pairwise_mutual_exclusion</td>
+      <td></td>
+      <td>same outcome subtype/stage/scope with different options</td>
+      <td>[]</td>
+      <td>[]</td>
+      <td>0.7</td>
+    </tr>
+    <tr>
+      <td>9fd4f914809585de3830a93d6968c20b</td>
+      <td>561232</td>
+      <td>561251</td>
+      <td>Will Pete Buttigieg win the 2028 US Presidential Election?</td>
+      <td>Will LeBron James win the 2028 US Presidential Election?</td>
+      <td>mutually_exclusive_category</td>
+      <td>mutual_exclusion</td>
+      <td>candidate_winner_same_election</td>
+      <td>2028_us_presidential_election_candidate_winner</td>
+      <td>candidate_winner_same_election</td>
+      <td>candidate_winner_same_election</td>
+      <td>candidate</td>
+      <td>candidate</td>
+      <td>general_election</td>
+      <td>general_election</td>
+      <td>Pete Buttigieg</td>
+      <td>LeBron James</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>accepted</td>
+      <td>eligible</td>
+      <td>pairwise_mutual_exclusion</td>
+      <td></td>
+      <td>same outcome subtype/stage/scope with different options</td>
+      <td>[]</td>
+      <td>[]</td>
+      <td>0.7</td>
+    </tr>
+    <tr>
+      <td>50f458ffd06ca3625e89fc3a3c90514b</td>
+      <td>561233</td>
+      <td>561251</td>
+      <td>Will Josh Shapiro win the 2028 US Presidential Election?</td>
+      <td>Will LeBron James win the 2028 US Presidential Election?</td>
+      <td>mutually_exclusive_category</td>
+      <td>mutual_exclusion</td>
+      <td>candidate_winner_same_election</td>
+      <td>2028_us_presidential_election_candidate_winner</td>
+      <td>candidate_winner_same_election</td>
+      <td>candidate_winner_same_election</td>
+      <td>candidate</td>
+      <td>candidate</td>
+      <td>general_election</td>
+      <td>general_election</td>
+      <td>Josh Shapiro</td>
+      <td>LeBron James</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>accepted</td>
+      <td>eligible</td>
+      <td>pairwise_mutual_exclusion</td>
+      <td></td>
+      <td>same outcome subtype/stage/scope with different options</td>
+      <td>[]</td>
+      <td>[]</td>
+      <td>0.7</td>
+    </tr>
+    <tr>
+      <td>a53d065bc5412fcee3bd8c731f3de911</td>
+      <td>561234</td>
+      <td>561251</td>
+      <td>Will Marco Rubio win the 2028 US Presidential Election?</td>
+      <td>Will LeBron James win the 2028 US Presidential Election?</td>
+      <td>mutually_exclusive_category</td>
+      <td>mutual_exclusion</td>
+      <td>candidate_winner_same_election</td>
+      <td>2028_us_presidential_election_candidate_winner</td>
+      <td>candidate_winner_same_election</td>
+      <td>candidate_winner_same_election</td>
+      <td>candidate</td>
+      <td>candidate</td>
+      <td>general_election</td>
+      <td>general_election</td>
+      <td>Marco Rubio</td>
+      <td>LeBron James</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>accepted</td>
+      <td>eligible</td>
+      <td>pairwise_mutual_exclusion</td>
+      <td></td>
+      <td>same outcome subtype/stage/scope with different options</td>
+      <td>[]</td>
+      <td>[]</td>
+      <td>0.7</td>
+    </tr>
+    <tr>
+      <td>052292ad6f81d1a7c296d2df4fb09343</td>
+      <td>561238</td>
+      <td>561251</td>
+      <td>Will Glenn Youngkin win the 2028 US Presidential Election?</td>
+      <td>Will LeBron James win the 2028 US Presidential Election?</td>
+      <td>mutually_exclusive_category</td>
+      <td>mutual_exclusion</td>
+      <td>candidate_winner_same_election</td>
+      <td>2028_us_presidential_election_candidate_winner</td>
+      <td>candidate_winner_same_election</td>
+      <td>candidate_winner_same_election</td>
+      <td>candidate</td>
+      <td>candidate</td>
+      <td>general_election</td>
+      <td>general_election</td>
+      <td>Glenn Youngkin</td>
+      <td>LeBron James</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>accepted</td>
+      <td>eligible</td>
+      <td>pairwise_mutual_exclusion</td>
+      <td></td>
+      <td>same outcome subtype/stage/scope with different options</td>
+      <td>[]</td>
+      <td>[]</td>
+      <td>0.7</td>
+    </tr>
+    <tr>
+      <td>da3636d4f58fda530cdb0757e05669aa</td>
+      <td>561239</td>
+      <td>561251</td>
+      <td>Will Kamala Harris win the 2028 US Presidential Election?</td>
+      <td>Will LeBron James win the 2028 US Presidential Election?</td>
+      <td>mutually_exclusive_category</td>
+      <td>mutual_exclusion</td>
+      <td>candidate_winner_same_election</td>
+      <td>2028_us_presidential_election_candidate_winner</td>
+      <td>candidate_winner_same_election</td>
+      <td>candidate_winner_same_election</td>
+      <td>candidate</td>
+      <td>candidate</td>
+      <td>general_election</td>
+      <td>general_election</td>
+      <td>Kamala Harris</td>
+      <td>LeBron James</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>accepted</td>
+      <td>eligible</td>
+      <td>pairwise_mutual_exclusion</td>
+      <td></td>
+      <td>same outcome subtype/stage/scope with different options</td>
+      <td>[]</td>
+      <td>[]</td>
+      <td>0.7</td>
+    </tr>
+    <tr>
+      <td>de90120a8d591983a1617bd1111c7e06</td>
+      <td>559664</td>
+      <td>559681</td>
+      <td>Will Raphael Warnock win the 2028 Democratic presidential nomination?</td>
+      <td>Will LeBron James win the 2028 Democratic presidential nomination?</td>
+      <td>mutually_exclusive_category</td>
+      <td>mutual_exclusion</td>
+      <td>candidate_wins_nomination</td>
+      <td>2028_democrats_presidential_nomination</td>
+      <td>candidate_wins_nomination</td>
+      <td>candidate_wins_nomination</td>
+      <td>candidate</td>
+      <td>candidate</td>
+      <td>nomination</td>
+      <td>nomination</td>
+      <td>Raphael Warnock</td>
+      <td>LeBron James</td>
+      <td>Democrats</td>
+      <td>Democrats</td>
+      <td>None</td>
+      <td>None</td>
+      <td>accepted</td>
+      <td>eligible</td>
+      <td>pairwise_mutual_exclusion</td>
+      <td></td>
+      <td>same outcome subtype/stage/scope with different options</td>
+      <td>[]</td>
+      <td>[]</td>
+      <td>0.7</td>
+    </tr>
+    <tr>
+      <td>1aefabf4228fe797ec77e4ac83a57065</td>
+      <td>561241</td>
+      <td>561251</td>
+      <td>Will JB Pritzker win the 2028 US Presidential Election?</td>
+      <td>Will LeBron James win the 2028 US Presidential Election?</td>
+      <td>mutually_exclusive_category</td>
+      <td>mutual_exclusion</td>
+      <td>candidate_winner_same_election</td>
+      <td>2028_us_presidential_election_candidate_winner</td>
+      <td>candidate_winner_same_election</td>
+      <td>candidate_winner_same_election</td>
+      <td>candidate</td>
+      <td>candidate</td>
+      <td>general_election</td>
+      <td>general_election</td>
+      <td>JB Pritzker</td>
+      <td>LeBron James</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>accepted</td>
+      <td>eligible</td>
+      <td>pairwise_mutual_exclusion</td>
+      <td></td>
+      <td>same outcome subtype/stage/scope with different options</td>
+      <td>[]</td>
+      <td>[]</td>
+      <td>0.7</td>
+    </tr>
+    <tr>
+      <td>73b568d11158e53faec8caf0e2cdf55a</td>
+      <td>561242</td>
+      <td>561251</td>
+      <td>Will Tulsi Gabbard win the 2028 US Presidential Election?</td>
+      <td>Will LeBron James win the 2028 US Presidential Election?</td>
+      <td>mutually_exclusive_category</td>
+      <td>mutual_exclusion</td>
+      <td>candidate_winner_same_election</td>
+      <td>2028_us_presidential_election_candidate_winner</td>
+      <td>candidate_winner_same_election</td>
+      <td>candidate_winner_same_election</td>
+      <td>candidate</td>
+      <td>candidate</td>
+      <td>general_election</td>
+      <td>general_election</td>
+      <td>Tulsi Gabbard</td>
+      <td>LeBron James</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>accepted</td>
+      <td>eligible</td>
+      <td>pairwise_mutual_exclusion</td>
+      <td></td>
+      <td>same outcome subtype/stage/scope with different options</td>
+      <td>[]</td>
+      <td>[]</td>
+      <td>0.7</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Mixed Subtype Rejections</h2>
+<table class="dataframe report-table">
+  <thead>
+    <tr style="text-align: right;">
+      <th>relationship_id</th>
+      <th>market_id_a</th>
+      <th>market_id_b</th>
+      <th>question_a</th>
+      <th>question_b</th>
+      <th>relationship_type</th>
+      <th>relationship_family</th>
+      <th>relationship_subtype</th>
+      <th>outcome_space_id</th>
+      <th>outcome_subtype_a</th>
+      <th>outcome_subtype_b</th>
+      <th>entity_type_a</th>
+      <th>entity_type_b</th>
+      <th>stage_a</th>
+      <th>stage_b</th>
+      <th>candidate_a</th>
+      <th>candidate_b</th>
+      <th>party_a</th>
+      <th>party_b</th>
+      <th>team_a</th>
+      <th>team_b</th>
+      <th>validation_status</th>
+      <th>strategy_eligibility_status</th>
+      <th>strategy_family</th>
+      <th>mixed_subtype_reason</th>
+      <th>strategy_eligible_reason</th>
+      <th>rejection_reasons_json</th>
+      <th>strategy_exclusion_reasons_json</th>
+      <th>final_confidence</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>18fb149ec147379b34dea643cb9f5222</td>
+      <td>561251</td>
+      <td>565064</td>
+      <td>Will LeBron James win the 2028 US Presidential Election?</td>
+      <td>Will the Republicans win the 2028 US Presidential Election?</td>
+      <td>mixed_subtype</td>
+      <td>mixed_subtype</td>
+      <td>candidate_to_party_dependency</td>
+      <td>2028_us_presidential_election</td>
+      <td>candidate_winner_same_election</td>
+      <td>party_winner_same_election</td>
+      <td>candidate</td>
+      <td>party</td>
+      <td>general_election</td>
+      <td>general_election</td>
+      <td>LeBron James</td>
+      <td>Republicans</td>
+      <td>None</td>
+      <td>Republicans</td>
+      <td>None</td>
+      <td>None</td>
+      <td>rejected</td>
+      <td>ineligible</td>
+      <td>none</td>
+      <td>candidate market and party market share a broad election space</td>
+      <td>not strategy eligible by default</td>
+      <td>[{"code": "candidate_to_party_dependency", "detail": "candidate market and party market share a broad election space"}]</td>
+      <td>[{"code": "taxonomy_not_pairwise_mutual_exclusion", "detail": "not strategy eligible by default"}]</td>
+      <td>0.7000</td>
+    </tr>
+    <tr>
+      <td>f5f3dd0e7bd76afdd722395e9500eda0</td>
+      <td>561251</td>
+      <td>565065</td>
+      <td>Will LeBron James win the 2028 US Presidential Election?</td>
+      <td>Will the Democrats win the 2028 US Presidential Election?</td>
+      <td>mixed_subtype</td>
+      <td>mixed_subtype</td>
+      <td>candidate_to_party_dependency</td>
+      <td>2028_us_presidential_election</td>
+      <td>candidate_winner_same_election</td>
+      <td>party_winner_same_election</td>
+      <td>candidate</td>
+      <td>party</td>
+      <td>general_election</td>
+      <td>general_election</td>
+      <td>LeBron James</td>
+      <td>Democrats</td>
+      <td>None</td>
+      <td>Democrats</td>
+      <td>None</td>
+      <td>None</td>
+      <td>rejected</td>
+      <td>ineligible</td>
+      <td>none</td>
+      <td>candidate market and party market share a broad election space</td>
+      <td>not strategy eligible by default</td>
+      <td>[{"code": "candidate_to_party_dependency", "detail": "candidate market and party market share a broad election space"}]</td>
+      <td>[{"code": "taxonomy_not_pairwise_mutual_exclusion", "detail": "not strategy eligible by default"}]</td>
+      <td>0.7000</td>
+    </tr>
+    <tr>
+      <td>cc376429463d78167ad174e43317b2d3</td>
+      <td>559690</td>
+      <td>562003</td>
+      <td>Will Kim Kardashian win the 2028 Democratic presidential nomination?</td>
+      <td>Will Kim Kardashian win the 2028 Republican presidential nomination?</td>
+      <td>rejected</td>
+      <td>mixed_subtype</td>
+      <td>mixed_party_nomination</td>
+      <td>2028_democrats_presidential_nomination</td>
+      <td>candidate_wins_nomination</td>
+      <td>candidate_wins_nomination</td>
+      <td>candidate</td>
+      <td>candidate</td>
+      <td>nomination</td>
+      <td>nomination</td>
+      <td>None</td>
+      <td>None</td>
+      <td>Democrats</td>
+      <td>Republicans</td>
+      <td>None</td>
+      <td>None</td>
+      <td>needs_manual_review</td>
+      <td>ineligible</td>
+      <td>none</td>
+      <td>same person appears in nomination markets for different parties</td>
+      <td>not strategy eligible by default</td>
+      <td>[{"code": "mixed_party_nomination", "detail": "same person appears in nomination markets for different parties"}]</td>
+      <td>[{"code": "taxonomy_not_strategy_eligible", "detail": "not strategy eligible by default"}]</td>
+      <td>0.5283</td>
+    </tr>
+    <tr>
+      <td>05ae0794a6a689f86dd1441ff2df26ec</td>
+      <td>572765</td>
+      <td>582134</td>
+      <td>Will Liverpool finish in 3rd place in the 2025-26 English Premier League?</td>
+      <td>Will Liverpool finish in the top 4 of the EPL 2025–26 standings?</td>
+      <td>rejected</td>
+      <td>mixed_subtype</td>
+      <td>team_exact_finish_position_vs_team_top_n_finish</td>
+      <td>premier_league_finish_position</td>
+      <td>team_exact_finish_position</td>
+      <td>team_top_n_finish</td>
+      <td>team</td>
+      <td>team</td>
+      <td>league_finish</td>
+      <td>league_finish</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>rejected</td>
+      <td>ineligible</td>
+      <td>none</td>
+      <td>same broad outcome space but different outcome subtypes</td>
+      <td>not strategy eligible by default</td>
+      <td>[{"code": "team_exact_finish_position_vs_team_top_n_finish", "detail": "same broad outcome space but different outcome subtypes"}]</td>
+      <td>[{"code": "coverage_insufficient_a", "detail": "market_a coverage_score=0.15"}, {"code": "coverage_insufficient_b", "detail": "market_b coverage_score=0.15"}]</td>
+      <td>0.4653</td>
+    </tr>
+    <tr>
+      <td>4d8e3f1dfa6859ea0a922dd6e3d3c163</td>
+      <td>572770</td>
+      <td>582138</td>
+      <td>Will Manchester United finish in 3rd place in the 2025-26 English Premier League?</td>
+      <td>Will Manchester United finish in the top 4 of the EPL 2025–26 standings?</td>
+      <td>rejected</td>
+      <td>mixed_subtype</td>
+      <td>team_exact_finish_position_vs_team_top_n_finish</td>
+      <td>premier_league_finish_position</td>
+      <td>team_exact_finish_position</td>
+      <td>team_top_n_finish</td>
+      <td>team</td>
+      <td>team</td>
+      <td>league_finish</td>
+      <td>league_finish</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>rejected</td>
+      <td>ineligible</td>
+      <td>none</td>
+      <td>same broad outcome space but different outcome subtypes</td>
+      <td>not strategy eligible by default</td>
+      <td>[{"code": "team_exact_finish_position_vs_team_top_n_finish", "detail": "same broad outcome space but different outcome subtypes"}]</td>
+      <td>[{"code": "coverage_insufficient_a", "detail": "market_a coverage_score=0.15"}, {"code": "coverage_insufficient_b", "detail": "market_b coverage_score=0.15"}]</td>
+      <td>0.4114</td>
+    </tr>
+    <tr>
+      <td>866a3f7cda29a5d81f552e8d3bf9ee2e</td>
+      <td>572772</td>
+      <td>582139</td>
+      <td>Will Aston Villa finish in 3rd place in the 2025-26 English Premier League?</td>
+      <td>Will Aston Villa finish in the top 4 of the EPL 2025–26 standings?</td>
+      <td>rejected</td>
+      <td>mixed_subtype</td>
+      <td>team_exact_finish_position_vs_team_top_n_finish</td>
+      <td>premier_league_finish_position</td>
+      <td>team_exact_finish_position</td>
+      <td>team_top_n_finish</td>
+      <td>team</td>
+      <td>team</td>
+      <td>league_finish</td>
+      <td>league_finish</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>rejected</td>
+      <td>ineligible</td>
+      <td>none</td>
+      <td>same broad outcome space but different outcome subtypes</td>
+      <td>not strategy eligible by default</td>
+      <td>[{"code": "entity_mismatch", "detail": "entity_overlap=0.400 &lt; 0.5"}, {"code": "team_exact_finish_position_vs_team_top_n_finish", "detail": "same broad outcome space but different outcome subtypes"}]</td>
+      <td>[{"code": "coverage_insufficient_a", "detail": "market_a coverage_score=0.15"}, {"code": "coverage_insufficient_b", "detail": "market_b coverage_score=0.15"}]</td>
+      <td>0.3900</td>
+    </tr>
+    <tr>
+      <td>351d1fdb96c8437bcc50c9efdc849634</td>
+      <td>561239</td>
+      <td>565064</td>
+      <td>Will Kamala Harris win the 2028 US Presidential Election?</td>
+      <td>Will the Republicans win the 2028 US Presidential Election?</td>
+      <td>rejected</td>
+      <td>mixed_subtype</td>
+      <td>candidate_to_party_dependency</td>
+      <td>2028_us_presidential_election</td>
+      <td>candidate_winner_same_election</td>
+      <td>party_winner_same_election</td>
+      <td>candidate</td>
+      <td>party</td>
+      <td>general_election</td>
+      <td>general_election</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>Republicans</td>
+      <td>None</td>
+      <td>None</td>
+      <td>rejected</td>
+      <td>ineligible</td>
+      <td>none</td>
+      <td>candidate market and party market share a broad election space</td>
+      <td>not strategy eligible by default</td>
+      <td>[{"code": "entity_mismatch", "detail": "entity_overlap=0.100 &lt; 0.5"}, {"code": "candidate_to_party_dependency", "detail": "candidate market and party market share a broad election space"}]</td>
+      <td>[{"code": "taxonomy_not_strategy_eligible", "detail": "not strategy eligible by default"}]</td>
+      <td>0.3057</td>
+    </tr>
+    <tr>
+      <td>0462c7c0d38ac054df91da25b1e186e1</td>
+      <td>540817</td>
+      <td>540820</td>
+      <td>New Rihanna Album before GTA VI?</td>
+      <td>Trump out as President before GTA VI?</td>
+      <td>rejected</td>
+      <td>mixed_subtype</td>
+      <td>album_release_before_reference_vs_movie_release_before_reference</td>
+      <td>gta_vi_reference_clock</td>
+      <td>album_release_before_reference</td>
+      <td>movie_release_before_reference</td>
+      <td>event</td>
+      <td>event</td>
+      <td>temporal</td>
+      <td>temporal</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>rejected</td>
+      <td>ineligible</td>
+      <td>none</td>
+      <td>same broad outcome space but different outcome subtypes</td>
+      <td>not strategy eligible by default</td>
+      <td>[{"code": "entity_mismatch", "detail": "entity_overlap=0.333 &lt; 0.5"}, {"code": "album_release_before_reference_vs_movie_release_before_reference", "detail": "same broad outcome space but different outcome subtypes"}]</td>
+      <td>[{"code": "taxonomy_not_strategy_eligible", "detail": "not strategy eligible by default"}]</td>
+      <td>0.3024</td>
+    </tr>
+    <tr>
+      <td>cf16259291f23bb8c092833634ff60b6</td>
+      <td>561246</td>
+      <td>565064</td>
+      <td>Will Ron DeSantis win the 2028 US Presidential Election?</td>
+      <td>Will the Republicans win the 2028 US Presidential Election?</td>
+      <td>rejected</td>
+      <td>mixed_subtype</td>
+      <td>candidate_to_party_dependency</td>
+      <td>2028_us_presidential_election</td>
+      <td>candidate_winner_same_election</td>
+      <td>party_winner_same_election</td>
+      <td>candidate</td>
+      <td>party</td>
+      <td>general_election</td>
+      <td>general_election</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>Republicans</td>
+      <td>None</td>
+      <td>None</td>
+      <td>rejected</td>
+      <td>ineligible</td>
+      <td>none</td>
+      <td>candidate market and party market share a broad election space</td>
+      <td>not strategy eligible by default</td>
+      <td>[{"code": "entity_mismatch", "detail": "entity_overlap=0.100 &lt; 0.5"}, {"code": "candidate_to_party_dependency", "detail": "candidate market and party market share a broad election space"}]</td>
+      <td>[{"code": "taxonomy_not_strategy_eligible", "detail": "not strategy eligible by default"}]</td>
+      <td>0.2918</td>
+    </tr>
+    <tr>
+      <td>b7af699c4c25cda7c7c5b16ee302e7fb</td>
+      <td>561245</td>
+      <td>565064</td>
+      <td>Will Nikki Haley win the 2028 US Presidential Election?</td>
+      <td>Will the Republicans win the 2028 US Presidential Election?</td>
+      <td>rejected</td>
+      <td>mixed_subtype</td>
+      <td>candidate_to_party_dependency</td>
+      <td>2028_us_presidential_election</td>
+      <td>candidate_winner_same_election</td>
+      <td>party_winner_same_election</td>
+      <td>candidate</td>
+      <td>party</td>
+      <td>general_election</td>
+      <td>general_election</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>Republicans</td>
+      <td>None</td>
+      <td>None</td>
+      <td>rejected</td>
+      <td>ineligible</td>
+      <td>none</td>
+      <td>candidate market and party market share a broad election space</td>
+      <td>not strategy eligible by default</td>
+      <td>[{"code": "entity_mismatch", "detail": "entity_overlap=0.100 &lt; 0.5"}, {"code": "candidate_to_party_dependency", "detail": "candidate market and party market share a broad election space"}]</td>
+      <td>[{"code": "taxonomy_not_strategy_eligible", "detail": "not strategy eligible by default"}]</td>
+      <td>0.2884</td>
+    </tr>
+    <tr>
+      <td>9d5e6da736426316f2d7b4d67325f2ae</td>
+      <td>561236</td>
+      <td>565064</td>
+      <td>Will Gretchen Whitmer win the 2028 US Presidential Election?</td>
+      <td>Will the Republicans win the 2028 US Presidential Election?</td>
+      <td>rejected</td>
+      <td>mixed_subtype</td>
+      <td>candidate_to_party_dependency</td>
+      <td>2028_us_presidential_election</td>
+      <td>candidate_winner_same_election</td>
+      <td>party_winner_same_election</td>
+      <td>candidate</td>
+      <td>party</td>
+      <td>general_election</td>
+      <td>general_election</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>Republicans</td>
+      <td>None</td>
+      <td>None</td>
+      <td>rejected</td>
+      <td>ineligible</td>
+      <td>none</td>
+      <td>candidate market and party market share a broad election space</td>
+      <td>not strategy eligible by default</td>
+      <td>[{"code": "entity_mismatch", "detail": "entity_overlap=0.100 &lt; 0.5"}, {"code": "candidate_to_party_dependency", "detail": "candidate market and party market share a broad election space"}]</td>
+      <td>[{"code": "taxonomy_not_strategy_eligible", "detail": "not strategy eligible by default"}]</td>
+      <td>0.2832</td>
+    </tr>
+    <tr>
+      <td>8c54d9a10d5386ce5266acdd320cf56a</td>
+      <td>561234</td>
+      <td>565064</td>
+      <td>Will Marco Rubio win the 2028 US Presidential Election?</td>
+      <td>Will the Republicans win the 2028 US Presidential Election?</td>
+      <td>rejected</td>
+      <td>mixed_subtype</td>
+      <td>candidate_to_party_dependency</td>
+      <td>2028_us_presidential_election</td>
+      <td>candidate_winner_same_election</td>
+      <td>party_winner_same_election</td>
+      <td>candidate</td>
+      <td>party</td>
+      <td>general_election</td>
+      <td>general_election</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>Republicans</td>
+      <td>None</td>
+      <td>None</td>
+      <td>rejected</td>
+      <td>ineligible</td>
+      <td>none</td>
+      <td>candidate market and party market share a broad election space</td>
+      <td>not strategy eligible by default</td>
+      <td>[{"code": "entity_mismatch", "detail": "entity_overlap=0.100 &lt; 0.5"}, {"code": "candidate_to_party_dependency", "detail": "candidate market and party market share a broad election space"}]</td>
+      <td>[{"code": "taxonomy_not_strategy_eligible", "detail": "not strategy eligible by default"}]</td>
+      <td>0.2829</td>
+    </tr>
+    <tr>
+      <td>2d25494e96480450e77183ad9b2454a9</td>
+      <td>561248</td>
+      <td>565064</td>
+      <td>Will Vivek Ramaswamy win the 2028 US Presidential Election?</td>
+      <td>Will the Republicans win the 2028 US Presidential Election?</td>
+      <td>rejected</td>
+      <td>mixed_subtype</td>
+      <td>candidate_to_party_dependency</td>
+      <td>2028_us_presidential_election</td>
+      <td>candidate_winner_same_election</td>
+      <td>party_winner_same_election</td>
+      <td>candidate</td>
+      <td>party</td>
+      <td>general_election</td>
+      <td>general_election</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>Republicans</td>
+      <td>None</td>
+      <td>None</td>
+      <td>rejected</td>
+      <td>ineligible</td>
+      <td>none</td>
+      <td>candidate market and party market share a broad election space</td>
+      <td>not strategy eligible by default</td>
+      <td>[{"code": "entity_mismatch", "detail": "entity_overlap=0.100 &lt; 0.5"}, {"code": "candidate_to_party_dependency", "detail": "candidate market and party market share a broad election space"}]</td>
+      <td>[{"code": "taxonomy_not_strategy_eligible", "detail": "not strategy eligible by default"}]</td>
+      <td>0.2822</td>
+    </tr>
+    <tr>
+      <td>3e724fd557311a758d2ff30d51f096d4</td>
+      <td>561257</td>
+      <td>565064</td>
+      <td>Will Michelle Obama win the 2028 US Presidential Election?</td>
+      <td>Will the Republicans win the 2028 US Presidential Election?</td>
+      <td>rejected</td>
+      <td>mixed_subtype</td>
+      <td>candidate_to_party_dependency</td>
+      <td>2028_us_presidential_election</td>
+      <td>candidate_winner_same_election</td>
+      <td>party_winner_same_election</td>
+      <td>candidate</td>
+      <td>party</td>
+      <td>general_election</td>
+      <td>general_election</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>Republicans</td>
+      <td>None</td>
+      <td>None</td>
+      <td>rejected</td>
+      <td>ineligible</td>
+      <td>none</td>
+      <td>candidate market and party market share a broad election space</td>
+      <td>not strategy eligible by default</td>
+      <td>[{"code": "entity_mismatch", "detail": "entity_overlap=0.100 &lt; 0.5"}, {"code": "candidate_to_party_dependency", "detail": "candidate market and party market share a broad election space"}]</td>
+      <td>[{"code": "taxonomy_not_strategy_eligible", "detail": "not strategy eligible by default"}]</td>
+      <td>0.2819</td>
+    </tr>
+    <tr>
+      <td>0c2bbb1172ebad2c914731d5b11944f4</td>
+      <td>561262</td>
+      <td>565064</td>
+      <td>Will James Talarico win the 2028 US Presidential Election?</td>
+      <td>Will the Republicans win the 2028 US Presidential Election?</td>
+      <td>rejected</td>
+      <td>mixed_subtype</td>
+      <td>candidate_to_party_dependency</td>
+      <td>2028_us_presidential_election</td>
+      <td>candidate_winner_same_election</td>
+      <td>party_winner_same_election</td>
+      <td>candidate</td>
+      <td>party</td>
+      <td>general_election</td>
+      <td>general_election</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>Republicans</td>
+      <td>None</td>
+      <td>None</td>
+      <td>rejected</td>
+      <td>ineligible</td>
+      <td>none</td>
+      <td>candidate market and party market share a broad election space</td>
+      <td>not strategy eligible by default</td>
+      <td>[{"code": "entity_mismatch", "detail": "entity_overlap=0.100 &lt; 0.5"}, {"code": "candidate_to_party_dependency", "detail": "candidate market and party market share a broad election space"}]</td>
+      <td>[{"code": "taxonomy_not_strategy_eligible", "detail": "not strategy eligible by default"}]</td>
+      <td>0.2800</td>
+    </tr>
+    <tr>
+      <td>e3c8cb56e29404983d6aa0a3514460ff</td>
+      <td>561247</td>
+      <td>565064</td>
+      <td>Will Tim Walz win the 2028 US Presidential Election?</td>
+      <td>Will the Republicans win the 2028 US Presidential Election?</td>
+      <td>rejected</td>
+      <td>mixed_subtype</td>
+      <td>candidate_to_party_dependency</td>
+      <td>2028_us_presidential_election</td>
+      <td>candidate_winner_same_election</td>
+      <td>party_winner_same_election</td>
+      <td>candidate</td>
+      <td>party</td>
+      <td>general_election</td>
+      <td>general_election</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>Republicans</td>
+      <td>None</td>
+      <td>None</td>
+      <td>rejected</td>
+      <td>ineligible</td>
+      <td>none</td>
+      <td>candidate market and party market share a broad election space</td>
+      <td>not strategy eligible by default</td>
+      <td>[{"code": "entity_mismatch", "detail": "entity_overlap=0.100 &lt; 0.5"}, {"code": "candidate_to_party_dependency", "detail": "candidate market and party market share a broad election space"}]</td>
+      <td>[{"code": "taxonomy_not_strategy_eligible", "detail": "not strategy eligible by default"}]</td>
+      <td>0.2795</td>
+    </tr>
+    <tr>
+      <td>e95b6dcecc0de2e23c0043829de0c4c2</td>
+      <td>561258</td>
+      <td>565064</td>
+      <td>Will Jamie Dimon win the 2028 US Presidential Election?</td>
+      <td>Will the Republicans win the 2028 US Presidential Election?</td>
+      <td>rejected</td>
+      <td>mixed_subtype</td>
+      <td>candidate_to_party_dependency</td>
+      <td>2028_us_presidential_election</td>
+      <td>candidate_winner_same_election</td>
+      <td>party_winner_same_election</td>
+      <td>candidate</td>
+      <td>party</td>
+      <td>general_election</td>
+      <td>general_election</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>Republicans</td>
+      <td>None</td>
+      <td>None</td>
+      <td>rejected</td>
+      <td>ineligible</td>
+      <td>none</td>
+      <td>candidate market and party market share a broad election space</td>
+      <td>not strategy eligible by default</td>
+      <td>[{"code": "entity_mismatch", "detail": "entity_overlap=0.100 &lt; 0.5"}, {"code": "candidate_to_party_dependency", "detail": "candidate market and party market share a broad election space"}]</td>
+      <td>[{"code": "taxonomy_not_strategy_eligible", "detail": "not strategy eligible by default"}]</td>
+      <td>0.2785</td>
+    </tr>
+    <tr>
+      <td>f2882bb64692933a9e7adb47e2ad9452</td>
+      <td>561241</td>
+      <td>565064</td>
+      <td>Will JB Pritzker win the 2028 US Presidential Election?</td>
+      <td>Will the Republicans win the 2028 US Presidential Election?</td>
+      <td>rejected</td>
+      <td>mixed_subtype</td>
+      <td>candidate_to_party_dependency</td>
+      <td>2028_us_presidential_election</td>
+      <td>candidate_winner_same_election</td>
+      <td>party_winner_same_election</td>
+      <td>candidate</td>
+      <td>party</td>
+      <td>general_election</td>
+      <td>general_election</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>Republicans</td>
+      <td>None</td>
+      <td>None</td>
+      <td>rejected</td>
+      <td>ineligible</td>
+      <td>none</td>
+      <td>candidate market and party market share a broad election space</td>
+      <td>not strategy eligible by default</td>
+      <td>[{"code": "entity_mismatch", "detail": "entity_overlap=0.100 &lt; 0.5"}, {"code": "candidate_to_party_dependency", "detail": "candidate market and party market share a broad election space"}]</td>
+      <td>[{"code": "taxonomy_not_strategy_eligible", "detail": "not strategy eligible by default"}]</td>
+      <td>0.2779</td>
+    </tr>
+    <tr>
+      <td>06eb8de3f348578d5212ece1f4fce7df</td>
+      <td>540818</td>
+      <td>573647</td>
+      <td>New Playboi Carti Album before GTA VI?</td>
+      <td>Will GPT-6 be released before GTA VI?</td>
+      <td>rejected</td>
+      <td>mixed_subtype</td>
+      <td>album_release_before_reference_vs_movie_release_before_reference</td>
+      <td>gta_vi_reference_clock</td>
+      <td>album_release_before_reference</td>
+      <td>movie_release_before_reference</td>
+      <td>event</td>
+      <td>event</td>
+      <td>temporal</td>
+      <td>temporal</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>rejected</td>
+      <td>ineligible</td>
+      <td>none</td>
+      <td>same broad outcome space but different outcome subtypes</td>
+      <td>not strategy eligible by default</td>
+      <td>[{"code": "entity_mismatch", "detail": "entity_overlap=0.100 &lt; 0.5"}, {"code": "album_release_before_reference_vs_movie_release_before_reference", "detail": "same broad outcome space but different outcome subtypes"}]</td>
+      <td>[{"code": "coverage_insufficient_b", "detail": "market_b coverage_score=0.54"}]</td>
+      <td>0.2771</td>
+    </tr>
+    <tr>
+      <td>e916b1eed9b2b3dca25064c383a4cb55</td>
+      <td>561244</td>
+      <td>565064</td>
+      <td>Will Donald Trump Jr. win the 2028 US Presidential Election?</td>
+      <td>Will the Republicans win the 2028 US Presidential Election?</td>
+      <td>rejected</td>
+      <td>mixed_subtype</td>
+      <td>candidate_to_party_dependency</td>
+      <td>2028_us_presidential_election</td>
+      <td>candidate_winner_same_election</td>
+      <td>party_winner_same_election</td>
+      <td>candidate</td>
+      <td>party</td>
+      <td>general_election</td>
+      <td>general_election</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>Republicans</td>
+      <td>None</td>
+      <td>None</td>
+      <td>rejected</td>
+      <td>ineligible</td>
+      <td>none</td>
+      <td>candidate market and party market share a broad election space</td>
+      <td>not strategy eligible by default</td>
+      <td>[{"code": "entity_mismatch", "detail": "entity_overlap=0.100 &lt; 0.5"}, {"code": "candidate_to_party_dependency", "detail": "candidate market and party market share a broad election space"}]</td>
+      <td>[{"code": "taxonomy_not_strategy_eligible", "detail": "not strategy eligible by default"}]</td>
+      <td>0.2765</td>
+    </tr>
+    <tr>
+      <td>0588919fb5757ba381b2acd9e49a13ac</td>
+      <td>561263</td>
+      <td>565064</td>
+      <td>Will Eric Trump win the 2028 US Presidential Election?</td>
+      <td>Will the Republicans win the 2028 US Presidential Election?</td>
+      <td>rejected</td>
+      <td>mixed_subtype</td>
+      <td>candidate_to_party_dependency</td>
+      <td>2028_us_presidential_election</td>
+      <td>candidate_winner_same_election</td>
+      <td>party_winner_same_election</td>
+      <td>candidate</td>
+      <td>party</td>
+      <td>general_election</td>
+      <td>general_election</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>Republicans</td>
+      <td>None</td>
+      <td>None</td>
+      <td>rejected</td>
+      <td>ineligible</td>
+      <td>none</td>
+      <td>candidate market and party market share a broad election space</td>
+      <td>not strategy eligible by default</td>
+      <td>[{"code": "entity_mismatch", "detail": "entity_overlap=0.100 &lt; 0.5"}, {"code": "candidate_to_party_dependency", "detail": "candidate market and party market share a broad election space"}]</td>
+      <td>[{"code": "coverage_insufficient_a", "detail": "market_a coverage_score=0.51"}]</td>
+      <td>0.2756</td>
+    </tr>
+    <tr>
+      <td>8daf151f9737c385edbd72f358471e90</td>
+      <td>561243</td>
+      <td>565064</td>
+      <td>Will Donald Trump win the 2028 US Presidential Election?</td>
+      <td>Will the Republicans win the 2028 US Presidential Election?</td>
+      <td>rejected</td>
+      <td>mixed_subtype</td>
+      <td>candidate_to_party_dependency</td>
+      <td>2028_us_presidential_election</td>
+      <td>candidate_winner_same_election</td>
+      <td>party_winner_same_election</td>
+      <td>candidate</td>
+      <td>party</td>
+      <td>general_election</td>
+      <td>general_election</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>Republicans</td>
+      <td>None</td>
+      <td>None</td>
+      <td>rejected</td>
+      <td>ineligible</td>
+      <td>none</td>
+      <td>candidate market and party market share a broad election space</td>
+      <td>not strategy eligible by default</td>
+      <td>[{"code": "entity_mismatch", "detail": "entity_overlap=0.100 &lt; 0.5"}, {"code": "candidate_to_party_dependency", "detail": "candidate market and party market share a broad election space"}]</td>
+      <td>[{"code": "taxonomy_not_strategy_eligible", "detail": "not strategy eligible by default"}]</td>
+      <td>0.2756</td>
+    </tr>
+    <tr>
+      <td>74619b48e9320daafede268066cda94a</td>
+      <td>561252</td>
+      <td>565064</td>
+      <td>Will Dwayne 'The Rock' Johnson win the 2028 US Presidential Election?</td>
+      <td>Will the Republicans win the 2028 US Presidential Election?</td>
+      <td>rejected</td>
+      <td>mixed_subtype</td>
+      <td>candidate_to_party_dependency</td>
+      <td>2028_us_presidential_election</td>
+      <td>candidate_winner_same_election</td>
+      <td>party_winner_same_election</td>
+      <td>candidate</td>
+      <td>party</td>
+      <td>general_election</td>
+      <td>general_election</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>Republicans</td>
+      <td>None</td>
+      <td>None</td>
+      <td>rejected</td>
+      <td>ineligible</td>
+      <td>none</td>
+      <td>candidate market and party market share a broad election space</td>
+      <td>not strategy eligible by default</td>
+      <td>[{"code": "entity_mismatch", "detail": "entity_overlap=0.100 &lt; 0.5"}, {"code": "candidate_to_party_dependency", "detail": "candidate market and party market share a broad election space"}]</td>
+      <td>[{"code": "taxonomy_not_strategy_eligible", "detail": "not strategy eligible by default"}]</td>
+      <td>0.2756</td>
+    </tr>
+    <tr>
+      <td>73c04070ff490857838b43f3a1787f6b</td>
+      <td>561255</td>
+      <td>565064</td>
+      <td>Will Ivanka Trump win the 2028 US Presidential Election?</td>
+      <td>Will the Republicans win the 2028 US Presidential Election?</td>
+      <td>rejected</td>
+      <td>mixed_subtype</td>
+      <td>candidate_to_party_dependency</td>
+      <td>2028_us_presidential_election</td>
+      <td>candidate_winner_same_election</td>
+      <td>party_winner_same_election</td>
+      <td>candidate</td>
+      <td>party</td>
+      <td>general_election</td>
+      <td>general_election</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>Republicans</td>
+      <td>None</td>
+      <td>None</td>
+      <td>rejected</td>
+      <td>ineligible</td>
+      <td>none</td>
+      <td>candidate market and party market share a broad election space</td>
+      <td>not strategy eligible by default</td>
+      <td>[{"code": "entity_mismatch", "detail": "entity_overlap=0.100 &lt; 0.5"}, {"code": "candidate_to_party_dependency", "detail": "candidate market and party market share a broad election space"}]</td>
+      <td>[{"code": "taxonomy_not_strategy_eligible", "detail": "not strategy eligible by default"}]</td>
+      <td>0.2756</td>
+    </tr>
+    <tr>
+      <td>0bdd77d3e422f310da192706152eb3c6</td>
+      <td>561259</td>
+      <td>565064</td>
+      <td>Will Ro Khanna win the 2028 US Presidential Election?</td>
+      <td>Will the Republicans win the 2028 US Presidential Election?</td>
+      <td>rejected</td>
+      <td>mixed_subtype</td>
+      <td>candidate_to_party_dependency</td>
+      <td>2028_us_presidential_election</td>
+      <td>candidate_winner_same_election</td>
+      <td>party_winner_same_election</td>
+      <td>candidate</td>
+      <td>party</td>
+      <td>general_election</td>
+      <td>general_election</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>Republicans</td>
+      <td>None</td>
+      <td>None</td>
+      <td>rejected</td>
+      <td>ineligible</td>
+      <td>none</td>
+      <td>candidate market and party market share a broad election space</td>
+      <td>not strategy eligible by default</td>
+      <td>[{"code": "entity_mismatch", "detail": "entity_overlap=0.100 &lt; 0.5"}, {"code": "candidate_to_party_dependency", "detail": "candidate market and party market share a broad election space"}]</td>
+      <td>[{"code": "taxonomy_not_strategy_eligible", "detail": "not strategy eligible by default"}]</td>
+      <td>0.2750</td>
+    </tr>
+    <tr>
+      <td>9f2893717414b1728b2ee69dbc0da2fa</td>
+      <td>561250</td>
+      <td>565064</td>
+      <td>Will Elon Musk win the 2028 US Presidential Election?</td>
+      <td>Will the Republicans win the 2028 US Presidential Election?</td>
+      <td>rejected</td>
+      <td>mixed_subtype</td>
+      <td>candidate_to_party_dependency</td>
+      <td>2028_us_presidential_election</td>
+      <td>candidate_winner_same_election</td>
+      <td>party_winner_same_election</td>
+      <td>candidate</td>
+      <td>party</td>
+      <td>general_election</td>
+      <td>general_election</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>Republicans</td>
+      <td>None</td>
+      <td>None</td>
+      <td>rejected</td>
+      <td>ineligible</td>
+      <td>none</td>
+      <td>candidate market and party market share a broad election space</td>
+      <td>not strategy eligible by default</td>
+      <td>[{"code": "entity_mismatch", "detail": "entity_overlap=0.100 &lt; 0.5"}, {"code": "candidate_to_party_dependency", "detail": "candidate market and party market share a broad election space"}]</td>
+      <td>[{"code": "taxonomy_not_strategy_eligible", "detail": "not strategy eligible by default"}]</td>
+      <td>0.2750</td>
+    </tr>
+    <tr>
+      <td>d35f569ac408a0ba9f40f9907354980f</td>
+      <td>561229</td>
+      <td>565064</td>
+      <td>Will JD Vance win the 2028 US Presidential Election?</td>
+      <td>Will the Republicans win the 2028 US Presidential Election?</td>
+      <td>rejected</td>
+      <td>mixed_subtype</td>
+      <td>candidate_to_party_dependency</td>
+      <td>2028_us_presidential_election</td>
+      <td>candidate_winner_same_election</td>
+      <td>party_winner_same_election</td>
+      <td>candidate</td>
+      <td>party</td>
+      <td>general_election</td>
+      <td>general_election</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>Republicans</td>
+      <td>None</td>
+      <td>None</td>
+      <td>rejected</td>
+      <td>ineligible</td>
+      <td>none</td>
+      <td>candidate market and party market share a broad election space</td>
+      <td>not strategy eligible by default</td>
+      <td>[{"code": "entity_mismatch", "detail": "entity_overlap=0.100 &lt; 0.5"}, {"code": "candidate_to_party_dependency", "detail": "candidate market and party market share a broad election space"}]</td>
+      <td>[{"code": "taxonomy_not_strategy_eligible", "detail": "not strategy eligible by default"}]</td>
+      <td>0.2745</td>
+    </tr>
+    <tr>
+      <td>fbd613ce2942adb17aa0e7940d02c2d1</td>
+      <td>561235</td>
+      <td>565064</td>
+      <td>Will Wes Moore win the 2028 US Presidential Election?</td>
+      <td>Will the Republicans win the 2028 US Presidential Election?</td>
+      <td>rejected</td>
+      <td>mixed_subtype</td>
+      <td>candidate_to_party_dependency</td>
+      <td>2028_us_presidential_election</td>
+      <td>candidate_winner_same_election</td>
+      <td>party_winner_same_election</td>
+      <td>candidate</td>
+      <td>party</td>
+      <td>general_election</td>
+      <td>general_election</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>Republicans</td>
+      <td>None</td>
+      <td>None</td>
+      <td>rejected</td>
+      <td>ineligible</td>
+      <td>none</td>
+      <td>candidate market and party market share a broad election space</td>
+      <td>not strategy eligible by default</td>
+      <td>[{"code": "entity_mismatch", "detail": "entity_overlap=0.100 &lt; 0.5"}, {"code": "candidate_to_party_dependency", "detail": "candidate market and party market share a broad election space"}]</td>
+      <td>[{"code": "taxonomy_not_strategy_eligible", "detail": "not strategy eligible by default"}]</td>
+      <td>0.2733</td>
+    </tr>
+    <tr>
+      <td>ab29c3a650ebac63be8170393c149aec</td>
+      <td>561261</td>
+      <td>565064</td>
+      <td>Will Jon Ossoff win the 2028 US Presidential Election?</td>
+      <td>Will the Republicans win the 2028 US Presidential Election?</td>
+      <td>rejected</td>
+      <td>mixed_subtype</td>
+      <td>candidate_to_party_dependency</td>
+      <td>2028_us_presidential_election</td>
+      <td>candidate_winner_same_election</td>
+      <td>party_winner_same_election</td>
+      <td>candidate</td>
+      <td>party</td>
+      <td>general_election</td>
+      <td>general_election</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>Republicans</td>
+      <td>None</td>
+      <td>None</td>
+      <td>rejected</td>
+      <td>ineligible</td>
+      <td>none</td>
+      <td>candidate market and party market share a broad election space</td>
+      <td>not strategy eligible by default</td>
+      <td>[{"code": "entity_mismatch", "detail": "entity_overlap=0.100 &lt; 0.5"}, {"code": "candidate_to_party_dependency", "detail": "candidate market and party market share a broad election space"}]</td>
+      <td>[{"code": "taxonomy_not_strategy_eligible", "detail": "not strategy eligible by default"}]</td>
+      <td>0.2733</td>
+    </tr>
+    <tr>
+      <td>3ab9645d3305aa7753a43e4712fec8e6</td>
+      <td>561260</td>
+      <td>565064</td>
+      <td>Will Thomas Massie win the 2028 US Presidential Election?</td>
+      <td>Will the Republicans win the 2028 US Presidential Election?</td>
+      <td>rejected</td>
+      <td>mixed_subtype</td>
+      <td>candidate_to_party_dependency</td>
+      <td>2028_us_presidential_election</td>
+      <td>candidate_winner_same_election</td>
+      <td>party_winner_same_election</td>
+      <td>candidate</td>
+      <td>party</td>
+      <td>general_election</td>
+      <td>general_election</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>Republicans</td>
+      <td>None</td>
+      <td>None</td>
+      <td>rejected</td>
+      <td>ineligible</td>
+      <td>none</td>
+      <td>candidate market and party market share a broad election space</td>
+      <td>not strategy eligible by default</td>
+      <td>[{"code": "entity_mismatch", "detail": "entity_overlap=0.100 &lt; 0.5"}, {"code": "candidate_to_party_dependency", "detail": "candidate market and party market share a broad election space"}]</td>
+      <td>[{"code": "taxonomy_not_strategy_eligible", "detail": "not strategy eligible by default"}]</td>
+      <td>0.2731</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Candidate To Party Examples</h2>
+<table class="dataframe report-table">
+  <thead>
+    <tr style="text-align: right;">
+      <th>relationship_id</th>
+      <th>market_id_a</th>
+      <th>market_id_b</th>
+      <th>question_a</th>
+      <th>question_b</th>
+      <th>relationship_type</th>
+      <th>relationship_family</th>
+      <th>relationship_subtype</th>
+      <th>outcome_space_id</th>
+      <th>outcome_subtype_a</th>
+      <th>outcome_subtype_b</th>
+      <th>entity_type_a</th>
+      <th>entity_type_b</th>
+      <th>stage_a</th>
+      <th>stage_b</th>
+      <th>candidate_a</th>
+      <th>candidate_b</th>
+      <th>party_a</th>
+      <th>party_b</th>
+      <th>team_a</th>
+      <th>team_b</th>
+      <th>validation_status</th>
+      <th>strategy_eligibility_status</th>
+      <th>strategy_family</th>
+      <th>mixed_subtype_reason</th>
+      <th>strategy_eligible_reason</th>
+      <th>rejection_reasons_json</th>
+      <th>strategy_exclusion_reasons_json</th>
+      <th>final_confidence</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>18fb149ec147379b34dea643cb9f5222</td>
+      <td>561251</td>
+      <td>565064</td>
+      <td>Will LeBron James win the 2028 US Presidential Election?</td>
+      <td>Will the Republicans win the 2028 US Presidential Election?</td>
+      <td>mixed_subtype</td>
+      <td>mixed_subtype</td>
+      <td>candidate_to_party_dependency</td>
+      <td>2028_us_presidential_election</td>
+      <td>candidate_winner_same_election</td>
+      <td>party_winner_same_election</td>
+      <td>candidate</td>
+      <td>party</td>
+      <td>general_election</td>
+      <td>general_election</td>
+      <td>LeBron James</td>
+      <td>Republicans</td>
+      <td>None</td>
+      <td>Republicans</td>
+      <td>None</td>
+      <td>None</td>
+      <td>rejected</td>
+      <td>ineligible</td>
+      <td>none</td>
+      <td>candidate market and party market share a broad election space</td>
+      <td>not strategy eligible by default</td>
+      <td>[{"code": "candidate_to_party_dependency", "detail": "candidate market and party market share a broad election space"}]</td>
+      <td>[{"code": "taxonomy_not_pairwise_mutual_exclusion", "detail": "not strategy eligible by default"}]</td>
+      <td>0.7000</td>
+    </tr>
+    <tr>
+      <td>f5f3dd0e7bd76afdd722395e9500eda0</td>
+      <td>561251</td>
+      <td>565065</td>
+      <td>Will LeBron James win the 2028 US Presidential Election?</td>
+      <td>Will the Democrats win the 2028 US Presidential Election?</td>
+      <td>mixed_subtype</td>
+      <td>mixed_subtype</td>
+      <td>candidate_to_party_dependency</td>
+      <td>2028_us_presidential_election</td>
+      <td>candidate_winner_same_election</td>
+      <td>party_winner_same_election</td>
+      <td>candidate</td>
+      <td>party</td>
+      <td>general_election</td>
+      <td>general_election</td>
+      <td>LeBron James</td>
+      <td>Democrats</td>
+      <td>None</td>
+      <td>Democrats</td>
+      <td>None</td>
+      <td>None</td>
+      <td>rejected</td>
+      <td>ineligible</td>
+      <td>none</td>
+      <td>candidate market and party market share a broad election space</td>
+      <td>not strategy eligible by default</td>
+      <td>[{"code": "candidate_to_party_dependency", "detail": "candidate market and party market share a broad election space"}]</td>
+      <td>[{"code": "taxonomy_not_pairwise_mutual_exclusion", "detail": "not strategy eligible by default"}]</td>
+      <td>0.7000</td>
+    </tr>
+    <tr>
+      <td>351d1fdb96c8437bcc50c9efdc849634</td>
+      <td>561239</td>
+      <td>565064</td>
+      <td>Will Kamala Harris win the 2028 US Presidential Election?</td>
+      <td>Will the Republicans win the 2028 US Presidential Election?</td>
+      <td>rejected</td>
+      <td>mixed_subtype</td>
+      <td>candidate_to_party_dependency</td>
+      <td>2028_us_presidential_election</td>
+      <td>candidate_winner_same_election</td>
+      <td>party_winner_same_election</td>
+      <td>candidate</td>
+      <td>party</td>
+      <td>general_election</td>
+      <td>general_election</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>Republicans</td>
+      <td>None</td>
+      <td>None</td>
+      <td>rejected</td>
+      <td>ineligible</td>
+      <td>none</td>
+      <td>candidate market and party market share a broad election space</td>
+      <td>not strategy eligible by default</td>
+      <td>[{"code": "entity_mismatch", "detail": "entity_overlap=0.100 &lt; 0.5"}, {"code": "candidate_to_party_dependency", "detail": "candidate market and party market share a broad election space"}]</td>
+      <td>[{"code": "taxonomy_not_strategy_eligible", "detail": "not strategy eligible by default"}]</td>
+      <td>0.3057</td>
+    </tr>
+    <tr>
+      <td>cf16259291f23bb8c092833634ff60b6</td>
+      <td>561246</td>
+      <td>565064</td>
+      <td>Will Ron DeSantis win the 2028 US Presidential Election?</td>
+      <td>Will the Republicans win the 2028 US Presidential Election?</td>
+      <td>rejected</td>
+      <td>mixed_subtype</td>
+      <td>candidate_to_party_dependency</td>
+      <td>2028_us_presidential_election</td>
+      <td>candidate_winner_same_election</td>
+      <td>party_winner_same_election</td>
+      <td>candidate</td>
+      <td>party</td>
+      <td>general_election</td>
+      <td>general_election</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>Republicans</td>
+      <td>None</td>
+      <td>None</td>
+      <td>rejected</td>
+      <td>ineligible</td>
+      <td>none</td>
+      <td>candidate market and party market share a broad election space</td>
+      <td>not strategy eligible by default</td>
+      <td>[{"code": "entity_mismatch", "detail": "entity_overlap=0.100 &lt; 0.5"}, {"code": "candidate_to_party_dependency", "detail": "candidate market and party market share a broad election space"}]</td>
+      <td>[{"code": "taxonomy_not_strategy_eligible", "detail": "not strategy eligible by default"}]</td>
+      <td>0.2918</td>
+    </tr>
+    <tr>
+      <td>b7af699c4c25cda7c7c5b16ee302e7fb</td>
+      <td>561245</td>
+      <td>565064</td>
+      <td>Will Nikki Haley win the 2028 US Presidential Election?</td>
+      <td>Will the Republicans win the 2028 US Presidential Election?</td>
+      <td>rejected</td>
+      <td>mixed_subtype</td>
+      <td>candidate_to_party_dependency</td>
+      <td>2028_us_presidential_election</td>
+      <td>candidate_winner_same_election</td>
+      <td>party_winner_same_election</td>
+      <td>candidate</td>
+      <td>party</td>
+      <td>general_election</td>
+      <td>general_election</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>Republicans</td>
+      <td>None</td>
+      <td>None</td>
+      <td>rejected</td>
+      <td>ineligible</td>
+      <td>none</td>
+      <td>candidate market and party market share a broad election space</td>
+      <td>not strategy eligible by default</td>
+      <td>[{"code": "entity_mismatch", "detail": "entity_overlap=0.100 &lt; 0.5"}, {"code": "candidate_to_party_dependency", "detail": "candidate market and party market share a broad election space"}]</td>
+      <td>[{"code": "taxonomy_not_strategy_eligible", "detail": "not strategy eligible by default"}]</td>
+      <td>0.2884</td>
+    </tr>
+    <tr>
+      <td>9d5e6da736426316f2d7b4d67325f2ae</td>
+      <td>561236</td>
+      <td>565064</td>
+      <td>Will Gretchen Whitmer win the 2028 US Presidential Election?</td>
+      <td>Will the Republicans win the 2028 US Presidential Election?</td>
+      <td>rejected</td>
+      <td>mixed_subtype</td>
+      <td>candidate_to_party_dependency</td>
+      <td>2028_us_presidential_election</td>
+      <td>candidate_winner_same_election</td>
+      <td>party_winner_same_election</td>
+      <td>candidate</td>
+      <td>party</td>
+      <td>general_election</td>
+      <td>general_election</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>Republicans</td>
+      <td>None</td>
+      <td>None</td>
+      <td>rejected</td>
+      <td>ineligible</td>
+      <td>none</td>
+      <td>candidate market and party market share a broad election space</td>
+      <td>not strategy eligible by default</td>
+      <td>[{"code": "entity_mismatch", "detail": "entity_overlap=0.100 &lt; 0.5"}, {"code": "candidate_to_party_dependency", "detail": "candidate market and party market share a broad election space"}]</td>
+      <td>[{"code": "taxonomy_not_strategy_eligible", "detail": "not strategy eligible by default"}]</td>
+      <td>0.2832</td>
+    </tr>
+    <tr>
+      <td>8c54d9a10d5386ce5266acdd320cf56a</td>
+      <td>561234</td>
+      <td>565064</td>
+      <td>Will Marco Rubio win the 2028 US Presidential Election?</td>
+      <td>Will the Republicans win the 2028 US Presidential Election?</td>
+      <td>rejected</td>
+      <td>mixed_subtype</td>
+      <td>candidate_to_party_dependency</td>
+      <td>2028_us_presidential_election</td>
+      <td>candidate_winner_same_election</td>
+      <td>party_winner_same_election</td>
+      <td>candidate</td>
+      <td>party</td>
+      <td>general_election</td>
+      <td>general_election</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>Republicans</td>
+      <td>None</td>
+      <td>None</td>
+      <td>rejected</td>
+      <td>ineligible</td>
+      <td>none</td>
+      <td>candidate market and party market share a broad election space</td>
+      <td>not strategy eligible by default</td>
+      <td>[{"code": "entity_mismatch", "detail": "entity_overlap=0.100 &lt; 0.5"}, {"code": "candidate_to_party_dependency", "detail": "candidate market and party market share a broad election space"}]</td>
+      <td>[{"code": "taxonomy_not_strategy_eligible", "detail": "not strategy eligible by default"}]</td>
+      <td>0.2829</td>
+    </tr>
+    <tr>
+      <td>2d25494e96480450e77183ad9b2454a9</td>
+      <td>561248</td>
+      <td>565064</td>
+      <td>Will Vivek Ramaswamy win the 2028 US Presidential Election?</td>
+      <td>Will the Republicans win the 2028 US Presidential Election?</td>
+      <td>rejected</td>
+      <td>mixed_subtype</td>
+      <td>candidate_to_party_dependency</td>
+      <td>2028_us_presidential_election</td>
+      <td>candidate_winner_same_election</td>
+      <td>party_winner_same_election</td>
+      <td>candidate</td>
+      <td>party</td>
+      <td>general_election</td>
+      <td>general_election</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>Republicans</td>
+      <td>None</td>
+      <td>None</td>
+      <td>rejected</td>
+      <td>ineligible</td>
+      <td>none</td>
+      <td>candidate market and party market share a broad election space</td>
+      <td>not strategy eligible by default</td>
+      <td>[{"code": "entity_mismatch", "detail": "entity_overlap=0.100 &lt; 0.5"}, {"code": "candidate_to_party_dependency", "detail": "candidate market and party market share a broad election space"}]</td>
+      <td>[{"code": "taxonomy_not_strategy_eligible", "detail": "not strategy eligible by default"}]</td>
+      <td>0.2822</td>
+    </tr>
+    <tr>
+      <td>3e724fd557311a758d2ff30d51f096d4</td>
+      <td>561257</td>
+      <td>565064</td>
+      <td>Will Michelle Obama win the 2028 US Presidential Election?</td>
+      <td>Will the Republicans win the 2028 US Presidential Election?</td>
+      <td>rejected</td>
+      <td>mixed_subtype</td>
+      <td>candidate_to_party_dependency</td>
+      <td>2028_us_presidential_election</td>
+      <td>candidate_winner_same_election</td>
+      <td>party_winner_same_election</td>
+      <td>candidate</td>
+      <td>party</td>
+      <td>general_election</td>
+      <td>general_election</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>Republicans</td>
+      <td>None</td>
+      <td>None</td>
+      <td>rejected</td>
+      <td>ineligible</td>
+      <td>none</td>
+      <td>candidate market and party market share a broad election space</td>
+      <td>not strategy eligible by default</td>
+      <td>[{"code": "entity_mismatch", "detail": "entity_overlap=0.100 &lt; 0.5"}, {"code": "candidate_to_party_dependency", "detail": "candidate market and party market share a broad election space"}]</td>
+      <td>[{"code": "taxonomy_not_strategy_eligible", "detail": "not strategy eligible by default"}]</td>
+      <td>0.2819</td>
+    </tr>
+    <tr>
+      <td>0c2bbb1172ebad2c914731d5b11944f4</td>
+      <td>561262</td>
+      <td>565064</td>
+      <td>Will James Talarico win the 2028 US Presidential Election?</td>
+      <td>Will the Republicans win the 2028 US Presidential Election?</td>
+      <td>rejected</td>
+      <td>mixed_subtype</td>
+      <td>candidate_to_party_dependency</td>
+      <td>2028_us_presidential_election</td>
+      <td>candidate_winner_same_election</td>
+      <td>party_winner_same_election</td>
+      <td>candidate</td>
+      <td>party</td>
+      <td>general_election</td>
+      <td>general_election</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>Republicans</td>
+      <td>None</td>
+      <td>None</td>
+      <td>rejected</td>
+      <td>ineligible</td>
+      <td>none</td>
+      <td>candidate market and party market share a broad election space</td>
+      <td>not strategy eligible by default</td>
+      <td>[{"code": "entity_mismatch", "detail": "entity_overlap=0.100 &lt; 0.5"}, {"code": "candidate_to_party_dependency", "detail": "candidate market and party market share a broad election space"}]</td>
+      <td>[{"code": "taxonomy_not_strategy_eligible", "detail": "not strategy eligible by default"}]</td>
+      <td>0.2800</td>
+    </tr>
+    <tr>
+      <td>e3c8cb56e29404983d6aa0a3514460ff</td>
+      <td>561247</td>
+      <td>565064</td>
+      <td>Will Tim Walz win the 2028 US Presidential Election?</td>
+      <td>Will the Republicans win the 2028 US Presidential Election?</td>
+      <td>rejected</td>
+      <td>mixed_subtype</td>
+      <td>candidate_to_party_dependency</td>
+      <td>2028_us_presidential_election</td>
+      <td>candidate_winner_same_election</td>
+      <td>party_winner_same_election</td>
+      <td>candidate</td>
+      <td>party</td>
+      <td>general_election</td>
+      <td>general_election</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>Republicans</td>
+      <td>None</td>
+      <td>None</td>
+      <td>rejected</td>
+      <td>ineligible</td>
+      <td>none</td>
+      <td>candidate market and party market share a broad election space</td>
+      <td>not strategy eligible by default</td>
+      <td>[{"code": "entity_mismatch", "detail": "entity_overlap=0.100 &lt; 0.5"}, {"code": "candidate_to_party_dependency", "detail": "candidate market and party market share a broad election space"}]</td>
+      <td>[{"code": "taxonomy_not_strategy_eligible", "detail": "not strategy eligible by default"}]</td>
+      <td>0.2795</td>
+    </tr>
+    <tr>
+      <td>e95b6dcecc0de2e23c0043829de0c4c2</td>
+      <td>561258</td>
+      <td>565064</td>
+      <td>Will Jamie Dimon win the 2028 US Presidential Election?</td>
+      <td>Will the Republicans win the 2028 US Presidential Election?</td>
+      <td>rejected</td>
+      <td>mixed_subtype</td>
+      <td>candidate_to_party_dependency</td>
+      <td>2028_us_presidential_election</td>
+      <td>candidate_winner_same_election</td>
+      <td>party_winner_same_election</td>
+      <td>candidate</td>
+      <td>party</td>
+      <td>general_election</td>
+      <td>general_election</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>Republicans</td>
+      <td>None</td>
+      <td>None</td>
+      <td>rejected</td>
+      <td>ineligible</td>
+      <td>none</td>
+      <td>candidate market and party market share a broad election space</td>
+      <td>not strategy eligible by default</td>
+      <td>[{"code": "entity_mismatch", "detail": "entity_overlap=0.100 &lt; 0.5"}, {"code": "candidate_to_party_dependency", "detail": "candidate market and party market share a broad election space"}]</td>
+      <td>[{"code": "taxonomy_not_strategy_eligible", "detail": "not strategy eligible by default"}]</td>
+      <td>0.2785</td>
+    </tr>
+    <tr>
+      <td>f2882bb64692933a9e7adb47e2ad9452</td>
+      <td>561241</td>
+      <td>565064</td>
+      <td>Will JB Pritzker win the 2028 US Presidential Election?</td>
+      <td>Will the Republicans win the 2028 US Presidential Election?</td>
+      <td>rejected</td>
+      <td>mixed_subtype</td>
+      <td>candidate_to_party_dependency</td>
+      <td>2028_us_presidential_election</td>
+      <td>candidate_winner_same_election</td>
+      <td>party_winner_same_election</td>
+      <td>candidate</td>
+      <td>party</td>
+      <td>general_election</td>
+      <td>general_election</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>Republicans</td>
+      <td>None</td>
+      <td>None</td>
+      <td>rejected</td>
+      <td>ineligible</td>
+      <td>none</td>
+      <td>candidate market and party market share a broad election space</td>
+      <td>not strategy eligible by default</td>
+      <td>[{"code": "entity_mismatch", "detail": "entity_overlap=0.100 &lt; 0.5"}, {"code": "candidate_to_party_dependency", "detail": "candidate market and party market share a broad election space"}]</td>
+      <td>[{"code": "taxonomy_not_strategy_eligible", "detail": "not strategy eligible by default"}]</td>
+      <td>0.2779</td>
+    </tr>
+    <tr>
+      <td>e916b1eed9b2b3dca25064c383a4cb55</td>
+      <td>561244</td>
+      <td>565064</td>
+      <td>Will Donald Trump Jr. win the 2028 US Presidential Election?</td>
+      <td>Will the Republicans win the 2028 US Presidential Election?</td>
+      <td>rejected</td>
+      <td>mixed_subtype</td>
+      <td>candidate_to_party_dependency</td>
+      <td>2028_us_presidential_election</td>
+      <td>candidate_winner_same_election</td>
+      <td>party_winner_same_election</td>
+      <td>candidate</td>
+      <td>party</td>
+      <td>general_election</td>
+      <td>general_election</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>Republicans</td>
+      <td>None</td>
+      <td>None</td>
+      <td>rejected</td>
+      <td>ineligible</td>
+      <td>none</td>
+      <td>candidate market and party market share a broad election space</td>
+      <td>not strategy eligible by default</td>
+      <td>[{"code": "entity_mismatch", "detail": "entity_overlap=0.100 &lt; 0.5"}, {"code": "candidate_to_party_dependency", "detail": "candidate market and party market share a broad election space"}]</td>
+      <td>[{"code": "taxonomy_not_strategy_eligible", "detail": "not strategy eligible by default"}]</td>
+      <td>0.2765</td>
+    </tr>
+    <tr>
+      <td>0588919fb5757ba381b2acd9e49a13ac</td>
+      <td>561263</td>
+      <td>565064</td>
+      <td>Will Eric Trump win the 2028 US Presidential Election?</td>
+      <td>Will the Republicans win the 2028 US Presidential Election?</td>
+      <td>rejected</td>
+      <td>mixed_subtype</td>
+      <td>candidate_to_party_dependency</td>
+      <td>2028_us_presidential_election</td>
+      <td>candidate_winner_same_election</td>
+      <td>party_winner_same_election</td>
+      <td>candidate</td>
+      <td>party</td>
+      <td>general_election</td>
+      <td>general_election</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>Republicans</td>
+      <td>None</td>
+      <td>None</td>
+      <td>rejected</td>
+      <td>ineligible</td>
+      <td>none</td>
+      <td>candidate market and party market share a broad election space</td>
+      <td>not strategy eligible by default</td>
+      <td>[{"code": "entity_mismatch", "detail": "entity_overlap=0.100 &lt; 0.5"}, {"code": "candidate_to_party_dependency", "detail": "candidate market and party market share a broad election space"}]</td>
+      <td>[{"code": "coverage_insufficient_a", "detail": "market_a coverage_score=0.51"}]</td>
+      <td>0.2756</td>
+    </tr>
+    <tr>
+      <td>8daf151f9737c385edbd72f358471e90</td>
+      <td>561243</td>
+      <td>565064</td>
+      <td>Will Donald Trump win the 2028 US Presidential Election?</td>
+      <td>Will the Republicans win the 2028 US Presidential Election?</td>
+      <td>rejected</td>
+      <td>mixed_subtype</td>
+      <td>candidate_to_party_dependency</td>
+      <td>2028_us_presidential_election</td>
+      <td>candidate_winner_same_election</td>
+      <td>party_winner_same_election</td>
+      <td>candidate</td>
+      <td>party</td>
+      <td>general_election</td>
+      <td>general_election</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>Republicans</td>
+      <td>None</td>
+      <td>None</td>
+      <td>rejected</td>
+      <td>ineligible</td>
+      <td>none</td>
+      <td>candidate market and party market share a broad election space</td>
+      <td>not strategy eligible by default</td>
+      <td>[{"code": "entity_mismatch", "detail": "entity_overlap=0.100 &lt; 0.5"}, {"code": "candidate_to_party_dependency", "detail": "candidate market and party market share a broad election space"}]</td>
+      <td>[{"code": "taxonomy_not_strategy_eligible", "detail": "not strategy eligible by default"}]</td>
+      <td>0.2756</td>
+    </tr>
+    <tr>
+      <td>74619b48e9320daafede268066cda94a</td>
+      <td>561252</td>
+      <td>565064</td>
+      <td>Will Dwayne 'The Rock' Johnson win the 2028 US Presidential Election?</td>
+      <td>Will the Republicans win the 2028 US Presidential Election?</td>
+      <td>rejected</td>
+      <td>mixed_subtype</td>
+      <td>candidate_to_party_dependency</td>
+      <td>2028_us_presidential_election</td>
+      <td>candidate_winner_same_election</td>
+      <td>party_winner_same_election</td>
+      <td>candidate</td>
+      <td>party</td>
+      <td>general_election</td>
+      <td>general_election</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>Republicans</td>
+      <td>None</td>
+      <td>None</td>
+      <td>rejected</td>
+      <td>ineligible</td>
+      <td>none</td>
+      <td>candidate market and party market share a broad election space</td>
+      <td>not strategy eligible by default</td>
+      <td>[{"code": "entity_mismatch", "detail": "entity_overlap=0.100 &lt; 0.5"}, {"code": "candidate_to_party_dependency", "detail": "candidate market and party market share a broad election space"}]</td>
+      <td>[{"code": "taxonomy_not_strategy_eligible", "detail": "not strategy eligible by default"}]</td>
+      <td>0.2756</td>
+    </tr>
+    <tr>
+      <td>73c04070ff490857838b43f3a1787f6b</td>
+      <td>561255</td>
+      <td>565064</td>
+      <td>Will Ivanka Trump win the 2028 US Presidential Election?</td>
+      <td>Will the Republicans win the 2028 US Presidential Election?</td>
+      <td>rejected</td>
+      <td>mixed_subtype</td>
+      <td>candidate_to_party_dependency</td>
+      <td>2028_us_presidential_election</td>
+      <td>candidate_winner_same_election</td>
+      <td>party_winner_same_election</td>
+      <td>candidate</td>
+      <td>party</td>
+      <td>general_election</td>
+      <td>general_election</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>Republicans</td>
+      <td>None</td>
+      <td>None</td>
+      <td>rejected</td>
+      <td>ineligible</td>
+      <td>none</td>
+      <td>candidate market and party market share a broad election space</td>
+      <td>not strategy eligible by default</td>
+      <td>[{"code": "entity_mismatch", "detail": "entity_overlap=0.100 &lt; 0.5"}, {"code": "candidate_to_party_dependency", "detail": "candidate market and party market share a broad election space"}]</td>
+      <td>[{"code": "taxonomy_not_strategy_eligible", "detail": "not strategy eligible by default"}]</td>
+      <td>0.2756</td>
+    </tr>
+    <tr>
+      <td>0bdd77d3e422f310da192706152eb3c6</td>
+      <td>561259</td>
+      <td>565064</td>
+      <td>Will Ro Khanna win the 2028 US Presidential Election?</td>
+      <td>Will the Republicans win the 2028 US Presidential Election?</td>
+      <td>rejected</td>
+      <td>mixed_subtype</td>
+      <td>candidate_to_party_dependency</td>
+      <td>2028_us_presidential_election</td>
+      <td>candidate_winner_same_election</td>
+      <td>party_winner_same_election</td>
+      <td>candidate</td>
+      <td>party</td>
+      <td>general_election</td>
+      <td>general_election</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>Republicans</td>
+      <td>None</td>
+      <td>None</td>
+      <td>rejected</td>
+      <td>ineligible</td>
+      <td>none</td>
+      <td>candidate market and party market share a broad election space</td>
+      <td>not strategy eligible by default</td>
+      <td>[{"code": "entity_mismatch", "detail": "entity_overlap=0.100 &lt; 0.5"}, {"code": "candidate_to_party_dependency", "detail": "candidate market and party market share a broad election space"}]</td>
+      <td>[{"code": "taxonomy_not_strategy_eligible", "detail": "not strategy eligible by default"}]</td>
+      <td>0.2750</td>
+    </tr>
+    <tr>
+      <td>9f2893717414b1728b2ee69dbc0da2fa</td>
+      <td>561250</td>
+      <td>565064</td>
+      <td>Will Elon Musk win the 2028 US Presidential Election?</td>
+      <td>Will the Republicans win the 2028 US Presidential Election?</td>
+      <td>rejected</td>
+      <td>mixed_subtype</td>
+      <td>candidate_to_party_dependency</td>
+      <td>2028_us_presidential_election</td>
+      <td>candidate_winner_same_election</td>
+      <td>party_winner_same_election</td>
+      <td>candidate</td>
+      <td>party</td>
+      <td>general_election</td>
+      <td>general_election</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>Republicans</td>
+      <td>None</td>
+      <td>None</td>
+      <td>rejected</td>
+      <td>ineligible</td>
+      <td>none</td>
+      <td>candidate market and party market share a broad election space</td>
+      <td>not strategy eligible by default</td>
+      <td>[{"code": "entity_mismatch", "detail": "entity_overlap=0.100 &lt; 0.5"}, {"code": "candidate_to_party_dependency", "detail": "candidate market and party market share a broad election space"}]</td>
+      <td>[{"code": "taxonomy_not_strategy_eligible", "detail": "not strategy eligible by default"}]</td>
+      <td>0.2750</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Nomination To General Examples</h2>
+<table class="dataframe report-table">
+  <thead>
+    <tr style="text-align: right;">
+      <th>relationship_id</th>
+      <th>market_id_a</th>
+      <th>market_id_b</th>
+      <th>question_a</th>
+      <th>question_b</th>
+      <th>relationship_type</th>
+      <th>relationship_family</th>
+      <th>relationship_subtype</th>
+      <th>outcome_space_id</th>
+      <th>outcome_subtype_a</th>
+      <th>outcome_subtype_b</th>
+      <th>entity_type_a</th>
+      <th>entity_type_b</th>
+      <th>stage_a</th>
+      <th>stage_b</th>
+      <th>candidate_a</th>
+      <th>candidate_b</th>
+      <th>party_a</th>
+      <th>party_b</th>
+      <th>team_a</th>
+      <th>team_b</th>
+      <th>validation_status</th>
+      <th>strategy_eligibility_status</th>
+      <th>strategy_family</th>
+      <th>mixed_subtype_reason</th>
+      <th>strategy_eligible_reason</th>
+      <th>rejection_reasons_json</th>
+      <th>strategy_exclusion_reasons_json</th>
+      <th>final_confidence</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>8b937b1b819dbf225c72414c3b5653d9</td>
+      <td>559686</td>
+      <td>561252</td>
+      <td>Will Dwayne 'The Rock' Johnson win the 2028 Democratic presidential nomination?</td>
+      <td>Will Dwayne 'The Rock' Johnson win the 2028 US Presidential Election?</td>
+      <td>rejected</td>
+      <td>unknown</td>
+      <td>nomination_to_general_dependency</td>
+      <td>2028_democrats_presidential_nomination</td>
+      <td>candidate_wins_nomination</td>
+      <td>candidate_winner_same_election</td>
+      <td>candidate</td>
+      <td>candidate</td>
+      <td>nomination</td>
+      <td>general_election</td>
+      <td>None</td>
+      <td>None</td>
+      <td>Democrats</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>needs_manual_review</td>
+      <td>ineligible</td>
+      <td>none</td>
+      <td></td>
+      <td>staged nomination/general relationship is analysis-only by default</td>
+      <td>[{"code": "nomination_to_general_dependency", "detail": "staged nomination/general relationship is analysis-only by default"}]</td>
+      <td>[{"code": "taxonomy_not_strategy_eligible", "detail": "staged nomination/general relationship is analysis-only by default"}]</td>
+      <td>0.4517</td>
+    </tr>
+    <tr>
+      <td>ce1403a76b3c8a70b5e36e97d0a18741</td>
+      <td>561234</td>
+      <td>561975</td>
+      <td>Will Marco Rubio win the 2028 US Presidential Election?</td>
+      <td>Will Marco Rubio win the 2028 Republican presidential nomination?</td>
+      <td>rejected</td>
+      <td>unknown</td>
+      <td>nomination_to_general_dependency</td>
+      <td>2028_us_presidential_election_candidate_winner</td>
+      <td>candidate_winner_same_election</td>
+      <td>candidate_wins_nomination</td>
+      <td>candidate</td>
+      <td>candidate</td>
+      <td>general_election</td>
+      <td>nomination</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>Republicans</td>
+      <td>None</td>
+      <td>None</td>
+      <td>needs_manual_review</td>
+      <td>ineligible</td>
+      <td>none</td>
+      <td></td>
+      <td>staged nomination/general relationship is analysis-only by default</td>
+      <td>[{"code": "nomination_to_general_dependency", "detail": "staged nomination/general relationship is analysis-only by default"}]</td>
+      <td>[{"code": "taxonomy_not_strategy_eligible", "detail": "staged nomination/general relationship is analysis-only by default"}]</td>
+      <td>0.4138</td>
+    </tr>
+    <tr>
+      <td>d6f3e0670c0e7765406d5af2709303ed</td>
+      <td>561245</td>
+      <td>561980</td>
+      <td>Will Nikki Haley win the 2028 US Presidential Election?</td>
+      <td>Will Nikki Haley win the 2028 Republican presidential nomination?</td>
+      <td>rejected</td>
+      <td>unknown</td>
+      <td>nomination_to_general_dependency</td>
+      <td>2028_us_presidential_election_candidate_winner</td>
+      <td>candidate_winner_same_election</td>
+      <td>candidate_wins_nomination</td>
+      <td>candidate</td>
+      <td>candidate</td>
+      <td>general_election</td>
+      <td>nomination</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>Republicans</td>
+      <td>None</td>
+      <td>None</td>
+      <td>needs_manual_review</td>
+      <td>ineligible</td>
+      <td>none</td>
+      <td></td>
+      <td>staged nomination/general relationship is analysis-only by default</td>
+      <td>[{"code": "nomination_to_general_dependency", "detail": "staged nomination/general relationship is analysis-only by default"}]</td>
+      <td>[{"code": "taxonomy_not_strategy_eligible", "detail": "staged nomination/general relationship is analysis-only by default"}]</td>
+      <td>0.4052</td>
+    </tr>
+    <tr>
+      <td>4ceb6c57b9a9908fcbbbe636c2b57b9d</td>
+      <td>559658</td>
+      <td>561239</td>
+      <td>Will Kamala Harris win the 2028 Democratic presidential nomination?</td>
+      <td>Will Kamala Harris win the 2028 US Presidential Election?</td>
+      <td>rejected</td>
+      <td>unknown</td>
+      <td>nomination_to_general_dependency</td>
+      <td>2028_democrats_presidential_nomination</td>
+      <td>candidate_wins_nomination</td>
+      <td>candidate_winner_same_election</td>
+      <td>candidate</td>
+      <td>candidate</td>
+      <td>nomination</td>
+      <td>general_election</td>
+      <td>None</td>
+      <td>None</td>
+      <td>Democrats</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>needs_manual_review</td>
+      <td>ineligible</td>
+      <td>none</td>
+      <td></td>
+      <td>staged nomination/general relationship is analysis-only by default</td>
+      <td>[{"code": "nomination_to_general_dependency", "detail": "staged nomination/general relationship is analysis-only by default"}]</td>
+      <td>[{"code": "taxonomy_not_strategy_eligible", "detail": "staged nomination/general relationship is analysis-only by default"}]</td>
+      <td>0.4017</td>
+    </tr>
+    <tr>
+      <td>e5267754e49a11237e3cd6f4d4a5eda2</td>
+      <td>559671</td>
+      <td>561256</td>
+      <td>Will Zohran Mamdani win the 2028 Democratic presidential nomination?</td>
+      <td>Will Zohran Mamdani win the 2028 US Presidential Election?</td>
+      <td>rejected</td>
+      <td>unknown</td>
+      <td>nomination_to_general_dependency</td>
+      <td>2028_democrats_presidential_nomination</td>
+      <td>candidate_wins_nomination</td>
+      <td>candidate_winner_same_election</td>
+      <td>candidate</td>
+      <td>candidate</td>
+      <td>nomination</td>
+      <td>general_election</td>
+      <td>None</td>
+      <td>None</td>
+      <td>Democrats</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>needs_manual_review</td>
+      <td>ineligible</td>
+      <td>none</td>
+      <td></td>
+      <td>staged nomination/general relationship is analysis-only by default</td>
+      <td>[{"code": "nomination_to_general_dependency", "detail": "staged nomination/general relationship is analysis-only by default"}]</td>
+      <td>[{"code": "taxonomy_not_strategy_eligible", "detail": "staged nomination/general relationship is analysis-only by default"}]</td>
+      <td>0.4000</td>
+    </tr>
+    <tr>
+      <td>8cd78a1977f5200ff342e072bdd6bf15</td>
+      <td>559667</td>
+      <td>561257</td>
+      <td>Will Michelle Obama win the 2028 Democratic presidential nomination?</td>
+      <td>Will Michelle Obama win the 2028 US Presidential Election?</td>
+      <td>rejected</td>
+      <td>unknown</td>
+      <td>nomination_to_general_dependency</td>
+      <td>2028_democrats_presidential_nomination</td>
+      <td>candidate_wins_nomination</td>
+      <td>candidate_winner_same_election</td>
+      <td>candidate</td>
+      <td>candidate</td>
+      <td>nomination</td>
+      <td>general_election</td>
+      <td>None</td>
+      <td>None</td>
+      <td>Democrats</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>needs_manual_review</td>
+      <td>ineligible</td>
+      <td>none</td>
+      <td></td>
+      <td>staged nomination/general relationship is analysis-only by default</td>
+      <td>[{"code": "nomination_to_general_dependency", "detail": "staged nomination/general relationship is analysis-only by default"}]</td>
+      <td>[{"code": "taxonomy_not_strategy_eligible", "detail": "staged nomination/general relationship is analysis-only by default"}]</td>
+      <td>0.4000</td>
+    </tr>
+    <tr>
+      <td>671c63a001cfdfe037255346d48f4dd6</td>
+      <td>559660</td>
+      <td>561237</td>
+      <td>Will Andy Beshear win the 2028 Democratic presidential nomination?</td>
+      <td>Will Andy Beshear win the 2028 US Presidential Election?</td>
+      <td>rejected</td>
+      <td>unknown</td>
+      <td>nomination_to_general_dependency</td>
+      <td>2028_democrats_presidential_nomination</td>
+      <td>candidate_wins_nomination</td>
+      <td>candidate_winner_same_election</td>
+      <td>candidate</td>
+      <td>candidate</td>
+      <td>nomination</td>
+      <td>general_election</td>
+      <td>None</td>
+      <td>None</td>
+      <td>Democrats</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>needs_manual_review</td>
+      <td>ineligible</td>
+      <td>none</td>
+      <td></td>
+      <td>staged nomination/general relationship is analysis-only by default</td>
+      <td>[{"code": "nomination_to_general_dependency", "detail": "staged nomination/general relationship is analysis-only by default"}]</td>
+      <td>[{"code": "taxonomy_not_strategy_eligible", "detail": "staged nomination/general relationship is analysis-only by default"}]</td>
+      <td>0.3989</td>
+    </tr>
+    <tr>
+      <td>67702d888fa0ce85614d831561f2d55b</td>
+      <td>559653</td>
+      <td>561231</td>
+      <td>Will Alexandria Ocasio-Cortez win the 2028 Democratic presidential nomination?</td>
+      <td>Will Alexandria Ocasio-Cortez win the 2028 US Presidential Election?</td>
+      <td>rejected</td>
+      <td>unknown</td>
+      <td>nomination_to_general_dependency</td>
+      <td>2028_democrats_presidential_nomination</td>
+      <td>candidate_wins_nomination</td>
+      <td>candidate_winner_same_election</td>
+      <td>candidate</td>
+      <td>candidate</td>
+      <td>nomination</td>
+      <td>general_election</td>
+      <td>None</td>
+      <td>None</td>
+      <td>Democrats</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>needs_manual_review</td>
+      <td>ineligible</td>
+      <td>none</td>
+      <td></td>
+      <td>staged nomination/general relationship is analysis-only by default</td>
+      <td>[{"code": "nomination_to_general_dependency", "detail": "staged nomination/general relationship is analysis-only by default"}]</td>
+      <td>[{"code": "taxonomy_not_strategy_eligible", "detail": "staged nomination/general relationship is analysis-only by default"}]</td>
+      <td>0.3989</td>
+    </tr>
+    <tr>
+      <td>9814f0b1f2c1e137cdd0f01081c9d79d</td>
+      <td>561248</td>
+      <td>561981</td>
+      <td>Will Vivek Ramaswamy win the 2028 US Presidential Election?</td>
+      <td>Will Vivek Ramaswamy win the 2028 Republican presidential nomination?</td>
+      <td>rejected</td>
+      <td>unknown</td>
+      <td>nomination_to_general_dependency</td>
+      <td>2028_us_presidential_election_candidate_winner</td>
+      <td>candidate_winner_same_election</td>
+      <td>candidate_wins_nomination</td>
+      <td>candidate</td>
+      <td>candidate</td>
+      <td>general_election</td>
+      <td>nomination</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>Republicans</td>
+      <td>None</td>
+      <td>None</td>
+      <td>needs_manual_review</td>
+      <td>ineligible</td>
+      <td>none</td>
+      <td></td>
+      <td>staged nomination/general relationship is analysis-only by default</td>
+      <td>[{"code": "nomination_to_general_dependency", "detail": "staged nomination/general relationship is analysis-only by default"}]</td>
+      <td>[{"code": "taxonomy_not_strategy_eligible", "detail": "staged nomination/general relationship is analysis-only by default"}]</td>
+      <td>0.3959</td>
+    </tr>
+    <tr>
+      <td>7b13eefd6d90d2688ac31722ff8efe17</td>
+      <td>561260</td>
+      <td>562005</td>
+      <td>Will Thomas Massie win the 2028 US Presidential Election?</td>
+      <td>Will Thomas Massie win the 2028 Republican presidential nomination?</td>
+      <td>rejected</td>
+      <td>unknown</td>
+      <td>nomination_to_general_dependency</td>
+      <td>2028_us_presidential_election_candidate_winner</td>
+      <td>candidate_winner_same_election</td>
+      <td>candidate_wins_nomination</td>
+      <td>candidate</td>
+      <td>candidate</td>
+      <td>general_election</td>
+      <td>nomination</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>Republicans</td>
+      <td>None</td>
+      <td>None</td>
+      <td>needs_manual_review</td>
+      <td>ineligible</td>
+      <td>none</td>
+      <td></td>
+      <td>staged nomination/general relationship is analysis-only by default</td>
+      <td>[{"code": "nomination_to_general_dependency", "detail": "staged nomination/general relationship is analysis-only by default"}]</td>
+      <td>[{"code": "taxonomy_not_strategy_eligible", "detail": "staged nomination/general relationship is analysis-only by default"}]</td>
+      <td>0.3940</td>
+    </tr>
+    <tr>
+      <td>5b9170e0c89e0e7ad7bb127a5796d918</td>
+      <td>559666</td>
+      <td>561247</td>
+      <td>Will Tim Walz win the 2028 Democratic presidential nomination?</td>
+      <td>Will Tim Walz win the 2028 US Presidential Election?</td>
+      <td>rejected</td>
+      <td>unknown</td>
+      <td>nomination_to_general_dependency</td>
+      <td>2028_democrats_presidential_nomination</td>
+      <td>candidate_wins_nomination</td>
+      <td>candidate_winner_same_election</td>
+      <td>candidate</td>
+      <td>candidate</td>
+      <td>nomination</td>
+      <td>general_election</td>
+      <td>None</td>
+      <td>None</td>
+      <td>Democrats</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>needs_manual_review</td>
+      <td>ineligible</td>
+      <td>none</td>
+      <td></td>
+      <td>staged nomination/general relationship is analysis-only by default</td>
+      <td>[{"code": "nomination_to_general_dependency", "detail": "staged nomination/general relationship is analysis-only by default"}]</td>
+      <td>[{"code": "taxonomy_not_strategy_eligible", "detail": "staged nomination/general relationship is analysis-only by default"}]</td>
+      <td>0.3933</td>
+    </tr>
+    <tr>
+      <td>1c302d09aad4deb9ff7250e3c822df1d</td>
+      <td>561238</td>
+      <td>561977</td>
+      <td>Will Glenn Youngkin win the 2028 US Presidential Election?</td>
+      <td>Will Glenn Youngkin win the 2028 Republican presidential nomination?</td>
+      <td>rejected</td>
+      <td>unknown</td>
+      <td>nomination_to_general_dependency</td>
+      <td>2028_us_presidential_election_candidate_winner</td>
+      <td>candidate_winner_same_election</td>
+      <td>candidate_wins_nomination</td>
+      <td>candidate</td>
+      <td>candidate</td>
+      <td>general_election</td>
+      <td>nomination</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>Republicans</td>
+      <td>None</td>
+      <td>None</td>
+      <td>needs_manual_review</td>
+      <td>ineligible</td>
+      <td>none</td>
+      <td></td>
+      <td>staged nomination/general relationship is analysis-only by default</td>
+      <td>[{"code": "nomination_to_general_dependency", "detail": "staged nomination/general relationship is analysis-only by default"}]</td>
+      <td>[{"code": "taxonomy_not_strategy_eligible", "detail": "staged nomination/general relationship is analysis-only by default"}]</td>
+      <td>0.3923</td>
+    </tr>
+    <tr>
+      <td>2d911c0905127bffd7fd430f4b610760</td>
+      <td>559654</td>
+      <td>561232</td>
+      <td>Will Pete Buttigieg win the 2028 Democratic presidential nomination?</td>
+      <td>Will Pete Buttigieg win the 2028 US Presidential Election?</td>
+      <td>rejected</td>
+      <td>unknown</td>
+      <td>nomination_to_general_dependency</td>
+      <td>2028_democrats_presidential_nomination</td>
+      <td>candidate_wins_nomination</td>
+      <td>candidate_winner_same_election</td>
+      <td>candidate</td>
+      <td>candidate</td>
+      <td>nomination</td>
+      <td>general_election</td>
+      <td>None</td>
+      <td>None</td>
+      <td>Democrats</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>needs_manual_review</td>
+      <td>ineligible</td>
+      <td>none</td>
+      <td></td>
+      <td>staged nomination/general relationship is analysis-only by default</td>
+      <td>[{"code": "nomination_to_general_dependency", "detail": "staged nomination/general relationship is analysis-only by default"}]</td>
+      <td>[{"code": "taxonomy_not_strategy_eligible", "detail": "staged nomination/general relationship is analysis-only by default"}]</td>
+      <td>0.3914</td>
+    </tr>
+    <tr>
+      <td>d1665f8688af505f6969f6abefb096d6</td>
+      <td>559694</td>
+      <td>561259</td>
+      <td>Will Ro Khanna win the 2028 Democratic presidential nomination?</td>
+      <td>Will Ro Khanna win the 2028 US Presidential Election?</td>
+      <td>rejected</td>
+      <td>unknown</td>
+      <td>nomination_to_general_dependency</td>
+      <td>2028_democrats_presidential_nomination</td>
+      <td>candidate_wins_nomination</td>
+      <td>candidate_winner_same_election</td>
+      <td>candidate</td>
+      <td>candidate</td>
+      <td>nomination</td>
+      <td>general_election</td>
+      <td>None</td>
+      <td>None</td>
+      <td>Democrats</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>needs_manual_review</td>
+      <td>ineligible</td>
+      <td>none</td>
+      <td></td>
+      <td>staged nomination/general relationship is analysis-only by default</td>
+      <td>[{"code": "nomination_to_general_dependency", "detail": "staged nomination/general relationship is analysis-only by default"}]</td>
+      <td>[{"code": "taxonomy_not_strategy_eligible", "detail": "staged nomination/general relationship is analysis-only by default"}]</td>
+      <td>0.3914</td>
+    </tr>
+    <tr>
+      <td>a32d8d6605c4ff9fc8381752bb637f2e</td>
+      <td>559655</td>
+      <td>561233</td>
+      <td>Will Josh Shapiro win the 2028 Democratic presidential nomination?</td>
+      <td>Will Josh Shapiro win the 2028 US Presidential Election?</td>
+      <td>rejected</td>
+      <td>unknown</td>
+      <td>nomination_to_general_dependency</td>
+      <td>2028_democrats_presidential_nomination</td>
+      <td>candidate_wins_nomination</td>
+      <td>candidate_winner_same_election</td>
+      <td>candidate</td>
+      <td>candidate</td>
+      <td>nomination</td>
+      <td>general_election</td>
+      <td>None</td>
+      <td>None</td>
+      <td>Democrats</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>needs_manual_review</td>
+      <td>ineligible</td>
+      <td>none</td>
+      <td></td>
+      <td>staged nomination/general relationship is analysis-only by default</td>
+      <td>[{"code": "nomination_to_general_dependency", "detail": "staged nomination/general relationship is analysis-only by default"}]</td>
+      <td>[{"code": "taxonomy_not_strategy_eligible", "detail": "staged nomination/general relationship is analysis-only by default"}]</td>
+      <td>0.3903</td>
+    </tr>
+    <tr>
+      <td>3c4c4d4734389fadaed96d4f40e0c654</td>
+      <td>561250</td>
+      <td>561990</td>
+      <td>Will Elon Musk win the 2028 US Presidential Election?</td>
+      <td>Will Elon Musk win the 2028 Republican presidential nomination?</td>
+      <td>rejected</td>
+      <td>unknown</td>
+      <td>nomination_to_general_dependency</td>
+      <td>2028_us_presidential_election_candidate_winner</td>
+      <td>candidate_winner_same_election</td>
+      <td>candidate_wins_nomination</td>
+      <td>candidate</td>
+      <td>candidate</td>
+      <td>general_election</td>
+      <td>nomination</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>Republicans</td>
+      <td>None</td>
+      <td>None</td>
+      <td>needs_manual_review</td>
+      <td>ineligible</td>
+      <td>none</td>
+      <td></td>
+      <td>staged nomination/general relationship is analysis-only by default</td>
+      <td>[{"code": "nomination_to_general_dependency", "detail": "staged nomination/general relationship is analysis-only by default"}]</td>
+      <td>[{"code": "taxonomy_not_strategy_eligible", "detail": "staged nomination/general relationship is analysis-only by default"}]</td>
+      <td>0.3903</td>
+    </tr>
+    <tr>
+      <td>0757dba0a05e54599e481c229b5c61cf</td>
+      <td>561242</td>
+      <td>561976</td>
+      <td>Will Tulsi Gabbard win the 2028 US Presidential Election?</td>
+      <td>Will Tulsi Gabbard win the 2028 Republican presidential nomination?</td>
+      <td>rejected</td>
+      <td>unknown</td>
+      <td>nomination_to_general_dependency</td>
+      <td>2028_us_presidential_election_candidate_winner</td>
+      <td>candidate_winner_same_election</td>
+      <td>candidate_wins_nomination</td>
+      <td>candidate</td>
+      <td>candidate</td>
+      <td>general_election</td>
+      <td>nomination</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>Republicans</td>
+      <td>None</td>
+      <td>None</td>
+      <td>needs_manual_review</td>
+      <td>ineligible</td>
+      <td>none</td>
+      <td></td>
+      <td>staged nomination/general relationship is analysis-only by default</td>
+      <td>[{"code": "nomination_to_general_dependency", "detail": "staged nomination/general relationship is analysis-only by default"}]</td>
+      <td>[{"code": "taxonomy_not_strategy_eligible", "detail": "staged nomination/general relationship is analysis-only by default"}]</td>
+      <td>0.3903</td>
+    </tr>
+    <tr>
+      <td>d83ea6ad30dbdbf28a07297bbba46ff2</td>
+      <td>559695</td>
+      <td>561262</td>
+      <td>Will James Talarico win the 2028 Democratic presidential nomination?</td>
+      <td>Will James Talarico win the 2028 US Presidential Election?</td>
+      <td>rejected</td>
+      <td>unknown</td>
+      <td>nomination_to_general_dependency</td>
+      <td>2028_democrats_presidential_nomination</td>
+      <td>candidate_wins_nomination</td>
+      <td>candidate_winner_same_election</td>
+      <td>candidate</td>
+      <td>candidate</td>
+      <td>nomination</td>
+      <td>general_election</td>
+      <td>None</td>
+      <td>None</td>
+      <td>Democrats</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>needs_manual_review</td>
+      <td>ineligible</td>
+      <td>none</td>
+      <td></td>
+      <td>staged nomination/general relationship is analysis-only by default</td>
+      <td>[{"code": "nomination_to_general_dependency", "detail": "staged nomination/general relationship is analysis-only by default"}]</td>
+      <td>[{"code": "taxonomy_not_strategy_eligible", "detail": "staged nomination/general relationship is analysis-only by default"}]</td>
+      <td>0.3886</td>
+    </tr>
+    <tr>
+      <td>cec0db338843fe1406f15edb794b2acd</td>
+      <td>561246</td>
+      <td>561979</td>
+      <td>Will Ron DeSantis win the 2028 US Presidential Election?</td>
+      <td>Will Ron DeSantis win the 2028 Republican presidential nomination?</td>
+      <td>rejected</td>
+      <td>unknown</td>
+      <td>nomination_to_general_dependency</td>
+      <td>2028_us_presidential_election_candidate_winner</td>
+      <td>candidate_winner_same_election</td>
+      <td>candidate_wins_nomination</td>
+      <td>candidate</td>
+      <td>candidate</td>
+      <td>general_election</td>
+      <td>nomination</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>Republicans</td>
+      <td>None</td>
+      <td>None</td>
+      <td>needs_manual_review</td>
+      <td>ineligible</td>
+      <td>none</td>
+      <td></td>
+      <td>staged nomination/general relationship is analysis-only by default</td>
+      <td>[{"code": "nomination_to_general_dependency", "detail": "staged nomination/general relationship is analysis-only by default"}]</td>
+      <td>[{"code": "taxonomy_not_strategy_eligible", "detail": "staged nomination/general relationship is analysis-only by default"}]</td>
+      <td>0.3886</td>
+    </tr>
+    <tr>
+      <td>2de26bc261398987df16efb1545e1843</td>
+      <td>561264</td>
+      <td>562008</td>
+      <td>Will Pete Hegseth win the 2028 US Presidential Election?</td>
+      <td>Will Pete Hegseth win the 2028 Republican presidential nomination?</td>
+      <td>rejected</td>
+      <td>unknown</td>
+      <td>nomination_to_general_dependency</td>
+      <td>2028_us_presidential_election_candidate_winner</td>
+      <td>candidate_winner_same_election</td>
+      <td>candidate_wins_nomination</td>
+      <td>candidate</td>
+      <td>candidate</td>
+      <td>general_election</td>
+      <td>nomination</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>Republicans</td>
+      <td>None</td>
+      <td>None</td>
+      <td>needs_manual_review</td>
+      <td>ineligible</td>
+      <td>none</td>
+      <td></td>
+      <td>staged nomination/general relationship is analysis-only by default</td>
+      <td>[{"code": "nomination_to_general_dependency", "detail": "staged nomination/general relationship is analysis-only by default"}]</td>
+      <td>[{"code": "coverage_insufficient_a", "detail": "market_a coverage_score=0.56"}]</td>
+      <td>0.3883</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Same Reference Only Examples</h2>
+<table class="dataframe report-table">
+  <thead>
+    <tr style="text-align: right;">
+      <th>relationship_id</th>
+      <th>market_id_a</th>
+      <th>market_id_b</th>
+      <th>question_a</th>
+      <th>question_b</th>
+      <th>relationship_type</th>
+      <th>relationship_family</th>
+      <th>relationship_subtype</th>
+      <th>outcome_space_id</th>
+      <th>outcome_subtype_a</th>
+      <th>outcome_subtype_b</th>
+      <th>entity_type_a</th>
+      <th>entity_type_b</th>
+      <th>stage_a</th>
+      <th>stage_b</th>
+      <th>candidate_a</th>
+      <th>candidate_b</th>
+      <th>party_a</th>
+      <th>party_b</th>
+      <th>team_a</th>
+      <th>team_b</th>
+      <th>validation_status</th>
+      <th>strategy_eligibility_status</th>
+      <th>strategy_family</th>
+      <th>mixed_subtype_reason</th>
+      <th>strategy_eligible_reason</th>
+      <th>rejection_reasons_json</th>
+      <th>strategy_exclusion_reasons_json</th>
+      <th>final_confidence</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>a38a46b0aa9e43da32288b6491f29802</td>
+      <td>540843</td>
+      <td>540844</td>
+      <td>Will China invades Taiwan before GTA VI?</td>
+      <td>Will bitcoin hit $1m before GTA VI?</td>
+      <td>same_reference_clock</td>
+      <td>same_reference_only</td>
+      <td>same_reference_clock_only</td>
+      <td>gta_vi_reference_clock</td>
+      <td>movie_release_before_reference</td>
+      <td>movie_release_before_reference</td>
+      <td>event</td>
+      <td>event</td>
+      <td>temporal</td>
+      <td>temporal</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>needs_manual_review</td>
+      <td>ineligible</td>
+      <td>none</td>
+      <td></td>
+      <td>shared reference clock does not create a deterministic tradable pair</td>
+      <td>[{"code": "manual_review_band", "detail": "final_confidence=0.420 in review band"}]</td>
+      <td>[{"code": "no_paired_market", "detail": "temporal relationships require a paired inverse market for arbitrage"}]</td>
+      <td>0.4200</td>
+    </tr>
+    <tr>
+      <td>eb2787e350b8e0294d593c91947117e4</td>
+      <td>540843</td>
+      <td>573647</td>
+      <td>Will China invades Taiwan before GTA VI?</td>
+      <td>Will GPT-6 be released before GTA VI?</td>
+      <td>same_reference_clock</td>
+      <td>same_reference_only</td>
+      <td>same_reference_clock_only</td>
+      <td>gta_vi_reference_clock</td>
+      <td>movie_release_before_reference</td>
+      <td>movie_release_before_reference</td>
+      <td>event</td>
+      <td>event</td>
+      <td>temporal</td>
+      <td>temporal</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>needs_manual_review</td>
+      <td>ineligible</td>
+      <td>none</td>
+      <td></td>
+      <td>shared reference clock does not create a deterministic tradable pair</td>
+      <td>[{"code": "manual_review_band", "detail": "final_confidence=0.420 in review band"}]</td>
+      <td>[{"code": "coverage_insufficient_b", "detail": "market_b coverage_score=0.54"}]</td>
+      <td>0.4200</td>
+    </tr>
+    <tr>
+      <td>656c1df5bb31997622521bc9e9f0adc6</td>
+      <td>540819</td>
+      <td>540843</td>
+      <td>Will Jesus Christ return before GTA VI?</td>
+      <td>Will China invades Taiwan before GTA VI?</td>
+      <td>same_reference_clock</td>
+      <td>same_reference_only</td>
+      <td>same_reference_clock_only</td>
+      <td>gta_vi_reference_clock</td>
+      <td>movie_release_before_reference</td>
+      <td>movie_release_before_reference</td>
+      <td>event</td>
+      <td>event</td>
+      <td>temporal</td>
+      <td>temporal</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>needs_manual_review</td>
+      <td>ineligible</td>
+      <td>none</td>
+      <td></td>
+      <td>shared reference clock does not create a deterministic tradable pair</td>
+      <td>[{"code": "manual_review_band", "detail": "final_confidence=0.420 in review band"}]</td>
+      <td>[{"code": "no_paired_market", "detail": "temporal relationships require a paired inverse market for arbitrage"}]</td>
+      <td>0.4200</td>
+    </tr>
+    <tr>
+      <td>3510fa79844874170bc5aa27001fd3f9</td>
+      <td>540818</td>
+      <td>540843</td>
+      <td>New Playboi Carti Album before GTA VI?</td>
+      <td>Will China invades Taiwan before GTA VI?</td>
+      <td>same_reference_clock</td>
+      <td>same_reference_only</td>
+      <td>same_reference_clock_only</td>
+      <td>gta_vi_reference_clock</td>
+      <td>album_release_before_reference</td>
+      <td>movie_release_before_reference</td>
+      <td>event</td>
+      <td>event</td>
+      <td>temporal</td>
+      <td>temporal</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>needs_manual_review</td>
+      <td>ineligible</td>
+      <td>none</td>
+      <td></td>
+      <td>shared reference clock does not create a deterministic tradable pair</td>
+      <td>[{"code": "manual_review_band", "detail": "final_confidence=0.420 in review band"}]</td>
+      <td>[{"code": "no_paired_market", "detail": "temporal relationships require a paired inverse market for arbitrage"}]</td>
+      <td>0.4200</td>
+    </tr>
+    <tr>
+      <td>9f8979f5595d8799aa56516df800886a</td>
+      <td>540817</td>
+      <td>540843</td>
+      <td>New Rihanna Album before GTA VI?</td>
+      <td>Will China invades Taiwan before GTA VI?</td>
+      <td>same_reference_clock</td>
+      <td>same_reference_only</td>
+      <td>same_reference_clock_only</td>
+      <td>gta_vi_reference_clock</td>
+      <td>album_release_before_reference</td>
+      <td>movie_release_before_reference</td>
+      <td>event</td>
+      <td>event</td>
+      <td>temporal</td>
+      <td>temporal</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>needs_manual_review</td>
+      <td>ineligible</td>
+      <td>none</td>
+      <td></td>
+      <td>shared reference clock does not create a deterministic tradable pair</td>
+      <td>[{"code": "manual_review_band", "detail": "final_confidence=0.420 in review band"}]</td>
+      <td>[{"code": "no_paired_market", "detail": "temporal relationships require a paired inverse market for arbitrage"}]</td>
+      <td>0.4200</td>
+    </tr>
+    <tr>
+      <td>2fc7c0bfadee801d685006086656d299</td>
+      <td>540820</td>
+      <td>540843</td>
+      <td>Trump out as President before GTA VI?</td>
+      <td>Will China invades Taiwan before GTA VI?</td>
+      <td>same_reference_clock</td>
+      <td>same_reference_only</td>
+      <td>same_reference_clock_only</td>
+      <td>gta_vi_reference_clock</td>
+      <td>movie_release_before_reference</td>
+      <td>movie_release_before_reference</td>
+      <td>event</td>
+      <td>event</td>
+      <td>temporal</td>
+      <td>temporal</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>needs_manual_review</td>
+      <td>ineligible</td>
+      <td>none</td>
+      <td></td>
+      <td>shared reference clock does not create a deterministic tradable pair</td>
+      <td>[{"code": "manual_review_band", "detail": "final_confidence=0.420 in review band"}]</td>
+      <td>[{"code": "no_paired_market", "detail": "temporal relationships require a paired inverse market for arbitrage"}]</td>
+      <td>0.4200</td>
+    </tr>
+    <tr>
+      <td>7e196c9cbf9fd7930dfcbf324ce82ebd</td>
+      <td>540817</td>
+      <td>540818</td>
+      <td>New Rihanna Album before GTA VI?</td>
+      <td>New Playboi Carti Album before GTA VI?</td>
+      <td>rejected</td>
+      <td>same_reference_only</td>
+      <td>same_reference_clock_only</td>
+      <td>gta_vi_reference_clock</td>
+      <td>album_release_before_reference</td>
+      <td>album_release_before_reference</td>
+      <td>event</td>
+      <td>event</td>
+      <td>temporal</td>
+      <td>temporal</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>rejected</td>
+      <td>ineligible</td>
+      <td>none</td>
+      <td></td>
+      <td>shared reference clock only; no deterministic implication</td>
+      <td>[{"code": "entity_mismatch", "detail": "entity_overlap=0.060 &lt; 0.5"}]</td>
+      <td>[{"code": "taxonomy_not_strategy_eligible", "detail": "shared reference clock only; no deterministic implication"}]</td>
+      <td>0.3453</td>
+    </tr>
+    <tr>
+      <td>e02bbc12cf27e2f1c7892aeaf4730cdf</td>
+      <td>540819</td>
+      <td>540820</td>
+      <td>Will Jesus Christ return before GTA VI?</td>
+      <td>Trump out as President before GTA VI?</td>
+      <td>rejected</td>
+      <td>same_reference_only</td>
+      <td>same_reference_clock_only</td>
+      <td>gta_vi_reference_clock</td>
+      <td>movie_release_before_reference</td>
+      <td>movie_release_before_reference</td>
+      <td>event</td>
+      <td>event</td>
+      <td>temporal</td>
+      <td>temporal</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>rejected</td>
+      <td>ineligible</td>
+      <td>none</td>
+      <td></td>
+      <td>shared reference clock only; no deterministic implication</td>
+      <td>[{"code": "entity_mismatch", "detail": "entity_overlap=0.060 &lt; 0.5"}]</td>
+      <td>[{"code": "taxonomy_not_strategy_eligible", "detail": "shared reference clock only; no deterministic implication"}]</td>
+      <td>0.2582</td>
+    </tr>
+    <tr>
+      <td>323a222f5b4e83bb756ed5a6e3c939a1</td>
+      <td>540819</td>
+      <td>573647</td>
+      <td>Will Jesus Christ return before GTA VI?</td>
+      <td>Will GPT-6 be released before GTA VI?</td>
+      <td>rejected</td>
+      <td>same_reference_only</td>
+      <td>same_reference_clock_only</td>
+      <td>gta_vi_reference_clock</td>
+      <td>movie_release_before_reference</td>
+      <td>movie_release_before_reference</td>
+      <td>event</td>
+      <td>event</td>
+      <td>temporal</td>
+      <td>temporal</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>rejected</td>
+      <td>ineligible</td>
+      <td>none</td>
+      <td></td>
+      <td>shared reference clock only; no deterministic implication</td>
+      <td>[{"code": "entity_mismatch", "detail": "entity_overlap=0.100 &lt; 0.5"}]</td>
+      <td>[{"code": "coverage_insufficient_b", "detail": "market_b coverage_score=0.54"}]</td>
+      <td>0.2581</td>
+    </tr>
+    <tr>
+      <td>44b90050a17ee86d2db590ea611662e1</td>
+      <td>540820</td>
+      <td>540844</td>
+      <td>Trump out as President before GTA VI?</td>
+      <td>Will bitcoin hit $1m before GTA VI?</td>
+      <td>rejected</td>
+      <td>same_reference_only</td>
+      <td>same_reference_clock_only</td>
+      <td>gta_vi_reference_clock</td>
+      <td>movie_release_before_reference</td>
+      <td>movie_release_before_reference</td>
+      <td>event</td>
+      <td>event</td>
+      <td>temporal</td>
+      <td>temporal</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>rejected</td>
+      <td>ineligible</td>
+      <td>none</td>
+      <td></td>
+      <td>shared reference clock only; no deterministic implication</td>
+      <td>[{"code": "entity_mismatch", "detail": "entity_overlap=0.060 &lt; 0.5"}]</td>
+      <td>[{"code": "taxonomy_not_strategy_eligible", "detail": "shared reference clock only; no deterministic implication"}]</td>
+      <td>0.2534</td>
+    </tr>
+    <tr>
+      <td>d6b7e9ccd5f194edc1dbaf107b3b87c2</td>
+      <td>540819</td>
+      <td>540844</td>
+      <td>Will Jesus Christ return before GTA VI?</td>
+      <td>Will bitcoin hit $1m before GTA VI?</td>
+      <td>rejected</td>
+      <td>same_reference_only</td>
+      <td>same_reference_clock_only</td>
+      <td>gta_vi_reference_clock</td>
+      <td>movie_release_before_reference</td>
+      <td>movie_release_before_reference</td>
+      <td>event</td>
+      <td>event</td>
+      <td>temporal</td>
+      <td>temporal</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>rejected</td>
+      <td>ineligible</td>
+      <td>none</td>
+      <td></td>
+      <td>shared reference clock only; no deterministic implication</td>
+      <td>[{"code": "entity_mismatch", "detail": "entity_overlap=0.100 &lt; 0.5"}]</td>
+      <td>[{"code": "taxonomy_not_strategy_eligible", "detail": "shared reference clock only; no deterministic implication"}]</td>
+      <td>0.2533</td>
+    </tr>
+    <tr>
+      <td>3408dfe3c22c0d8ccb013839c62ae2aa</td>
+      <td>540844</td>
+      <td>573647</td>
+      <td>Will bitcoin hit $1m before GTA VI?</td>
+      <td>Will GPT-6 be released before GTA VI?</td>
+      <td>rejected</td>
+      <td>same_reference_only</td>
+      <td>same_reference_clock_only</td>
+      <td>gta_vi_reference_clock</td>
+      <td>movie_release_before_reference</td>
+      <td>movie_release_before_reference</td>
+      <td>event</td>
+      <td>event</td>
+      <td>temporal</td>
+      <td>temporal</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>rejected</td>
+      <td>ineligible</td>
+      <td>none</td>
+      <td></td>
+      <td>shared reference clock only; no deterministic implication</td>
+      <td>[{"code": "entity_mismatch", "detail": "entity_overlap=0.100 &lt; 0.5"}]</td>
+      <td>[{"code": "coverage_insufficient_b", "detail": "market_b coverage_score=0.54"}]</td>
+      <td>0.2533</td>
+    </tr>
+    <tr>
+      <td>759843b8ca4b1c0c5f6cd9d21c0f7f06</td>
+      <td>540820</td>
+      <td>573647</td>
+      <td>Trump out as President before GTA VI?</td>
+      <td>Will GPT-6 be released before GTA VI?</td>
+      <td>rejected</td>
+      <td>same_reference_only</td>
+      <td>same_reference_clock_only</td>
+      <td>gta_vi_reference_clock</td>
+      <td>movie_release_before_reference</td>
+      <td>movie_release_before_reference</td>
+      <td>event</td>
+      <td>event</td>
+      <td>temporal</td>
+      <td>temporal</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>rejected</td>
+      <td>ineligible</td>
+      <td>none</td>
+      <td></td>
+      <td>shared reference clock only; no deterministic implication</td>
+      <td>[{"code": "entity_mismatch", "detail": "entity_overlap=0.060 &lt; 0.5"}]</td>
+      <td>[{"code": "coverage_insufficient_b", "detail": "market_b coverage_score=0.54"}]</td>
+      <td>0.2501</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Broad Same Topic No Trade</h2>
+<table class="dataframe report-table">
+  <thead>
+    <tr style="text-align: right;">
+      <th>relationship_id</th>
+      <th>market_id_a</th>
+      <th>market_id_b</th>
+      <th>question_a</th>
+      <th>question_b</th>
+      <th>relationship_type</th>
+      <th>relationship_family</th>
+      <th>relationship_subtype</th>
+      <th>outcome_space_id</th>
+      <th>outcome_subtype_a</th>
+      <th>outcome_subtype_b</th>
+      <th>entity_type_a</th>
+      <th>entity_type_b</th>
+      <th>stage_a</th>
+      <th>stage_b</th>
+      <th>candidate_a</th>
+      <th>candidate_b</th>
+      <th>party_a</th>
+      <th>party_b</th>
+      <th>team_a</th>
+      <th>team_b</th>
+      <th>validation_status</th>
+      <th>strategy_eligibility_status</th>
+      <th>strategy_family</th>
+      <th>mixed_subtype_reason</th>
+      <th>strategy_eligible_reason</th>
+      <th>rejection_reasons_json</th>
+      <th>strategy_exclusion_reasons_json</th>
+      <th>final_confidence</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>fdaf077bd7481f21faf221b1784de8cc</td>
+      <td>562829</td>
+      <td>562832</td>
+      <td>2026 Balance of Power: D Senate, R House</td>
+      <td>2026 Balance of Power: Other</td>
+      <td>same_topic_no_trade</td>
+      <td>unknown</td>
+      <td>same_topic_no_trade</td>
+      <td></td>
+      <td>same_topic_no_trade</td>
+      <td>same_topic_no_trade</td>
+      <td>unknown</td>
+      <td>unknown</td>
+      <td></td>
+      <td></td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>rejected</td>
+      <td>ineligible</td>
+      <td>none</td>
+      <td></td>
+      <td>not strategy eligible by default</td>
+      <td>[{"code": "manual_review_band", "detail": "final_confidence=0.390 below floor"}]</td>
+      <td>[{"code": "coverage_insufficient_a", "detail": "market_a coverage_score=0.50"}, {"code": "coverage_insufficient_b", "detail": "market_b coverage_score=0.51"}]</td>
+      <td>0.3905</td>
+    </tr>
+    <tr>
+      <td>12ee4d0c0d33b244bd89094dfb167a7a</td>
+      <td>572110</td>
+      <td>572133</td>
+      <td>Aaron Taylor-Johnson announced as next James Bond?</td>
+      <td>No one announced as next James Bond?</td>
+      <td>same_topic_no_trade</td>
+      <td>mutual_exclusion</td>
+      <td>next_actor_announced</td>
+      <td>next_actor_announced</td>
+      <td>next_actor_announced</td>
+      <td>next_actor_announced</td>
+      <td>candidate</td>
+      <td>candidate</td>
+      <td>announcement</td>
+      <td>announcement</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>rejected</td>
+      <td>ineligible</td>
+      <td>pairwise_mutual_exclusion</td>
+      <td></td>
+      <td>same outcome subtype/stage/scope with different options</td>
+      <td>[{"code": "manual_review_band", "detail": "final_confidence=0.390 below floor"}]</td>
+      <td>[{"code": "coverage_insufficient_a", "detail": "market_a coverage_score=0.15"}, {"code": "coverage_insufficient_b", "detail": "market_b coverage_score=0.15"}]</td>
+      <td>0.3900</td>
+    </tr>
+    <tr>
+      <td>9ee3ddd31b7f5f1643676778981efdc3</td>
+      <td>568116</td>
+      <td>568117</td>
+      <td>Will Trump be impeached by end of 2026?</td>
+      <td>Will Trump resign by December 31, 2026?</td>
+      <td>same_topic_no_trade</td>
+      <td>unknown</td>
+      <td>same_topic_no_trade</td>
+      <td></td>
+      <td>same_topic_no_trade</td>
+      <td>same_topic_no_trade</td>
+      <td>unknown</td>
+      <td>unknown</td>
+      <td></td>
+      <td></td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>rejected</td>
+      <td>ineligible</td>
+      <td>none</td>
+      <td></td>
+      <td>not strategy eligible by default</td>
+      <td>[{"code": "manual_review_band", "detail": "final_confidence=0.389 below floor"}]</td>
+      <td>[{"code": "coverage_insufficient_a", "detail": "market_a coverage_score=0.50"}, {"code": "coverage_insufficient_b", "detail": "market_b coverage_score=0.59"}]</td>
+      <td>0.3886</td>
+    </tr>
+    <tr>
+      <td>fe9111a88781b64a33e098802b14e582</td>
+      <td>572125</td>
+      <td>572133</td>
+      <td>Josh O'Connor announced as next James Bond?</td>
+      <td>No one announced as next James Bond?</td>
+      <td>same_topic_no_trade</td>
+      <td>mutual_exclusion</td>
+      <td>next_actor_announced</td>
+      <td>next_actor_announced</td>
+      <td>next_actor_announced</td>
+      <td>next_actor_announced</td>
+      <td>candidate</td>
+      <td>candidate</td>
+      <td>announcement</td>
+      <td>announcement</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>rejected</td>
+      <td>ineligible</td>
+      <td>pairwise_mutual_exclusion</td>
+      <td></td>
+      <td>same outcome subtype/stage/scope with different options</td>
+      <td>[{"code": "manual_review_band", "detail": "final_confidence=0.385 below floor"}]</td>
+      <td>[{"code": "coverage_insufficient_a", "detail": "market_a coverage_score=0.15"}, {"code": "coverage_insufficient_b", "detail": "market_b coverage_score=0.15"}]</td>
+      <td>0.3850</td>
+    </tr>
+    <tr>
+      <td>a54bc6cd4c894a685789ac7ab44b669c</td>
+      <td>572121</td>
+      <td>572133</td>
+      <td>Callum Turner announced as next James Bond?</td>
+      <td>No one announced as next James Bond?</td>
+      <td>same_topic_no_trade</td>
+      <td>mutual_exclusion</td>
+      <td>next_actor_announced</td>
+      <td>next_actor_announced</td>
+      <td>next_actor_announced</td>
+      <td>next_actor_announced</td>
+      <td>candidate</td>
+      <td>candidate</td>
+      <td>announcement</td>
+      <td>announcement</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>rejected</td>
+      <td>ineligible</td>
+      <td>pairwise_mutual_exclusion</td>
+      <td></td>
+      <td>same outcome subtype/stage/scope with different options</td>
+      <td>[{"code": "manual_review_band", "detail": "final_confidence=0.385 below floor"}]</td>
+      <td>[{"code": "coverage_insufficient_a", "detail": "market_a coverage_score=0.15"}, {"code": "coverage_insufficient_b", "detail": "market_b coverage_score=0.15"}]</td>
+      <td>0.3850</td>
+    </tr>
+    <tr>
+      <td>8fca1446307d7e264bc190c5c497565b</td>
+      <td>572772</td>
+      <td>578527</td>
+      <td>Will Aston Villa finish in 3rd place in the 2025-26 English Premier League?</td>
+      <td>Will Aston Villa win the 2025-26 UEFA Europa League?</td>
+      <td>same_topic_no_trade</td>
+      <td>unknown</td>
+      <td>same_topic_no_trade</td>
+      <td>premier_league_finish_position</td>
+      <td>team_exact_finish_position</td>
+      <td>same_topic_no_trade</td>
+      <td>team</td>
+      <td>unknown</td>
+      <td>league_finish</td>
+      <td></td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>rejected</td>
+      <td>ineligible</td>
+      <td>none</td>
+      <td></td>
+      <td>not strategy eligible by default</td>
+      <td>[{"code": "manual_review_band", "detail": "final_confidence=0.385 below floor"}]</td>
+      <td>[{"code": "coverage_insufficient_a", "detail": "market_a coverage_score=0.15"}, {"code": "coverage_insufficient_b", "detail": "market_b coverage_score=0.15"}]</td>
+      <td>0.3850</td>
+    </tr>
+    <tr>
+      <td>f0e5c78832c5144950c17377e3fe698d</td>
+      <td>562830</td>
+      <td>562832</td>
+      <td>2026 Balance of Power: R Senate, D House</td>
+      <td>2026 Balance of Power: Other</td>
+      <td>same_topic_no_trade</td>
+      <td>unknown</td>
+      <td>same_topic_no_trade</td>
+      <td></td>
+      <td>same_topic_no_trade</td>
+      <td>same_topic_no_trade</td>
+      <td>unknown</td>
+      <td>unknown</td>
+      <td></td>
+      <td></td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>rejected</td>
+      <td>ineligible</td>
+      <td>none</td>
+      <td></td>
+      <td>not strategy eligible by default</td>
+      <td>[{"code": "manual_review_band", "detail": "final_confidence=0.382 below floor"}]</td>
+      <td>[{"code": "coverage_insufficient_a", "detail": "market_a coverage_score=0.50"}, {"code": "coverage_insufficient_b", "detail": "market_b coverage_score=0.51"}]</td>
+      <td>0.3816</td>
+    </tr>
+    <tr>
+      <td>5520cafe255f6f916fe43b436a38b448</td>
+      <td>572110</td>
+      <td>572122</td>
+      <td>Aaron Taylor-Johnson announced as next James Bond?</td>
+      <td>Jack Lowdon announced as next James Bond?</td>
+      <td>same_topic_no_trade</td>
+      <td>mutual_exclusion</td>
+      <td>next_actor_announced</td>
+      <td>next_actor_announced</td>
+      <td>next_actor_announced</td>
+      <td>next_actor_announced</td>
+      <td>candidate</td>
+      <td>candidate</td>
+      <td>announcement</td>
+      <td>announcement</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>rejected</td>
+      <td>ineligible</td>
+      <td>pairwise_mutual_exclusion</td>
+      <td></td>
+      <td>same outcome subtype/stage/scope with different options</td>
+      <td>[{"code": "manual_review_band", "detail": "final_confidence=0.365 below floor"}]</td>
+      <td>[{"code": "coverage_insufficient_a", "detail": "market_a coverage_score=0.15"}, {"code": "coverage_insufficient_b", "detail": "market_b coverage_score=0.15"}]</td>
+      <td>0.3652</td>
+    </tr>
+    <tr>
+      <td>fef54dfc5b96c7695f09c69e80c9a5d5</td>
+      <td>566140</td>
+      <td>572733</td>
+      <td>Will Arsenal win the 2025–26 Champions League?</td>
+      <td>Will Arsenal finish in 2nd place in the 2025-26 English Premier League?</td>
+      <td>same_topic_no_trade</td>
+      <td>unknown</td>
+      <td>same_topic_no_trade</td>
+      <td>premier_league_finish_position</td>
+      <td>same_topic_no_trade</td>
+      <td>team_exact_finish_position</td>
+      <td>unknown</td>
+      <td>team</td>
+      <td></td>
+      <td>league_finish</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>rejected</td>
+      <td>ineligible</td>
+      <td>none</td>
+      <td></td>
+      <td>not strategy eligible by default</td>
+      <td>[{"code": "manual_review_band", "detail": "final_confidence=0.356 below floor"}]</td>
+      <td>[{"code": "coverage_insufficient_a", "detail": "market_a coverage_score=0.15"}, {"code": "coverage_insufficient_b", "detail": "market_b coverage_score=0.15"}]</td>
+      <td>0.3555</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Manual Review</h2>
+<table class="dataframe report-table">
+  <thead>
+    <tr style="text-align: right;">
+      <th>relationship_id</th>
+      <th>market_id_a</th>
+      <th>market_id_b</th>
+      <th>question_a</th>
+      <th>question_b</th>
+      <th>relationship_type</th>
+      <th>relationship_family</th>
+      <th>relationship_subtype</th>
+      <th>outcome_space_id</th>
+      <th>outcome_subtype_a</th>
+      <th>outcome_subtype_b</th>
+      <th>entity_type_a</th>
+      <th>entity_type_b</th>
+      <th>stage_a</th>
+      <th>stage_b</th>
+      <th>candidate_a</th>
+      <th>candidate_b</th>
+      <th>party_a</th>
+      <th>party_b</th>
+      <th>team_a</th>
+      <th>team_b</th>
+      <th>validation_status</th>
+      <th>strategy_eligibility_status</th>
+      <th>strategy_family</th>
+      <th>mixed_subtype_reason</th>
+      <th>strategy_eligible_reason</th>
+      <th>rejection_reasons_json</th>
+      <th>strategy_exclusion_reasons_json</th>
+      <th>final_confidence</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>e1872765035ad88c7f40da4b8df7da14</td>
+      <td>569346</td>
+      <td>569369</td>
+      <td>Will Daniel Quintero win the 1st round of the 2026 Colombian presidential election?</td>
+      <td>Will Daniel Quintero win the 2026 Colombian presidential election?</td>
+      <td>rejected</td>
+      <td>unknown</td>
+      <td>first_round_to_general_dependency</td>
+      <td>2026_colombian_presidential_election_first_round</td>
+      <td>first_round_winner</td>
+      <td>candidate_winner_same_election</td>
+      <td>candidate</td>
+      <td>candidate</td>
+      <td>first_round</td>
+      <td>general_election</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>needs_manual_review</td>
+      <td>ineligible</td>
+      <td>none</td>
+      <td></td>
+      <td>staged election relationship requires terms review</td>
+      <td>[{"code": "first_round_to_general_dependency", "detail": "staged election relationship requires terms review"}]</td>
+      <td>[{"code": "coverage_insufficient_a", "detail": "market_a coverage_score=0.15"}, {"code": "coverage_insufficient_b", "detail": "market_b coverage_score=0.15"}]</td>
+      <td>0.5618</td>
+    </tr>
+    <tr>
+      <td>a6edab19118abe85173fa9a8b0f4cbe4</td>
+      <td>553856</td>
+      <td>564210</td>
+      <td>Will the Oklahoma City Thunder win the 2026 NBA Finals?</td>
+      <td>Will the Oklahoma City Thunder win the NBA Western Conference Finals?</td>
+      <td>inverse</td>
+      <td>contradiction</td>
+      <td>same_topic_no_trade</td>
+      <td>nba_finals</td>
+      <td>team_wins_championship</td>
+      <td>team_wins_conference</td>
+      <td>team</td>
+      <td>team</td>
+      <td>championship</td>
+      <td>conference</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>Oklahoma City Thunder</td>
+      <td>None</td>
+      <td>needs_manual_review</td>
+      <td>ineligible</td>
+      <td>none</td>
+      <td></td>
+      <td>not strategy eligible by default</td>
+      <td>[{"code": "manual_review_band", "detail": "final_confidence=0.557 in review band"}]</td>
+      <td>[{"code": "coverage_insufficient_a", "detail": "market_a coverage_score=0.15"}, {"code": "coverage_insufficient_b", "detail": "market_b coverage_score=0.15"}]</td>
+      <td>0.5571</td>
+    </tr>
+    <tr>
+      <td>a76d8c40b710308fead83c35e873b19f</td>
+      <td>569345</td>
+      <td>569370</td>
+      <td>Will Roy Barreras win the 1st round of the 2026 Colombian presidential election?</td>
+      <td>Will Roy Barreras win the 2026 Colombian presidential election?</td>
+      <td>rejected</td>
+      <td>unknown</td>
+      <td>first_round_to_general_dependency</td>
+      <td>2026_colombian_presidential_election_first_round</td>
+      <td>first_round_winner</td>
+      <td>candidate_winner_same_election</td>
+      <td>candidate</td>
+      <td>candidate</td>
+      <td>first_round</td>
+      <td>general_election</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>needs_manual_review</td>
+      <td>ineligible</td>
+      <td>none</td>
+      <td></td>
+      <td>staged election relationship requires terms review</td>
+      <td>[{"code": "first_round_to_general_dependency", "detail": "staged election relationship requires terms review"}]</td>
+      <td>[{"code": "coverage_insufficient_a", "detail": "market_a coverage_score=0.15"}, {"code": "coverage_insufficient_b", "detail": "market_b coverage_score=0.15"}]</td>
+      <td>0.5565</td>
+    </tr>
+    <tr>
+      <td>5dc05ffe4bb533b54ab4caf1b113b7f2</td>
+      <td>569334</td>
+      <td>569358</td>
+      <td>Will Claudia López win the 1st round of the 2026 Colombian presidential election?</td>
+      <td>Will Claudia López win the 2026 Colombian presidential election?</td>
+      <td>rejected</td>
+      <td>unknown</td>
+      <td>first_round_to_general_dependency</td>
+      <td>2026_colombian_presidential_election_first_round</td>
+      <td>first_round_winner</td>
+      <td>candidate_winner_same_election</td>
+      <td>candidate</td>
+      <td>candidate</td>
+      <td>first_round</td>
+      <td>general_election</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>needs_manual_review</td>
+      <td>ineligible</td>
+      <td>none</td>
+      <td></td>
+      <td>staged election relationship requires terms review</td>
+      <td>[{"code": "first_round_to_general_dependency", "detail": "staged election relationship requires terms review"}]</td>
+      <td>[{"code": "coverage_insufficient_a", "detail": "market_a coverage_score=0.15"}, {"code": "coverage_insufficient_b", "detail": "market_b coverage_score=0.15"}]</td>
+      <td>0.5540</td>
+    </tr>
+    <tr>
+      <td>cd1b23c2db2b5e4ee6b4318189cbed90</td>
+      <td>569340</td>
+      <td>569364</td>
+      <td>Will Juan Manuel Galán win the 1st round of the 2026 Colombian presidential election?</td>
+      <td>Will Juan Manuel Galán win the 2026 Colombian presidential election?</td>
+      <td>rejected</td>
+      <td>unknown</td>
+      <td>first_round_to_general_dependency</td>
+      <td>2026_colombian_presidential_election_first_round</td>
+      <td>first_round_winner</td>
+      <td>candidate_winner_same_election</td>
+      <td>candidate</td>
+      <td>candidate</td>
+      <td>first_round</td>
+      <td>general_election</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>needs_manual_review</td>
+      <td>ineligible</td>
+      <td>none</td>
+      <td></td>
+      <td>staged election relationship requires terms review</td>
+      <td>[{"code": "first_round_to_general_dependency", "detail": "staged election relationship requires terms review"}]</td>
+      <td>[{"code": "coverage_insufficient_a", "detail": "market_a coverage_score=0.15"}, {"code": "coverage_insufficient_b", "detail": "market_b coverage_score=0.15"}]</td>
+      <td>0.5538</td>
+    </tr>
+    <tr>
+      <td>2f3b8169d39e895ea88fe78bb95bfcea</td>
+      <td>569338</td>
+      <td>569362</td>
+      <td>Will Gustavo Bolívar win the 1st round of the 2026 Colombian presidential election?</td>
+      <td>Will Gustavo Bolívar win the 2026 Colombian presidential election?</td>
+      <td>rejected</td>
+      <td>unknown</td>
+      <td>first_round_to_general_dependency</td>
+      <td>2026_colombian_presidential_election_first_round</td>
+      <td>first_round_winner</td>
+      <td>candidate_winner_same_election</td>
+      <td>candidate</td>
+      <td>candidate</td>
+      <td>first_round</td>
+      <td>general_election</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>needs_manual_review</td>
+      <td>ineligible</td>
+      <td>none</td>
+      <td></td>
+      <td>staged election relationship requires terms review</td>
+      <td>[{"code": "first_round_to_general_dependency", "detail": "staged election relationship requires terms review"}]</td>
+      <td>[{"code": "coverage_insufficient_a", "detail": "market_a coverage_score=0.15"}, {"code": "coverage_insufficient_b", "detail": "market_b coverage_score=0.15"}]</td>
+      <td>0.5314</td>
+    </tr>
+    <tr>
+      <td>a15ce15124782057519af731455cc627</td>
+      <td>569342</td>
+      <td>569373</td>
+      <td>Will Paloma Valencia win the 1st round of the 2026 Colombian presidential election?</td>
+      <td>Will Paloma Valencia win the 2026 Colombian presidential election?</td>
+      <td>rejected</td>
+      <td>unknown</td>
+      <td>first_round_to_general_dependency</td>
+      <td>2026_colombian_presidential_election_first_round</td>
+      <td>first_round_winner</td>
+      <td>candidate_winner_same_election</td>
+      <td>candidate</td>
+      <td>candidate</td>
+      <td>first_round</td>
+      <td>general_election</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>needs_manual_review</td>
+      <td>ineligible</td>
+      <td>none</td>
+      <td></td>
+      <td>staged election relationship requires terms review</td>
+      <td>[{"code": "first_round_to_general_dependency", "detail": "staged election relationship requires terms review"}]</td>
+      <td>[{"code": "coverage_insufficient_a", "detail": "market_a coverage_score=0.15"}, {"code": "coverage_insufficient_b", "detail": "market_b coverage_score=0.15"}]</td>
+      <td>0.5306</td>
+    </tr>
+    <tr>
+      <td>cc376429463d78167ad174e43317b2d3</td>
+      <td>559690</td>
+      <td>562003</td>
+      <td>Will Kim Kardashian win the 2028 Democratic presidential nomination?</td>
+      <td>Will Kim Kardashian win the 2028 Republican presidential nomination?</td>
+      <td>rejected</td>
+      <td>mixed_subtype</td>
+      <td>mixed_party_nomination</td>
+      <td>2028_democrats_presidential_nomination</td>
+      <td>candidate_wins_nomination</td>
+      <td>candidate_wins_nomination</td>
+      <td>candidate</td>
+      <td>candidate</td>
+      <td>nomination</td>
+      <td>nomination</td>
+      <td>None</td>
+      <td>None</td>
+      <td>Democrats</td>
+      <td>Republicans</td>
+      <td>None</td>
+      <td>None</td>
+      <td>needs_manual_review</td>
+      <td>ineligible</td>
+      <td>none</td>
+      <td>same person appears in nomination markets for different parties</td>
+      <td>not strategy eligible by default</td>
+      <td>[{"code": "mixed_party_nomination", "detail": "same person appears in nomination markets for different parties"}]</td>
+      <td>[{"code": "taxonomy_not_strategy_eligible", "detail": "not strategy eligible by default"}]</td>
+      <td>0.5283</td>
+    </tr>
+    <tr>
+      <td>ce10f57c2a8d9700af8f9633f13eca01</td>
+      <td>569341</td>
+      <td>569365</td>
+      <td>Will Germán Vargas Lleras win the 1st round of the 2026 Colombian presidential election?</td>
+      <td>Will Germán Vargas Lleras win the 2026 Colombian presidential election?</td>
+      <td>rejected</td>
+      <td>unknown</td>
+      <td>first_round_to_general_dependency</td>
+      <td>2026_colombian_presidential_election_first_round</td>
+      <td>first_round_winner</td>
+      <td>candidate_winner_same_election</td>
+      <td>candidate</td>
+      <td>candidate</td>
+      <td>first_round</td>
+      <td>general_election</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>needs_manual_review</td>
+      <td>ineligible</td>
+      <td>none</td>
+      <td></td>
+      <td>staged election relationship requires terms review</td>
+      <td>[{"code": "first_round_to_general_dependency", "detail": "staged election relationship requires terms review"}]</td>
+      <td>[{"code": "coverage_insufficient_a", "detail": "market_a coverage_score=0.15"}, {"code": "coverage_insufficient_b", "detail": "market_b coverage_score=0.15"}]</td>
+      <td>0.5267</td>
+    </tr>
+    <tr>
+      <td>59ee0871ba2cbc59237b9ef1654b92a2</td>
+      <td>593983</td>
+      <td>593984</td>
+      <td>Will Trump endorse John Cornyn for TX-Sen by Nov 2 2026 ET?</td>
+      <td>Will Trump endorse Ken Paxton for TX-Sen by Nov 2 2026 ET?</td>
+      <td>contradiction</td>
+      <td>contradiction</td>
+      <td>same_topic_no_trade</td>
+      <td></td>
+      <td>same_topic_no_trade</td>
+      <td>same_topic_no_trade</td>
+      <td>unknown</td>
+      <td>unknown</td>
+      <td></td>
+      <td></td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>needs_manual_review</td>
+      <td>ineligible</td>
+      <td>none</td>
+      <td></td>
+      <td>not strategy eligible by default</td>
+      <td>[{"code": "manual_review_band", "detail": "final_confidence=0.526 in review band"}]</td>
+      <td>[{"code": "coverage_insufficient_a", "detail": "market_a coverage_score=0.50"}, {"code": "coverage_insufficient_b", "detail": "market_b coverage_score=0.50"}]</td>
+      <td>0.5256</td>
+    </tr>
+    <tr>
+      <td>46f491500c8d3a55a6d6a065fd1ddd1e</td>
+      <td>569336</td>
+      <td>569360</td>
+      <td>Will Juan Daniel Oviedo win the 1st round of the 2026 Colombian presidential election?</td>
+      <td>Will Juan Daniel Oviedo win the 2026 Colombian presidential election?</td>
+      <td>rejected</td>
+      <td>unknown</td>
+      <td>first_round_to_general_dependency</td>
+      <td>2026_colombian_presidential_election_first_round</td>
+      <td>first_round_winner</td>
+      <td>candidate_winner_same_election</td>
+      <td>candidate</td>
+      <td>candidate</td>
+      <td>first_round</td>
+      <td>general_election</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>needs_manual_review</td>
+      <td>ineligible</td>
+      <td>none</td>
+      <td></td>
+      <td>staged election relationship requires terms review</td>
+      <td>[{"code": "first_round_to_general_dependency", "detail": "staged election relationship requires terms review"}]</td>
+      <td>[{"code": "coverage_insufficient_a", "detail": "market_a coverage_score=0.15"}, {"code": "coverage_insufficient_b", "detail": "market_b coverage_score=0.15"}]</td>
+      <td>0.5229</td>
+    </tr>
+    <tr>
+      <td>3214ebdab19448d4deb5f5ac27f636d2</td>
+      <td>569347</td>
+      <td>569372</td>
+      <td>Will Juan Carlos Pinzón win the 1st round of the 2026 Colombian presidential election?</td>
+      <td>Will Juan Carlos Pinzón win the 2026 Colombian presidential election?</td>
+      <td>rejected</td>
+      <td>unknown</td>
+      <td>first_round_to_general_dependency</td>
+      <td>2026_colombian_presidential_election_first_round</td>
+      <td>first_round_winner</td>
+      <td>candidate_winner_same_election</td>
+      <td>candidate</td>
+      <td>candidate</td>
+      <td>first_round</td>
+      <td>general_election</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>needs_manual_review</td>
+      <td>ineligible</td>
+      <td>none</td>
+      <td></td>
+      <td>staged election relationship requires terms review</td>
+      <td>[{"code": "first_round_to_general_dependency", "detail": "staged election relationship requires terms review"}]</td>
+      <td>[{"code": "coverage_insufficient_a", "detail": "market_a coverage_score=0.15"}, {"code": "coverage_insufficient_b", "detail": "market_b coverage_score=0.15"}]</td>
+      <td>0.5143</td>
+    </tr>
+    <tr>
+      <td>cf0e55c8f3e6db3e2750ce4f188515ae</td>
+      <td>569333</td>
+      <td>569357</td>
+      <td>Will Luis Gilberto Murillo win the 1st round of the 2026 Colombian presidential election?</td>
+      <td>Will Luis Gilberto Murillo win the 2026 Colombian presidential election?</td>
+      <td>rejected</td>
+      <td>unknown</td>
+      <td>first_round_to_general_dependency</td>
+      <td>2026_colombian_presidential_election_first_round</td>
+      <td>first_round_winner</td>
+      <td>candidate_winner_same_election</td>
+      <td>candidate</td>
+      <td>candidate</td>
+      <td>first_round</td>
+      <td>general_election</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>needs_manual_review</td>
+      <td>ineligible</td>
+      <td>none</td>
+      <td></td>
+      <td>staged election relationship requires terms review</td>
+      <td>[{"code": "first_round_to_general_dependency", "detail": "staged election relationship requires terms review"}]</td>
+      <td>[{"code": "coverage_insufficient_a", "detail": "market_a coverage_score=0.15"}, {"code": "coverage_insufficient_b", "detail": "market_b coverage_score=0.15"}]</td>
+      <td>0.4982</td>
+    </tr>
+    <tr>
+      <td>3a3c613e7cb2d99759542047d399cfb4</td>
+      <td>569332</td>
+      <td>569356</td>
+      <td>Will Vicky Dávila win the 1st round of the 2026 Colombian presidential election?</td>
+      <td>Will Vicky Dávila win the 2026 Colombian presidential election?</td>
+      <td>rejected</td>
+      <td>unknown</td>
+      <td>first_round_to_general_dependency</td>
+      <td>2026_colombian_presidential_election_first_round</td>
+      <td>first_round_winner</td>
+      <td>candidate_winner_same_election</td>
+      <td>candidate</td>
+      <td>candidate</td>
+      <td>first_round</td>
+      <td>general_election</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>needs_manual_review</td>
+      <td>ineligible</td>
+      <td>none</td>
+      <td></td>
+      <td>staged election relationship requires terms review</td>
+      <td>[{"code": "first_round_to_general_dependency", "detail": "staged election relationship requires terms review"}]</td>
+      <td>[{"code": "coverage_insufficient_a", "detail": "market_a coverage_score=0.15"}, {"code": "coverage_insufficient_b", "detail": "market_b coverage_score=0.15"}]</td>
+      <td>0.4874</td>
+    </tr>
+    <tr>
+      <td>d9cbd7dea520c7efa0c9ebae24784c97</td>
+      <td>569344</td>
+      <td>569366</td>
+      <td>Will Abelardo de la Espriella win the 1st round of the 2026 Colombian presidential electi…</td>
+      <td>Will Abelardo de la Espriella  win the 2026 Colombian presidential election?</td>
+      <td>rejected</td>
+      <td>unknown</td>
+      <td>first_round_to_general_dependency</td>
+      <td>2026_colombian_presidential_election_first_round</td>
+      <td>first_round_winner</td>
+      <td>candidate_winner_same_election</td>
+      <td>candidate</td>
+      <td>candidate</td>
+      <td>first_round</td>
+      <td>general_election</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>needs_manual_review</td>
+      <td>ineligible</td>
+      <td>none</td>
+      <td></td>
+      <td>staged election relationship requires terms review</td>
+      <td>[{"code": "first_round_to_general_dependency", "detail": "staged election relationship requires terms review"}]</td>
+      <td>[{"code": "coverage_insufficient_a", "detail": "market_a coverage_score=0.15"}, {"code": "coverage_insufficient_b", "detail": "market_b coverage_score=0.15"}]</td>
+      <td>0.4853</td>
+    </tr>
+    <tr>
+      <td>f9e9da8c2d0b6f0481a0ecaff08ed685</td>
+      <td>569339</td>
+      <td>569363</td>
+      <td>Will Sergio Fajardo win the 1st round of the 2026 Colombian presidential election?</td>
+      <td>Will Sergio Fajardo win the 2026 Colombian presidential election?</td>
+      <td>rejected</td>
+      <td>unknown</td>
+      <td>first_round_to_general_dependency</td>
+      <td>2026_colombian_presidential_election_first_round</td>
+      <td>first_round_winner</td>
+      <td>candidate_winner_same_election</td>
+      <td>candidate</td>
+      <td>candidate</td>
+      <td>first_round</td>
+      <td>general_election</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>needs_manual_review</td>
+      <td>ineligible</td>
+      <td>none</td>
+      <td></td>
+      <td>staged election relationship requires terms review</td>
+      <td>[{"code": "first_round_to_general_dependency", "detail": "staged election relationship requires terms review"}]</td>
+      <td>[{"code": "coverage_insufficient_a", "detail": "market_a coverage_score=0.15"}, {"code": "coverage_insufficient_b", "detail": "market_b coverage_score=0.15"}]</td>
+      <td>0.4833</td>
+    </tr>
+    <tr>
+      <td>4aa9b9577769abc6b2617e899bc95949</td>
+      <td>562829</td>
+      <td>562830</td>
+      <td>2026 Balance of Power: D Senate, R House</td>
+      <td>2026 Balance of Power: R Senate, D House</td>
+      <td>inverse</td>
+      <td>contradiction</td>
+      <td>same_topic_no_trade</td>
+      <td></td>
+      <td>same_topic_no_trade</td>
+      <td>same_topic_no_trade</td>
+      <td>unknown</td>
+      <td>unknown</td>
+      <td></td>
+      <td></td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>needs_manual_review</td>
+      <td>ineligible</td>
+      <td>none</td>
+      <td></td>
+      <td>not strategy eligible by default</td>
+      <td>[{"code": "manual_review_band", "detail": "final_confidence=0.479 in review band"}]</td>
+      <td>[{"code": "coverage_insufficient_a", "detail": "market_a coverage_score=0.50"}, {"code": "coverage_insufficient_b", "detail": "market_b coverage_score=0.50"}]</td>
+      <td>0.4793</td>
+    </tr>
+    <tr>
+      <td>66d4cf169a9d205b8a138f1e89bf60be</td>
+      <td>572122</td>
+      <td>572133</td>
+      <td>Jack Lowdon announced as next James Bond?</td>
+      <td>No one announced as next James Bond?</td>
+      <td>mutually_exclusive_category</td>
+      <td>mutual_exclusion</td>
+      <td>next_actor_announced</td>
+      <td>next_actor_announced</td>
+      <td>next_actor_announced</td>
+      <td>next_actor_announced</td>
+      <td>candidate</td>
+      <td>candidate</td>
+      <td>announcement</td>
+      <td>announcement</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>needs_manual_review</td>
+      <td>ineligible</td>
+      <td>pairwise_mutual_exclusion</td>
+      <td></td>
+      <td>same outcome subtype/stage/scope with different options</td>
+      <td>[{"code": "manual_review_band", "detail": "final_confidence=0.475 in review band"}]</td>
+      <td>[{"code": "coverage_insufficient_a", "detail": "market_a coverage_score=0.15"}, {"code": "coverage_insufficient_b", "detail": "market_b coverage_score=0.15"}]</td>
+      <td>0.4750</td>
+    </tr>
+    <tr>
+      <td>13129551f78a304d4f7815a9f0b6b9a7</td>
+      <td>593983</td>
+      <td>593988</td>
+      <td>Will Trump endorse John Cornyn for TX-Sen by Nov 2 2026 ET?</td>
+      <td>Will Trump endorse Susan Collins for ME-Sen by Nov 2 2026 ET?</td>
+      <td>contradiction</td>
+      <td>contradiction</td>
+      <td>same_topic_no_trade</td>
+      <td></td>
+      <td>same_topic_no_trade</td>
+      <td>same_topic_no_trade</td>
+      <td>unknown</td>
+      <td>unknown</td>
+      <td></td>
+      <td></td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>needs_manual_review</td>
+      <td>ineligible</td>
+      <td>none</td>
+      <td></td>
+      <td>not strategy eligible by default</td>
+      <td>[{"code": "manual_review_band", "detail": "final_confidence=0.468 in review band"}]</td>
+      <td>[{"code": "coverage_insufficient_a", "detail": "market_a coverage_score=0.50"}, {"code": "coverage_insufficient_b", "detail": "market_b coverage_score=0.51"}]</td>
+      <td>0.4678</td>
+    </tr>
+    <tr>
+      <td>f6fe1d2f110b43d7b1f12bf926a6ed4c</td>
+      <td>593984</td>
+      <td>593988</td>
+      <td>Will Trump endorse Ken Paxton for TX-Sen by Nov 2 2026 ET?</td>
+      <td>Will Trump endorse Susan Collins for ME-Sen by Nov 2 2026 ET?</td>
+      <td>contradiction</td>
+      <td>contradiction</td>
+      <td>same_topic_no_trade</td>
+      <td></td>
+      <td>same_topic_no_trade</td>
+      <td>same_topic_no_trade</td>
+      <td>unknown</td>
+      <td>unknown</td>
+      <td></td>
+      <td></td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>None</td>
+      <td>needs_manual_review</td>
+      <td>ineligible</td>
+      <td>none</td>
+      <td></td>
+      <td>not strategy eligible by default</td>
+      <td>[{"code": "manual_review_band", "detail": "final_confidence=0.468 in review band"}]</td>
+      <td>[{"code": "coverage_insufficient_a", "detail": "market_a coverage_score=0.50"}, {"code": "coverage_insufficient_b", "detail": "market_b coverage_score=0.51"}]</td>
+      <td>0.4678</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Rejection Reasons</h2>
+<table class="report-table">
+<thead><tr><th>Reason</th><th>Count</th></tr></thead>
+<tbody>
+
+<tr><td>entity_mismatch</td><td>4959</td></tr>
+
+<tr><td>coverage_insufficient_b</td><td>2877</td></tr>
+
+<tr><td>coverage_insufficient_a</td><td>2759</td></tr>
+
+<tr><td>taxonomy_not_strategy_eligible</td><td>324</td></tr>
+
+<tr><td>time_scope_mismatch</td><td>108</td></tr>
+
+<tr><td>candidate_to_party_dependency</td><td>72</td></tr>
+
+<tr><td>manual_review_band</td><td>36</td></tr>
+
+<tr><td>nomination_to_general_dependency</td><td>33</td></tr>
+
+<tr><td>first_round_to_general_dependency</td><td>15</td></tr>
+
+<tr><td>taxonomy_not_pairwise_mutual_exclusion</td><td>12</td></tr>
+
+<tr><td>same_topic_no_trade</td><td>10</td></tr>
+
+<tr><td>album_release_before_reference_vs_movie_release_before_reference</td><td>8</td></tr>
+
+<tr><td>no_paired_market</td><td>5</td></tr>
+
+<tr><td>team_exact_finish_position_vs_team_top_n_finish</td><td>3</td></tr>
+
+<tr><td>mixed_party_nomination</td><td>1</td></tr>
+
+</tbody>
+</table>
+
+<h2>Validation</h2>
+<p>No-thinking check: <span class="status-pass">PASS</span></p>
+
+<h2>Downloads</h2>
+<ul>
+  <li><a href="classification_audit_all.csv">All classifications</a></li>
+  <li><a href="accepted_strategy_eligible.csv">Accepted strategy eligible</a></li>
+  <li><a href="mixed_subtype.csv">Mixed subtype</a></li>
+  <li><a href="manual_review.csv">Manual review</a></li>
+  <li><a href="rejected.csv">Rejected</a></li>
+  <li><a href="same_reference_only.csv">Same reference only</a></li>
+  <li><a href="bundles.csv">Bundles</a></li>
+</ul>
+
+
+<footer>polymarket-arb — research only, no trading</footer>
+</body>
+</html>

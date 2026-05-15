@@ -1,0 +1,60 @@
+rulebook_id: "relationship_v1"
+rulebook_version: 1
+description: "Deterministic rules for accepting cross-market relationships."
+
+score_weights:
+  entity_match: 0.35
+  time_scope_match: 0.30
+  resolution_criteria_match: 0.25
+  threshold_relation: 0.10
+
+hard_gates:
+  min_entity_match: 0.50
+  min_time_scope_match: 0.50
+  forbid_embedding_only: true
+  require_token_ids_when_strategy_eligible: true
+
+soft_gates:
+  min_resolution_criteria_match: 0.60
+  min_final_confidence_for_accept: 0.65
+  manual_review_band: [0.45, 0.65]
+
+type_rules:
+  nested_a_implies_b:
+    requires_threshold_relation: true
+    requires_same_variable: true
+    requires_same_entity: true
+    requires_overlapping_time_scope: true
+  nested_b_implies_a:
+    requires_threshold_relation: true
+    requires_same_variable: true
+    requires_same_entity: true
+    requires_overlapping_time_scope: true
+  contradiction:
+    requires_same_entity: true
+    requires_overlapping_time_scope: true
+  inverse:
+    requires_same_entity: true
+    requires_same_time_scope: true
+    must_partition_outcome_space: true
+  mutually_exclusive:
+    requires_same_entity: true
+    requires_overlapping_time_scope: true
+
+ambiguity_penalties:
+  semantics_ambiguity_flag_present: 0.10
+  needs_manual_review_either_market: 0.20
+  low_semantic_confidence_either_market: 0.10
+
+rejection_codes:
+  - missing_semantics
+  - entity_mismatch
+  - time_scope_mismatch
+  - resolution_criteria_mismatch
+  - threshold_direction_wrong
+  - embedding_only_match
+  - identical_market_pair
+  - missing_token_ids
+  - non_binary_outcomes_unsupported
+  - manual_review_band
+  - ambiguity_too_high

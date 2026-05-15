@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}Context Classification Audit{% endblock %}
+{% block content %}
+<h1>Context Classification Audit</h1>
+<p class="subtitle">Generated {{ generated_at }} · run {{ run_id }}</p>
+
+<div class="summary-grid">
+  <div class="summary-card"><div class="value">{{ summary.total_decisions }}</div><div class="label">Decisions</div></div>
+</div>
+
+<h2>Strategy Lanes</h2>
+<table class="report-table">
+  <thead><tr><th>Lane</th><th>Count</th></tr></thead>
+  <tbody>
+  {% for lane, count in lane_counts.items() %}
+    <tr><td>{{ lane }}</td><td>{{ count }}</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+
+<h2>Upgraded Relationships</h2>
+{% if upgraded_table %}{{ upgraded_table | safe }}{% else %}<p class="empty-state">No upgraded relationships.</p>{% endif %}
+
+<h2>Downgraded / Analysis Only</h2>
+{% if downgraded_table %}{{ downgraded_table | safe }}{% else %}<p class="empty-state">No downgraded relationships.</p>{% endif %}
+
+<h2>Missing Context</h2>
+{% if missing_table %}{{ missing_table | safe }}{% else %}<p class="empty-state">No missing-context relationships.</p>{% endif %}
+
+<h2>Manual Review Queue</h2>
+{% if manual_table %}{{ manual_table | safe }}{% else %}<p class="empty-state">No exploratory unreviewed relationships.</p>{% endif %}
+
+<h2>All Decisions</h2>
+{% if all_table %}{{ all_table | safe }}{% else %}<p class="empty-state">No context decisions.</p>{% endif %}
+{% endblock %}

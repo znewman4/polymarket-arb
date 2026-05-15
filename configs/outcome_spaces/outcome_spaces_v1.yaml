@@ -1,0 +1,35 @@
+outcome_spaces:
+  2026_nhl_stanley_cup:
+    display_name: "2026 NHL Stanley Cup winner"
+    outcome_subtype: team_wins_championship
+    expected_total_outcomes: 32
+    completeness_policy: complete_if_all_expected_present
+    allow_bundle_backtest: true
+    notes: "Complete only if all NHL teams are represented with matching terms."
+
+  2028_us_presidential_candidate_winner:
+    display_name: "2028 US Presidential Election candidate winner"
+    outcome_subtype: candidate_winner_same_election
+    expected_total_outcomes: null
+    completeness_policy: incomplete_unknown
+    allow_bundle_backtest: false
+    notes: "Candidate list is open-ended years in advance."
+
+  2028_us_presidential_party_winner:
+    display_name: "2028 US Presidential Election party winner"
+    outcome_subtype: party_winner_same_election
+    expected_total_outcomes: 2
+    required_candidates_or_options:
+      - Democrats
+      - Republicans
+    completeness_policy: complete_if_required_options_present
+    allow_bundle_backtest: true
+    caveats:
+      - "Other/third-party possibility may exist; only treat exhaustive if market terms explicitly exclude or account for other."
+
+  2028_republican_presidential_nomination:
+    display_name: "2028 Republican presidential nomination"
+    outcome_subtype: candidate_wins_nomination
+    expected_total_outcomes: null
+    completeness_policy: incomplete_unknown
+    allow_bundle_backtest: false

@@ -1,0 +1,23 @@
+{
+  "strict_context_valid": {
+    "by_market": {},
+    "by_context_space": {},
+    "largest_market_share": 0.0,
+    "largest_context_space_share": 0.0,
+    "concentration_flag": false
+  },
+  "reviewed_context_valid": {
+    "by_market": {},
+    "by_context_space": {},
+    "largest_market_share": 0.0,
+    "largest_context_space_share": 0.0,
+    "concentration_flag": false
+  },
+  "exploratory_context_unreviewed": {
+    "by_market": {},
+    "by_context_space": {},
+    "largest_market_share": 0.0,
+    "largest_context_space_share": 0.0,
+    "concentration_flag": false
+  }
+}

@@ -1,0 +1,69 @@
+# Phase 0–2 development config. Loaded by polymarket_arb.settings.Settings.
+# Environment variables prefixed POLYMARKET_ARB_ override these values.
+
+env: dev
+
+# ─── Hosts (no auth needed for read endpoints) ──────────────────────────────
+gamma_host: "https://gamma-api.polymarket.com"
+clob_host: "https://clob.polymarket.com"
+
+# ─── HTTP client ────────────────────────────────────────────────────────────
+http:
+  connect_timeout_s: 10
+  read_timeout_s: 30
+  max_retries: 3
+  backoff_initial_s: 0.25
+  backoff_max_s: 4.0
+  rate_limits:
+    # Conservative defaults. Tighten/loosen with logs in Phase 1.
+    "gamma-api.polymarket.com": { capacity: 5, refill_per_s: 5 }
+    "clob.polymarket.com":      { capacity: 10, refill_per_s: 10 }
+    # Egress IP providers
+    "api.ipify.org":            { capacity: 1, refill_per_s: 0.2 }
+    "ifconfig.co":              { capacity: 1, refill_per_s: 0.2 }
+
+# ─── Compliance ─────────────────────────────────────────────────────────────
+compliance:
+  # Two-letter ISO country codes the egress IP is *allowed* to be in.
+  # Whitelist, not blacklist. Empty list disables the check (dangerous).
+  # The user is in the UK; default whitelist below assumes a VPS in a
+  # permitted jurisdiction. Edit before deploying.
+  allowed_egress_countries: ["DE", "NL", "FR", "IE", "PT", "ES", "SE", "FI", "CA"]
+  ip_check_ttl_s: 300
+
+# ─── Storage ────────────────────────────────────────────────────────────────
+storage:
+  data_root: "data"
+  parquet:
+    compression: "zstd"
+    # We pin schemas in code; this is just the row-group sizing.
+    row_group_size: 50_000
+
+# ─── Trade gate ─────────────────────────────────────────────────────────────
+# Critical safety flag. Override only via POLYMARKET_ARB_ORDERS_ALLOWED env var.
+orders_allowed: false
+
+# ─── Logging ────────────────────────────────────────────────────────────────
+logging:
+  level: "INFO"
+  json_log_path: "data/logs/polymarket_arb.jsonl"
+  rotation: "1 day"
+  retention: "14 days"
+
+
+nlp:
+  enabled: true
+  provider: ollama
+  base_url: "http://172.22.16.1:11434"
+  llm_model: "deepseek-r1:8b"
+  embedding_model: "nomic-embed-text"
+  timeout_s: 180
+  prompt_version: "market_semantics_v2"
+  ollama_llm_endpoint: "generate"
+  ollama_embedding_endpoint: "embed"
+  debug_capture_thinking: false
+  rulebooks:
+    ambiguity: "ambiguity_v1.yaml"
+    implication: "implication_v1.yaml"
+    contradiction: "contradiction_v1.yaml"
+    evidence_fusion: "evidence_fusion_v1.yaml"

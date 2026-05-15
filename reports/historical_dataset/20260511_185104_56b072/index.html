@@ -1,0 +1,4719 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Historical Dataset Report</title>
+<style>
+  body { font-family: monospace; font-size: 13px; margin: 20px; background: #fafafa; color: #222; }
+  h1 { font-size: 1.4em; border-bottom: 2px solid #333; padding-bottom: 6px; }
+  h2 { font-size: 1.15em; margin-top: 2em; border-bottom: 1px solid #aaa; padding-bottom: 4px; }
+  h3 { font-size: 1em; margin-top: 1.5em; }
+  .summary-grid { display: flex; flex-wrap: wrap; gap: 12px; margin: 1em 0; }
+  .summary-card { background: #fff; border: 1px solid #ccc; border-radius: 4px;
+                  padding: 12px 18px; min-width: 140px; text-align: center; }
+  .summary-card .value { font-size: 1.8em; font-weight: bold; color: #1a73e8; }
+  .summary-card .label { font-size: 0.85em; color: #555; }
+  table.report-table { border-collapse: collapse; width: 100%; margin: 0.5em 0; }
+  table.report-table th { background: #333; color: #fff; padding: 5px 8px; text-align: left;
+                           position: sticky; top: 0; }
+  table.report-table td { padding: 4px 8px; border-bottom: 1px solid #ddd; }
+  table.report-table tr:nth-child(even) { background: #f5f5f5; }
+  .status-pass { color: #2e7d32; font-weight: bold; }
+  .status-warn { color: #e65100; font-weight: bold; }
+  .status-fail { color: #c62828; font-weight: bold; }
+  .chart-img { max-width: 100%; height: auto; margin: 0.5em 0; }
+  .empty-state { color: #888; font-style: italic; padding: 1em; }
+  footer { margin-top: 3em; font-size: 0.8em; color: #888; border-top: 1px solid #ddd; padding-top: 8px; }
+</style>
+</head>
+<body>
+
+<h1>Historical Dataset Report</h1>
+<p style="color:#666">Generated: 2026-05-11T18:55:46Z</p>
+
+
+
+
+<h2>Summary</h2>
+<div class="summary-grid">
+  <div class="summary-card"><div class="value">493</div><div class="label">Total Markets</div></div>
+  <div class="summary-card"><div class="value">196</div><div class="label">With Price History</div></div>
+  <div class="summary-card"><div class="value">119</div><div class="label">Recommended for Backtest</div></div>
+  <div class="summary-card"><div class="value">188502</div><div class="label">Total Price Points</div></div>
+  <div class="summary-card"><div class="value">0.368</div><div class="label">Avg Coverage Score</div></div>
+</div>
+
+<h2>Dataset Verification</h2>
+
+<table class="report-table">
+<thead><tr><th>Check</th><th>Status</th><th>Details</th></tr></thead>
+<tbody>
+
+<tr>
+  <td>markets_table</td>
+  <td class="status-pass">PASS</td>
+  <td>{&#39;total&#39;: 200, &#39;missing_token_ids&#39;: 0}</td>
+</tr>
+
+<tr>
+  <td>price_history</td>
+  <td class="status-warn">WARN</td>
+  <td>{&#39;total&#39;: 188502, &#39;out_of_bounds&#39;: 0, &#39;duplicate_timestamps&#39;: 2483}</td>
+</tr>
+
+<tr>
+  <td>trade_history</td>
+  <td class="status-warn">WARN</td>
+  <td>{&#39;message&#39;: &#39;no trade history (endpoint may be unavailable)&#39;}</td>
+</tr>
+
+<tr>
+  <td>semantics_coverage</td>
+  <td class="status-warn">WARN</td>
+  <td>{&#39;total_markets&#39;: 200, &#39;missing_semantics&#39;: 0, &#39;missing_scores&#39;: 196, &#39;missing_implications&#39;: 0, &#39;semantics_pct&#39;: 1.0}</td>
+</tr>
+
+<tr>
+  <td>no_thinking_content</td>
+  <td class="status-pass">PASS</td>
+  <td>{&#39;violations&#39;: [], &#39;checked_fields&#39;: [&#39;explanation_summary&#39;, &#39;flag_rationales_json&#39;, &#39;uncertainty_notes_json&#39;, &#39;rule_curation_notes_json&#39;, &#39;canonical_question&#39;]}</td>
+</tr>
+
+<tr>
+  <td>backfill_coverage</td>
+  <td class="status-pass">PASS</td>
+  <td>{&#39;total&#39;: 493, &#39;recommended_for_backtest&#39;: 119, &#39;low_coverage_markets&#39;: 289}</td>
+</tr>
+
+</tbody>
+</table>
+
+
+<h2>Coverage Distribution</h2>
+
+<img class="chart-img" src="chart_coverage_hist.png" alt="Coverage score distribution">
+
+
+<h2>Top Markets by Coverage Score</h2>
+
+<table class="dataframe report-table">
+  <thead>
+    <tr style="text-align: right;">
+      <th>market_id</th>
+      <th>token_id</th>
+      <th>question</th>
+      <th>coverage_score</th>
+      <th>price_points</th>
+      <th>trade_points</th>
+      <th>recommended</th>
+      <th>largest_gap_ms</th>
+      <th>first_price_ts</th>
+      <th>last_price_ts</th>
+      <th>has_semantics</th>
+      <th>has_score</th>
+      <th>has_implications</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>540817</td>
+      <td>0x1fad72fae204143ff1c3035e99e7c0f65ea8d5cd9bd1070987bd1a3316f772be</td>
+      <td>New Rihanna Album before GTA VI?</td>
+      <td>0.8714</td>
+      <td>1405</td>
+      <td>0</td>
+      <td>True</td>
+      <td>475235000</td>
+      <td>2025-05-03T00:00:06Z</td>
+      <td>2026-05-11T16:16:08Z</td>
+      <td>True</td>
+      <td>True</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>540844</td>
+      <td>0xbb57ccf5853a85487bc3d83d04d669310d28c6c810758953b9d9b91d1aee89d2</td>
+      <td>Will bitcoin hit $1m before GTA VI?</td>
+      <td>0.8500</td>
+      <td>1386</td>
+      <td>0</td>
+      <td>True</td>
+      <td>734370000</td>
+      <td>2025-05-03T00:00:06Z</td>
+      <td>2026-05-11T16:16:08Z</td>
+      <td>True</td>
+      <td>True</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>540843</td>
+      <td>0x7b49b9bacb5f435bc10f3b100ff59e2fdd346f7f92a9001881bc9825a0af0f11</td>
+      <td>Will China invades Taiwan before GTA VI?</td>
+      <td>0.8500</td>
+      <td>1423</td>
+      <td>0</td>
+      <td>True</td>
+      <td>691200000</td>
+      <td>2025-05-03T00:00:06Z</td>
+      <td>2026-05-11T16:16:08Z</td>
+      <td>True</td>
+      <td>True</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>540819</td>
+      <td>0x32b09f6390252b37d674501527e709016d55581b2c1e544bd4b8167f5f732f4c</td>
+      <td>Will Jesus Christ return before GTA VI?</td>
+      <td>0.8500</td>
+      <td>1415</td>
+      <td>0</td>
+      <td>True</td>
+      <td>777595000</td>
+      <td>2025-05-03T00:00:06Z</td>
+      <td>2026-05-11T16:16:08Z</td>
+      <td>True</td>
+      <td>True</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>562003</td>
+      <td>0x414378275cb214b747245942be889ee1e077c56d1c00eb4d726629c95f22b5a5</td>
+      <td>Will Kim Kardashian win the 2028 Republican presidential nomination?</td>
+      <td>0.8423</td>
+      <td>839</td>
+      <td>0</td>
+      <td>True</td>
+      <td>46439000</td>
+      <td>2025-10-02T00:00:03Z</td>
+      <td>2026-05-11T12:00:10Z</td>
+      <td>True</td>
+      <td>False</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>561973</td>
+      <td>0x895e01dbf3e6a33cd9a44ca0f8cdb5df1bd2b0b6ebed5300d28f8da7145145e4</td>
+      <td>Will Donald Trump win the 2028 Republican presidential nomination?</td>
+      <td>0.8423</td>
+      <td>1172</td>
+      <td>0</td>
+      <td>True</td>
+      <td>46442000</td>
+      <td>2025-07-19T00:00:09Z</td>
+      <td>2026-05-11T16:16:08Z</td>
+      <td>True</td>
+      <td>False</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>559688</td>
+      <td>0x450810ae738a0ff820d3248f2b24937f63fb8c8cf422ed2a915125adb4d9d3c8</td>
+      <td>Will Andrew Yang win the 2028 Democratic presidential nomination?</td>
+      <td>0.8422</td>
+      <td>1119</td>
+      <td>0</td>
+      <td>True</td>
+      <td>47332000</td>
+      <td>2025-07-26T00:00:09Z</td>
+      <td>2026-05-11T16:16:08Z</td>
+      <td>True</td>
+      <td>False</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>561233</td>
+      <td>0x5969cbb46aca5319b19e19a3c6f63de098950b675bf268f30f4d035508da1957</td>
+      <td>Will Josh Shapiro win the 2028 US Presidential Election?</td>
+      <td>0.8357</td>
+      <td>1133</td>
+      <td>0</td>
+      <td>True</td>
+      <td>86406000</td>
+      <td>2025-07-19T00:00:09Z</td>
+      <td>2026-05-11T16:16:07Z</td>
+      <td>True</td>
+      <td>False</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>561250</td>
+      <td>0x68e3c4e0dd8f82d010060032006fd157401b0bd8e04bd2953ae293e31eb99bf6</td>
+      <td>Will Elon Musk win the 2028 US Presidential Election?</td>
+      <td>0.8357</td>
+      <td>1117</td>
+      <td>0</td>
+      <td>True</td>
+      <td>86401000</td>
+      <td>2025-07-20T00:00:08Z</td>
+      <td>2026-05-11T12:00:13Z</td>
+      <td>True</td>
+      <td>False</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>561231</td>
+      <td>0xf232b565995e4b3a3e7fa6cef775eeff1cecd20ad7c013cb9fc8dadabfe279a9</td>
+      <td>Will Alexandria Ocasio-Cortez win the 2028 US Presidential Election?</td>
+      <td>0.8357</td>
+      <td>1141</td>
+      <td>0</td>
+      <td>True</td>
+      <td>86403000</td>
+      <td>2025-07-19T00:00:09Z</td>
+      <td>2026-05-11T16:16:08Z</td>
+      <td>True</td>
+      <td>False</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>559676</td>
+      <td>0x88d67705780a3d922317ecb0c78a947a306174d0510df2ae89394d5abfb28206</td>
+      <td>Will Barack Obama win the 2028 Democratic presidential nomination?</td>
+      <td>0.8357</td>
+      <td>1119</td>
+      <td>0</td>
+      <td>True</td>
+      <td>86409000</td>
+      <td>2025-07-19T00:00:09Z</td>
+      <td>2026-05-11T12:00:11Z</td>
+      <td>True</td>
+      <td>False</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>562000</td>
+      <td>0xd10bc768ede58b53ed400594240b0a0603134a32dab89ec823a18759cbc180ca</td>
+      <td>Will Rand Paul win the 2028 Republican presidential nomination?</td>
+      <td>0.8357</td>
+      <td>1122</td>
+      <td>0</td>
+      <td>True</td>
+      <td>86403000</td>
+      <td>2025-07-26T00:00:09Z</td>
+      <td>2026-05-11T16:16:08Z</td>
+      <td>True</td>
+      <td>False</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>561983</td>
+      <td>0x214093035e429b91df322bd20c55d9f611f741f67472a63f7623a9afc0cffa57</td>
+      <td>Will Greg Abbott win the 2028 Republican presidential nomination?</td>
+      <td>0.8357</td>
+      <td>1123</td>
+      <td>0</td>
+      <td>True</td>
+      <td>86403000</td>
+      <td>2025-07-19T00:00:09Z</td>
+      <td>2026-05-11T16:16:08Z</td>
+      <td>True</td>
+      <td>False</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>559692</td>
+      <td>0x3cd6e52603d80ddbbdac9b1a4d43f9b7faa6aae4fae4d0fdfad3bd58454da7d3</td>
+      <td>Will Jasmine Crockett win the 2028 Democratic presidential nomination?</td>
+      <td>0.8357</td>
+      <td>561</td>
+      <td>0</td>
+      <td>True</td>
+      <td>86403000</td>
+      <td>2025-12-10T00:00:11Z</td>
+      <td>2026-05-11T16:15:23Z</td>
+      <td>True</td>
+      <td>False</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>559670</td>
+      <td>0xcb239105ed21a2420ba4d85090b9bc32755c56601ffdc528afd17fd6282fe930</td>
+      <td>Will Gina Raimondo win the 2028 Democratic presidential nomination?</td>
+      <td>0.8357</td>
+      <td>1147</td>
+      <td>0</td>
+      <td>True</td>
+      <td>86401000</td>
+      <td>2025-07-19T00:00:09Z</td>
+      <td>2026-05-11T16:16:07Z</td>
+      <td>True</td>
+      <td>False</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>559681</td>
+      <td>0x8b203037c7c0e21b500314f8398d2a8ea294b7ce1f4f9185f426425a3505bc45</td>
+      <td>Will LeBron James win the 2028 Democratic presidential nomination?</td>
+      <td>0.8357</td>
+      <td>1166</td>
+      <td>0</td>
+      <td>True</td>
+      <td>86401000</td>
+      <td>2025-07-19T00:00:09Z</td>
+      <td>2026-05-11T16:16:07Z</td>
+      <td>True</td>
+      <td>False</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>561988</td>
+      <td>0x4d4bceee5f59f75230c6438f69fc913a6da7afa4098ce0734655045c02a730fc</td>
+      <td>Will Josh Hawley win the 2028 Republican presidential nomination?</td>
+      <td>0.8357</td>
+      <td>1137</td>
+      <td>0</td>
+      <td>True</td>
+      <td>86403000</td>
+      <td>2025-07-19T00:00:09Z</td>
+      <td>2026-05-11T16:16:08Z</td>
+      <td>True</td>
+      <td>False</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>559672</td>
+      <td>0x939eeb2dea216749bd409bedde483c3f2bfb0e24d4f2d34461c0b21c6e91f010</td>
+      <td>Will Roy Cooper win the 2028 Democratic presidential nomination?</td>
+      <td>0.8357</td>
+      <td>1120</td>
+      <td>0</td>
+      <td>True</td>
+      <td>86403000</td>
+      <td>2025-07-19T00:00:09Z</td>
+      <td>2026-05-11T16:16:07Z</td>
+      <td>True</td>
+      <td>False</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>561229</td>
+      <td>0x7ad403c3508f8e3912940fd1a913f227591145ca0614074208e0b962d5fcc422</td>
+      <td>Will JD Vance win the 2028 US Presidential Election?</td>
+      <td>0.8357</td>
+      <td>1166</td>
+      <td>0</td>
+      <td>True</td>
+      <td>86403000</td>
+      <td>2025-07-19T00:00:09Z</td>
+      <td>2026-05-11T16:16:07Z</td>
+      <td>True</td>
+      <td>False</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>559678</td>
+      <td>0x46dbd48d6bde5b81edb480e0f676a2cdda6c6b592c4d86a9367c7ad5a9870195</td>
+      <td>Will Liz Cheney win the 2028 Democratic presidential nomination?</td>
+      <td>0.8357</td>
+      <td>1132</td>
+      <td>0</td>
+      <td>True</td>
+      <td>86402000</td>
+      <td>2025-07-19T00:00:09Z</td>
+      <td>2026-05-11T16:16:07Z</td>
+      <td>True</td>
+      <td>False</td>
+      <td>True</td>
+    </tr>
+  </tbody>
+</table>
+
+
+<h2>Markets with Lowest Coverage</h2>
+
+<table class="dataframe report-table">
+  <thead>
+    <tr style="text-align: right;">
+      <th>market_id</th>
+      <th>token_id</th>
+      <th>question</th>
+      <th>coverage_score</th>
+      <th>price_points</th>
+      <th>trade_points</th>
+      <th>recommended</th>
+      <th>largest_gap_ms</th>
+      <th>first_price_ts</th>
+      <th>last_price_ts</th>
+      <th>has_semantics</th>
+      <th>has_score</th>
+      <th>has_implications</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>558944</td>
+      <td>0x7876851632c295043c66536150a304cb785abdf712ba8489d298c6e6926be106</td>
+      <td>Will Uruguay win the 2026 FIFA World Cup?</td>
+      <td>0.15</td>
+      <td>0</td>
+      <td>0</td>
+      <td>False</td>
+      <td>0</td>
+      <td></td>
+      <td></td>
+      <td>False</td>
+      <td>False</td>
+      <td>False</td>
+    </tr>
+    <tr>
+      <td>553857</td>
+      <td>0x6b44bd667fad6cb5b3b68d8bd1055a038c77d9176dbd51f123879797cc3368a7</td>
+      <td>Will the Cleveland Cavaliers win the 2026 NBA Finals?</td>
+      <td>0.15</td>
+      <td>0</td>
+      <td>0</td>
+      <td>False</td>
+      <td>0</td>
+      <td></td>
+      <td></td>
+      <td>False</td>
+      <td>False</td>
+      <td>False</td>
+    </tr>
+    <tr>
+      <td>582146</td>
+      <td>0xbf41a9bb4cce63bcea7bc1f67f0f110fbf35a389a636d1a835e04ab511800d3d</td>
+      <td>Will Brighton finish in the top 4 of the EPL 2025–26 standings?</td>
+      <td>0.15</td>
+      <td>0</td>
+      <td>0</td>
+      <td>False</td>
+      <td>0</td>
+      <td></td>
+      <td></td>
+      <td>False</td>
+      <td>False</td>
+      <td>False</td>
+    </tr>
+    <tr>
+      <td>562188</td>
+      <td>0x8de68dfbcfa9e9b6472bceec9aea2f252038cc12df9838b1f0016c02ec94b6d7</td>
+      <td>Will Dawn Buckingham win the 2026 Texas Republican Primary?</td>
+      <td>0.15</td>
+      <td>0</td>
+      <td>0</td>
+      <td>False</td>
+      <td>0</td>
+      <td></td>
+      <td></td>
+      <td>False</td>
+      <td>False</td>
+      <td>False</td>
+    </tr>
+    <tr>
+      <td>579382</td>
+      <td>0xc8dc4518e3e88aaa4d3854d547e9a703760cd0992fe4596e05b068a34f17dea8</td>
+      <td>Will Dusan Vlahovic be the top goal scorer in the 2025-26 Serie A season?</td>
+      <td>0.15</td>
+      <td>0</td>
+      <td>0</td>
+      <td>False</td>
+      <td>0</td>
+      <td></td>
+      <td></td>
+      <td>False</td>
+      <td>False</td>
+      <td>False</td>
+    </tr>
+    <tr>
+      <td>579379</td>
+      <td>0x8d6dad52bdc7f34ae33fd466b00308116110b724f0a203c5d4723faa94a96c55</td>
+      <td>Will Jonathan David be the top goal scorer in the 2025-26 Serie A season?</td>
+      <td>0.15</td>
+      <td>0</td>
+      <td>0</td>
+      <td>False</td>
+      <td>0</td>
+      <td></td>
+      <td></td>
+      <td>False</td>
+      <td>False</td>
+      <td>False</td>
+    </tr>
+    <tr>
+      <td>577236</td>
+      <td>0xc5a5599959ff15ca3533656c16dd441304b8721162ef770db59a1d2b4862e2b8</td>
+      <td>Will Gorka Guruzeta be the top goal scorer in the 2025–26 La Liga season?</td>
+      <td>0.15</td>
+      <td>0</td>
+      <td>0</td>
+      <td>False</td>
+      <td>0</td>
+      <td></td>
+      <td></td>
+      <td>False</td>
+      <td>False</td>
+      <td>False</td>
+    </tr>
+    <tr>
+      <td>577241</td>
+      <td>0xff54852cf4cb9c3568f795b983bc494d2e13d3f9cad41ba872a4ffd3ccb2101e</td>
+      <td>Will Cristhian Stuani be the top goal scorer in the 2025–26 La Liga season?</td>
+      <td>0.15</td>
+      <td>0</td>
+      <td>0</td>
+      <td>False</td>
+      <td>0</td>
+      <td></td>
+      <td></td>
+      <td>False</td>
+      <td>False</td>
+      <td>False</td>
+    </tr>
+    <tr>
+      <td>577242</td>
+      <td>0xc901b7ee5f6776feee0bc75349ddf15b3f1473c42e9c23fbd2c286129db2314b</td>
+      <td>Will Cyle Larin be the top goal scorer in the 2025–26 La Liga season?</td>
+      <td>0.15</td>
+      <td>0</td>
+      <td>0</td>
+      <td>False</td>
+      <td>0</td>
+      <td></td>
+      <td></td>
+      <td>False</td>
+      <td>False</td>
+      <td>False</td>
+    </tr>
+    <tr>
+      <td>578409</td>
+      <td>0xbdc71466aec5874beb0998b5937c1645f92b45c381c41d9b886ee440391c674b</td>
+      <td>Will Mason Greenwood be the top goal scorer in the 2025-26 Ligue 1 season?</td>
+      <td>0.15</td>
+      <td>0</td>
+      <td>0</td>
+      <td>False</td>
+      <td>0</td>
+      <td></td>
+      <td></td>
+      <td>False</td>
+      <td>False</td>
+      <td>False</td>
+    </tr>
+    <tr>
+      <td>569341</td>
+      <td>0x2890121a9277d619b936695405544bda9f80d184b05d9503fd8f173c52867365</td>
+      <td>Will Germán Vargas Lleras win the 1st round of the 2026 Colombian presidential …</td>
+      <td>0.15</td>
+      <td>0</td>
+      <td>0</td>
+      <td>False</td>
+      <td>0</td>
+      <td></td>
+      <td></td>
+      <td>False</td>
+      <td>False</td>
+      <td>False</td>
+    </tr>
+    <tr>
+      <td>564198</td>
+      <td>0x14dbdb6274de6bcc65ce2b628c6636ff210fd452d095b0f14fdb1d376b31cecf</td>
+      <td>Will the Detroit Pistons win the NBA Eastern Conference Finals?</td>
+      <td>0.15</td>
+      <td>0</td>
+      <td>0</td>
+      <td>False</td>
+      <td>0</td>
+      <td></td>
+      <td></td>
+      <td>False</td>
+      <td>False</td>
+      <td>False</td>
+    </tr>
+    <tr>
+      <td>572124</td>
+      <td>0xbaf1fe074410506bcd871ee43a6ea0230686b3a0b59eb93d014631fd4214decf</td>
+      <td>James Collier announced as next James Bond?</td>
+      <td>0.15</td>
+      <td>0</td>
+      <td>0</td>
+      <td>False</td>
+      <td>0</td>
+      <td></td>
+      <td></td>
+      <td>False</td>
+      <td>False</td>
+      <td>False</td>
+    </tr>
+    <tr>
+      <td>558939</td>
+      <td>0x1595b4818eeb1ea1e0bec5de6f057218e557feee9b405a0e930d290384fa1d16</td>
+      <td>Will Germany win the 2026 FIFA World Cup?</td>
+      <td>0.15</td>
+      <td>0</td>
+      <td>0</td>
+      <td>False</td>
+      <td>0</td>
+      <td></td>
+      <td></td>
+      <td>False</td>
+      <td>False</td>
+      <td>False</td>
+    </tr>
+    <tr>
+      <td>573655</td>
+      <td>0xa0f4c4924ea1a8b410b4ce821c2a9955fad21a1b19bdcfde90816732278b3dd5</td>
+      <td>Will Bitcoin hit $150k by June 30, 2026?</td>
+      <td>0.15</td>
+      <td>0</td>
+      <td>0</td>
+      <td>False</td>
+      <td>0</td>
+      <td></td>
+      <td></td>
+      <td>False</td>
+      <td>False</td>
+      <td>False</td>
+    </tr>
+    <tr>
+      <td>572123</td>
+      <td>0x2d116412f432cdb566c6eb4f0f35cf36c9842998085e13a5a0a2a6c01907b837</td>
+      <td>Theo James announced as next James Bond?</td>
+      <td>0.15</td>
+      <td>0</td>
+      <td>0</td>
+      <td>False</td>
+      <td>0</td>
+      <td></td>
+      <td></td>
+      <td>False</td>
+      <td>False</td>
+      <td>False</td>
+    </tr>
+    <tr>
+      <td>598936</td>
+      <td>0x1ec6f87bc7d6d0976bbaee5883577bc51be4ba5ef7c0127ccd96e9d64136df40</td>
+      <td>Will the next UK election be called by June 30, 2026?</td>
+      <td>0.15</td>
+      <td>0</td>
+      <td>0</td>
+      <td>False</td>
+      <td>0</td>
+      <td></td>
+      <td></td>
+      <td>False</td>
+      <td>False</td>
+      <td>False</td>
+    </tr>
+    <tr>
+      <td>569369</td>
+      <td>0x566196aaed496a8454b0dd572e88dbc096f13631589b8401efb942bbd4e07cdf</td>
+      <td>Will Daniel Quintero win the 2026 Colombian presidential election?</td>
+      <td>0.15</td>
+      <td>0</td>
+      <td>0</td>
+      <td>False</td>
+      <td>0</td>
+      <td></td>
+      <td></td>
+      <td>False</td>
+      <td>False</td>
+      <td>False</td>
+    </tr>
+    <tr>
+      <td>564195</td>
+      <td>0x1c60f9adb1d786b6fe78d63fd9f82dbb293fa06241532fb5ba43f8d8411cde1e</td>
+      <td>Will the New York Knicks win the NBA Eastern Conference Finals?</td>
+      <td>0.15</td>
+      <td>0</td>
+      <td>0</td>
+      <td>False</td>
+      <td>0</td>
+      <td></td>
+      <td></td>
+      <td>False</td>
+      <td>False</td>
+      <td>False</td>
+    </tr>
+    <tr>
+      <td>569338</td>
+      <td>0x49ed66968bfb4058a43bcf7bc664cb879e93a3e51bd10d844e3f8662febe9fd4</td>
+      <td>Will Gustavo Bolívar win the 1st round of the 2026 Colombian presidential elect…</td>
+      <td>0.15</td>
+      <td>0</td>
+      <td>0</td>
+      <td>False</td>
+      <td>0</td>
+      <td></td>
+      <td></td>
+      <td>False</td>
+      <td>False</td>
+      <td>False</td>
+    </tr>
+  </tbody>
+</table>
+
+
+<h2>Price History Gap Distribution</h2>
+
+<img class="chart-img" src="chart_gap_dist.png" alt="Price history gap distribution">
+
+
+<h2>All Markets</h2>
+
+<table class="dataframe report-table">
+  <thead>
+    <tr style="text-align: right;">
+      <th>market_id</th>
+      <th>token_id</th>
+      <th>question</th>
+      <th>active</th>
+      <th>closed</th>
+      <th>end_date_ms</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>553863</td>
+      <td>86297520870744792204751483474339201341298076835836561764334428915355504860913</td>
+      <td>Will the Los Angeles Lakers win the 2026 NBA Finals?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-07-01T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>553871</td>
+      <td>59742411602053785892348440048778056320272639465974092140970920277782290781360</td>
+      <td>Will the Detroit Pistons win the 2026 NBA Finals?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-07-01T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>558949</td>
+      <td>19159976531313550247579355752030367100657092033093647047491459813592996250034</td>
+      <td>Will Japan win the 2026 FIFA World Cup?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-07-20T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>558951</td>
+      <td>60447443643099453130956385288904175887233107411078568881602330835010340506057</td>
+      <td>Will Norway win the 2026 FIFA World Cup?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-07-20T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>559659</td>
+      <td>57761428076807364758801249497410455358987881775226117256631754592198558850468</td>
+      <td>Will Gretchen Whitmer win the 2028 Democratic presidential nomination?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>559670</td>
+      <td>35165603539035270209469650915267170915291414186795231160733227083640059691764</td>
+      <td>Will Gina Raimondo win the 2028 Democratic presidential nomination?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>559677</td>
+      <td>6349038249650226718426900942104344803413105653564595362433352811865798195800</td>
+      <td>Will Hillary Clinton win the 2028 Democratic presidential nomination?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>559686</td>
+      <td>40963724357262746498642320898188195118391211877976821531149510360187173789737</td>
+      <td>Will Dwayne 'The Rock' Johnson win the 2028 Democratic presidential nomination?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>559689</td>
+      <td>37126434962149084556522721025504254258386171468763869879755961635390358765833</td>
+      <td>Will Beto O’Rourke win the 2028 Democratic presidential nomination?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>559695</td>
+      <td>52535923606561722941567320365820395300598958985353103429657683100920373025261</td>
+      <td>Will James Talarico win the 2028 Democratic presidential nomination?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>561242</td>
+      <td>97633418272282627828834872960145259034624388719803091466146359304286851612172</td>
+      <td>Will Tulsi Gabbard win the 2028 US Presidential Election?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>561244</td>
+      <td>77660944053451874285291959901958937238149180369572698706675030657716494119346</td>
+      <td>Will Donald Trump Jr. win the 2028 US Presidential Election?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>561248</td>
+      <td>48067717079255656974334181122173546721823870434119599450595298250019538972254</td>
+      <td>Will Vivek Ramaswamy win the 2028 US Presidential Election?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>561974</td>
+      <td>40081275558852222228080198821361202017557872256707631666334039001378518619916</td>
+      <td>Will J.D. Vance win the 2028 Republican presidential nomination?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>562008</td>
+      <td>98511916129081689027111328481059704559518789751071585689160934736837069796376</td>
+      <td>Will Pete Hegseth win the 2028 Republican presidential nomination?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>564162</td>
+      <td>29048360022556021389805670398008888482908398853670829781367251641936311260707</td>
+      <td>Will Shai Gilgeous-Alexander win the 2025–2026 NBA MVP?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-06-10T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>566188</td>
+      <td>78140458432174397862436707256368409182467606418188760097873260862383336868084</td>
+      <td>Will Manchester City win the 2025–26 English Premier League?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-27T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>569341</td>
+      <td>91061986285111660506709592119475475293178445047267552942031473045846880257562</td>
+      <td>Will Germán Vargas Lleras win the 1st round of the 2026 Colombian presidential …</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-31T16:00:00Z</td>
+    </tr>
+    <tr>
+      <td>569346</td>
+      <td>87678849706704552441529840256129995088714454521339794038868863045951701650099</td>
+      <td>Will Daniel Quintero win the 1st round of the 2026 Colombian presidential elect…</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-31T16:00:00Z</td>
+    </tr>
+    <tr>
+      <td>569368</td>
+      <td>62374557612691330043510053829591470998236327248924987579815802826988260253261</td>
+      <td>Will Ivan Cepeda Castro win the 2026 Colombian presidential election?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-06-21T14:00:00Z</td>
+    </tr>
+    <tr>
+      <td>573656</td>
+      <td>93694900555669388759405753550770573998169287228984912881955464376232163096213</td>
+      <td>Will Bitcoin hit $150k by December 31, 2026?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2027-01-01T04:00:00Z</td>
+    </tr>
+    <tr>
+      <td>576815</td>
+      <td>79624438143180003800250237893918101185691753742967744395672914534069506080687</td>
+      <td>Will Sevilla be relegated from La Liga after the 2025–26 season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>577169</td>
+      <td>14113947289569660354318901014337895050808911024563232706727704224659774787942</td>
+      <td>Will Richarlison be the top goal scorer in the 2025–26 English Premier League s…</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-27T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>577171</td>
+      <td>56782241068199600313268662692209803590655001932781133985288119301438305647529</td>
+      <td>Will Omar Marmoush be the top goal scorer in the 2025–26 English Premier League…</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-27T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>577230</td>
+      <td>62070332729843756648077334071325768265229024314411995286040519682521027925149</td>
+      <td>Will Vinicius Junior be the top goal scorer in the 2025–26 La Liga season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>578431</td>
+      <td>64240014405085627684592707734611331216920331707290293835817889703088044234495</td>
+      <td>Will Igor Paixao be the top goal scorer in the 2025-26 Ligue 1 season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>579357</td>
+      <td>102301849623335609730031008739036219105375069576896430721113512919948604973345</td>
+      <td>Will Napoli finish in the top 4 in the 2025-26 Serie A season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-28T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>579382</td>
+      <td>113881562168428412930289498603858095602242736632873015903313273185458779527964</td>
+      <td>Will Dusan Vlahovic be the top goal scorer in the 2025-26 Serie A season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-28T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>599307</td>
+      <td>45761844533847615095657975499649554423516098382359546239787965241599216489110</td>
+      <td>Will Rashida Tlaib win the 2026 Michigan Democratic Primary?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-08-04T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>553858</td>
+      <td>20257190540739490630509657713144742134547949967093643458458133445357169845406</td>
+      <td>Will the New York Knicks win the 2026 NBA Finals?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-07-01T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>558956</td>
+      <td>93165696161088512376930999170413968261015485018106746563527821398897374023845</td>
+      <td>Will Paraguay win the 2026 FIFA World Cup?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-07-20T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>558973</td>
+      <td>105252206997885252352889070218074909957179496257006510170583432513037465278006</td>
+      <td>Will Scotland win the 2026 FIFA World Cup?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-07-20T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>558976</td>
+      <td>106593539437032467615148553707998472829334050617128244920821917025746481184109</td>
+      <td>Will Croatia win the 2026 FIFA World Cup?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-07-20T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>558977</td>
+      <td>113379015922744700109400673843380371641970914885846970213129353605968934558386</td>
+      <td>Will Haiti win the 2026 FIFA World Cup?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-07-20T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>558979</td>
+      <td>112181485529919660901332188537214992263355343785744498550605179448744432717486</td>
+      <td>Will Panama win the 2026 FIFA World Cup?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-07-20T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>559671</td>
+      <td>19323997520040734631220675039559156784534982703459512097490198935565229528445</td>
+      <td>Will Zohran Mamdani win the 2028 Democratic presidential nomination?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>559676</td>
+      <td>88927218779847397120407909832537568114340511586397698395193736044476021744522</td>
+      <td>Will Barack Obama win the 2028 Democratic presidential nomination?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>559687</td>
+      <td>2213957649161627793381994368131485505647723208738124952452819345058597751695</td>
+      <td>Will Oprah Winfrey win the 2028 Democratic presidential nomination?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>559691</td>
+      <td>8815924480259634499011776432080696931704057619336093802050596292915996723758</td>
+      <td>Will Chris Murphy win the 2028 Democratic presidential nomination?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>559693</td>
+      <td>94658518227479141344875476648819337938746150529318297759951212169676959854478</td>
+      <td>Will Ruben Gallego win the 2028 Democratic presidential nomination?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>561239</td>
+      <td>70663352401606372246362604193214664065595751757222752105245221905399175050480</td>
+      <td>Will Kamala Harris win the 2028 US Presidential Election?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>561247</td>
+      <td>2638997461401140008448476093092229850740161649668999975101243681118238509713</td>
+      <td>Will Tim Walz win the 2028 US Presidential Election?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>561258</td>
+      <td>23692929455124171734375794579007643086071570310019729232490607671061438183936</td>
+      <td>Will Jamie Dimon win the 2028 US Presidential Election?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>561977</td>
+      <td>108177352465155946413420144732939501038742536693084796111933355102723645081439</td>
+      <td>Will Glenn Youngkin win the 2028 Republican presidential nomination?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>561987</td>
+      <td>46762065358788748743762617584400316865170283087328708370205000691002445395596</td>
+      <td>Will Elise Stefanik win the 2028 Republican presidential nomination?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>561989</td>
+      <td>75602319799101799832214450648958470414659751617273540482126444460192042893239</td>
+      <td>Will Ted Cruz win the 2028 Republican presidential nomination?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>562007</td>
+      <td>79109138136144804495019974949003266649145803384760006308278371005319168843129</td>
+      <td>Will Joe Kent win the 2028 Republican presidential nomination?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>564161</td>
+      <td>73768610008619570600930429495180540710817177537162503586781057110775077618432</td>
+      <td>Will Nikola Jokic win the 2025–2026 NBA MVP?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-06-10T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>564214</td>
+      <td>80564199933198063686735983682931201091805047291421501140508185910743468318376</td>
+      <td>Will the Minnesota Timberwolves win the NBA Western Conference Finals?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-06-16T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>569339</td>
+      <td>22771558623355089707681429633836704882116031403343361257897294847540582889503</td>
+      <td>Will Sergio Fajardo win the 1st round of the 2026 Colombian presidential electi…</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-31T16:00:00Z</td>
+    </tr>
+    <tr>
+      <td>569357</td>
+      <td>33053388922196452557261107683035649080682228011295662021241156014202987636793</td>
+      <td>Will Luis Gilberto Murillo win the 2026 Colombian presidential election?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-06-21T14:00:00Z</td>
+    </tr>
+    <tr>
+      <td>569358</td>
+      <td>8704105627729187158244464441676617275507746943882460083674867791526057508646</td>
+      <td>Will Claudia López win the 2026 Colombian presidential election?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-06-21T14:00:00Z</td>
+    </tr>
+    <tr>
+      <td>572116</td>
+      <td>71859696618563192463287150616126338038422905213505105571292945744661289726309</td>
+      <td>Tom Hardy announced as next James Bond?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-06-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>572121</td>
+      <td>49100155288255713531280332748049097097613379788560462245718736090008547142642</td>
+      <td>Callum Turner announced as next James Bond?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-06-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>577176</td>
+      <td>72384687038182433689874327261984956544997236795314184718224091418094356344966</td>
+      <td>Will Bukayo Saka be the top goal scorer in the 2025–26 English Premier League s…</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-27T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>577185</td>
+      <td>98373717403750989662162833750111210918944497427472212228877007287591039744041</td>
+      <td>Will Mohammed Kudus be the top goal scorer in the 2025–26 English Premier Leagu…</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-27T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>577187</td>
+      <td>99198924097827784427532997585241286678466293148323233780401857923587127415754</td>
+      <td>Will Brennan Johnson be the top goal scorer in the 2025–26 English Premier Leag…</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-27T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>577233</td>
+      <td>85450186084380419372744179618618425905211867206934194164904272142040477321142</td>
+      <td>Will Ayoze Perez be the top goal scorer in the 2025–26 La Liga season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>577237</td>
+      <td>34996430135377662182478828889088041580319309767069410756085253475349980098679</td>
+      <td>Will Javi Puado be the top goal scorer in the 2025–26 La Liga season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>577277</td>
+      <td>44741888338419906404486954459719474606346125085587394073603483706523243052500</td>
+      <td>Will Serhou Guirassy be the top goal scorer in the 2025–26 Bundesliga season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-28T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>577278</td>
+      <td>7888861096717092470560466121984594720392856066405453400763940107686287865082</td>
+      <td>Will Patrik Schick be the top goal scorer in the 2025–26 Bundesliga season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-28T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>577282</td>
+      <td>32676499383400665200746037279217737558284937536223714873506426202539097902762</td>
+      <td>Will Luis Diaz be the top goal scorer in the 2025–26 Bundesliga season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-28T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>577283</td>
+      <td>71216154792191030083354473461386899246245242196096601702705023997087404907586</td>
+      <td>Will Victor Boniface be the top goal scorer in the 2025–26 Bundesliga season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-28T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>578157</td>
+      <td>43189282757237035928728983357191721227271350782993575202022336640911924467379</td>
+      <td>Will any 2026 FIFA World Cup game scheduled in the U.S. be relocated abroad?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-06-10T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>578401</td>
+      <td>28745788861076672720947634851890673159658681509256104153267819539064558306351</td>
+      <td>Will Lecce be relegated from Serie A after the 2025-26 season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-28T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>578418</td>
+      <td>113225921877107633778573037041689598158589060345210450313175165069802895788741</td>
+      <td>Will Amine Gouiri be the top goal scorer in the 2025-26 Ligue 1 season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>578428</td>
+      <td>105143982493427506303713709015399944550708749795456870668026875486154274792373</td>
+      <td>Will Jean Philippe Krasso be the top goal scorer in the 2025-26 Ligue 1 season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>579386</td>
+      <td>34442725748335703822174422733651933888122037185635392061813228630937508784695</td>
+      <td>Will Evan Ferguson be the top goal scorer in the 2025-26 Serie A season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-28T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>582317</td>
+      <td>34856892357651501103685911178619303187241406849937387885736851713013271817854</td>
+      <td>Will Lyon finish in the top 4 of the Ligue 1 2025–26 standings?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>599308</td>
+      <td>44162996630579613944619329601086604585114580039271806622718850166081603488312</td>
+      <td>Will Sarah Anthony win the 2026 Michigan Democratic Primary?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-08-04T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>558981</td>
+      <td>87403333427856945144645806003352057704193778078820484282942507058200689996202</td>
+      <td>Will Congo DR win the 2026 FIFA World Cup?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-07-20T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>558984</td>
+      <td>35797818400757287472708740881657961304270157125643131597907636474183210188025</td>
+      <td>Will Czechia win the 2026 FIFA World Cup?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-07-20T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>559651</td>
+      <td>32338220190071351435772801779725302244575775216413325951443816017994629993401</td>
+      <td>Xi Jinping out before 2027?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-12-31T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>559652</td>
+      <td>54533043819946592547517511176940999955633860128497669742211153063842200957669</td>
+      <td>Will Gavin Newsom win the 2028 Democratic presidential nomination?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>559653</td>
+      <td>107064985435494333113391038470401719113272800530429703182710416066774068907304</td>
+      <td>Will Alexandria Ocasio-Cortez win the 2028 Democratic presidential nomination?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>559672</td>
+      <td>30732552320006664177902085971957467957450485111214036633872573588757974348601</td>
+      <td>Will Roy Cooper win the 2028 Democratic presidential nomination?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>559673</td>
+      <td>71289010523270989807437428651002770360280908813019627976988032260868574107425</td>
+      <td>Will John Fetterman win the 2028 Democratic presidential nomination?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>559685</td>
+      <td>51035537065442638321333063915918274102446051033989435618245745345113522914516</td>
+      <td>Will MrBeast win the 2028 Democratic presidential nomination?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>559692</td>
+      <td>22103094389913052942362639589409218272323168761614999702665821259175535456835</td>
+      <td>Will Jasmine Crockett win the 2028 Democratic presidential nomination?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>561260</td>
+      <td>89071282556584199015490241074221756662667488270789034763702585258138302536112</td>
+      <td>Will Thomas Massie win the 2028 US Presidential Election?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>561990</td>
+      <td>97933607699985149274021900377397416175605196663149372937380275158258659161873</td>
+      <td>Will Elon Musk win the 2028 Republican presidential nomination?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>562188</td>
+      <td>58401019401260699653952858670495528419982703529223145905183604798309827954819</td>
+      <td>Will Dawn Buckingham win the 2026 Texas Republican Primary?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-26T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>562831</td>
+      <td>103704141773947678931823410030956181918562062788486034785782641603149828893320</td>
+      <td>2026 Balance of Power: R Senate, R House</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-11-03T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>566760</td>
+      <td>703229116919803457142440034780425874346022451261358752931225117413237404457</td>
+      <td>Will Trump pardon Ghislaine Maxwell by end of 2026?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-12-31T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>567689</td>
+      <td>108187737663325442737199857734058032845728149267925579081973309839049299838520</td>
+      <td>Zelenskyy out as Ukraine president by end of 2026?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-12-31T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>569340</td>
+      <td>34438409845535751191341828081530593695046286317271306160707054286296479165842</td>
+      <td>Will Juan Manuel Galán win the 1st round of the 2026 Colombian presidential ele…</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-31T16:00:00Z</td>
+    </tr>
+    <tr>
+      <td>569348</td>
+      <td>72774350053906879890006453324691552555097045786061116921411542398714774240040</td>
+      <td>Will Mauricio Cárdenas win the 1st round of the 2026 Colombian presidential ele…</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-31T16:00:00Z</td>
+    </tr>
+    <tr>
+      <td>569362</td>
+      <td>90597192178681015689649221295046634532475085163327739303111514887963871088190</td>
+      <td>Will Gustavo Bolívar win the 2026 Colombian presidential election?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-06-21T14:00:00Z</td>
+    </tr>
+    <tr>
+      <td>572115</td>
+      <td>103964743736847868582159777341324076149918550949982197636847126454376683338421</td>
+      <td>Harris Dickinson announced as next James Bond?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-06-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>572133</td>
+      <td>31651972441019808961685346078403610685710956924575973014923461950982284624160</td>
+      <td>No one announced as next James Bond?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-06-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>572772</td>
+      <td>86773900375669124840465987931747249545146062687938210252096173841184960855071</td>
+      <td>Will Aston Villa finish in 3rd place in the 2025-26 English Premier League?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-27T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>572854</td>
+      <td>111668273399360069194239636343778675245064040950387623332811001833974095876216</td>
+      <td>Will West Ham be relegated from the English Premier League after the 2025–26 se…</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-27T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>577231</td>
+      <td>35385046285095047875859550982501333940016148310175612786655121530268337331434</td>
+      <td>Will Mikel Oyarzabal be the top goal scorer in the 2025–26 La Liga season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>577242</td>
+      <td>87076761959524824596667767871338783105013148144014343593959452219056943445676</td>
+      <td>Will Cyle Larin be the top goal scorer in the 2025–26 La Liga season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>577245</td>
+      <td>69196677690927265002451334694240538592951011957285689708757350071125284654035</td>
+      <td>Will Alex Baena be the top goal scorer in the 2025–26 La Liga season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>577295</td>
+      <td>41208351236397166328872550854608550552314297451342384956165441312617513020672</td>
+      <td>Will Mohammed Amoura be the top goal scorer in the 2025–26 Bundesliga season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-28T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>578416</td>
+      <td>69434240030114581317400164901459370877273746887567386391790275895794271079668</td>
+      <td>Will Arnaud Kalimuendo be the top goal scorer in the 2025-26 Ligue 1 season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>578436</td>
+      <td>69482815711064967577377069380333362162780566927545061073565826363012519432807</td>
+      <td>Will Joaquin Panichelli be the top goal scorer in the 2025-26 Ligue 1 season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>579383</td>
+      <td>73325474841085738067975777937767801820558138409010135733456890505370745941309</td>
+      <td>Will Santiago Gimenez be the top goal scorer in the 2025-26 Serie A season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-28T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>579397</td>
+      <td>96751974984992524671381069695279743018981824691838748245376840443849666358462</td>
+      <td>Will Edin Dzeko be the top goal scorer in the 2025-26 Serie A season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-28T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>579400</td>
+      <td>56617611177742980504178011242480286733810317838839021080837916143048710056029</td>
+      <td>Will Rafael Leao be the top goal scorer in the 2025-26 Serie A season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-28T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>593983</td>
+      <td>11046262311494533237971148351329185314005627894869626528589068956894902481233</td>
+      <td>Will Trump endorse John Cornyn for TX-Sen by Nov 2 2026 ET?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-11-04T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>599304</td>
+      <td>4041912122563547970024635557261696068618666839090786586996637505354743961673</td>
+      <td>Will Haley Stevens win the 2026 Michigan Democratic Primary?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-08-04T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>540844</td>
+      <td>105267568073659068217311993901927962476298440625043565106676088842803600775810</td>
+      <td>Will bitcoin hit $1m before GTA VI?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-07-31T12:00:00Z</td>
+    </tr>
+    <tr>
+      <td>553849</td>
+      <td>114248353339288476395516704859280406139740194553592209059241667781908210476009</td>
+      <td>Will the Montreal Canadiens win the 2026 NHL Stanley Cup?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-06-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>553857</td>
+      <td>21929863894047830651599085392978377118642353711084157807549430066031384497667</td>
+      <td>Will the Cleveland Cavaliers win the 2026 NBA Finals?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-07-01T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>558945</td>
+      <td>22587775301869146748237913050505932485648958481571808324285560650057390882036</td>
+      <td>Will Mexico win the 2026 FIFA World Cup?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-07-20T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>558957</td>
+      <td>79609298644734030886284029462369514848707878622071495577618126141372199748974</td>
+      <td>Will New Zealand win the 2026 FIFA World Cup?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-07-20T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>559663</td>
+      <td>103988345069738240821107916249290759786442703283901164377120414690701074137717</td>
+      <td>Will J.B. Pritzker win the 2028 Democratic presidential nomination?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>561233</td>
+      <td>1420113190297259908358916251277696183671602680024474979931472444792502392139</td>
+      <td>Will Josh Shapiro win the 2028 US Presidential Election?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>561261</td>
+      <td>110102705199530588976777616718115948005824665233400132417374621750887344831757</td>
+      <td>Will Jon Ossoff win the 2028 US Presidential Election?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>561976</td>
+      <td>111796631871113641071635832853519973638674140424258605036492112910151603434351</td>
+      <td>Will Tulsi Gabbard win the 2028 Republican presidential nomination?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>561978</td>
+      <td>96972794085445478502118386209219626048407104930213167197946285611747327241358</td>
+      <td>Will Donald Trump Jr. win the 2028 Republican presidential nomination?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>561979</td>
+      <td>12127975650736113116407758794754973741525044713193258995588171654429754588610</td>
+      <td>Will Ron DeSantis win the 2028 Republican presidential nomination?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>561981</td>
+      <td>7847177314809025001842027337093046201021185723933452855314998541165696902642</td>
+      <td>Will Vivek Ramaswamy win the 2028 Republican presidential nomination?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>561986</td>
+      <td>311624663652221737215322113380496984764966764039692273354641152455298576851</td>
+      <td>Will Byron Donalds win the 2028 Republican presidential nomination?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>562000</td>
+      <td>56369772478534954338683665819559528414197495274302917800610633957542171787417</td>
+      <td>Will Rand Paul win the 2028 Republican presidential nomination?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>562829</td>
+      <td>70997927349469817841862065582625658840347600365813612622959588796331622340305</td>
+      <td>2026 Balance of Power: D Senate, R House</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-11-03T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>567688</td>
+      <td>114694726451307654528948558967898493662917070661203465131156925998487819889437</td>
+      <td>Netanyahu out by end of 2026?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-12-31T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>569333</td>
+      <td>101472336359145774296027429436400506992904652049782535544126746198476695802182</td>
+      <td>Will Luis Gilberto Murillo win the 1st round of the 2026 Colombian presidential…</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-31T16:00:00Z</td>
+    </tr>
+    <tr>
+      <td>569343</td>
+      <td>97787606698093663746310161655083884268863593082956469376386743061399298825100</td>
+      <td>Will Iván Cepeda Castro win the 1st round of the 2026 Colombian presidential el…</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-31T16:00:00Z</td>
+    </tr>
+    <tr>
+      <td>569363</td>
+      <td>8068224814554540438878048752492562091284744204380091879028789889702206094159</td>
+      <td>Will Sergio Fajardo win the 2026 Colombian presidential election?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-06-21T14:00:00Z</td>
+    </tr>
+    <tr>
+      <td>572765</td>
+      <td>5324931812391432518666440898708673790758706219943331845673262100571513403270</td>
+      <td>Will Liverpool finish in 3rd place in the 2025-26 English Premier League?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-27T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>576810</td>
+      <td>73597877173797776703533961386391778914469921189602999210385790382300668791595</td>
+      <td>Will Getafe be relegated from La Liga after the 2025–26 season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>577168</td>
+      <td>104582508148424115897511334519834707085901645295166805533084841423912878555712</td>
+      <td>Will Ollie Watkins be the top goal scorer in the 2025–26 English Premier League…</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-27T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>577170</td>
+      <td>111833791713605298141350391268557048852627695992567917532719982369837309341050</td>
+      <td>Will Dominic Solanke be the top goal scorer in the 2025–26 English Premier Leag…</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-27T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>577177</td>
+      <td>48096461703828524256164307708005083326532171684035677911193083899587188981253</td>
+      <td>Will Bryan Mbeumo be the top goal scorer in the 2025–26 English Premier League …</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-27T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>577184</td>
+      <td>104760050366702563650209438348007452609559241951955868049242892063686019535745</td>
+      <td>Will Thierno Barry be the top goal scorer in the 2025–26 English Premier League…</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-27T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>577188</td>
+      <td>112108452217672365554003857740648803941447166454729564791570976908020655526617</td>
+      <td>Will Cody Gakpo be the top goal scorer in the 2025–26 English Premier League se…</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-27T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>577224</td>
+      <td>75885549806041705440616483171403974382986377202053531674757984617564016983448</td>
+      <td>Will Gonzalo Garcia be the top goal scorer in the 2025–26 La Liga season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>577225</td>
+      <td>20450835923140925865575749200335209238127709493333398350897559979417648423084</td>
+      <td>Will Oihan Sancet be the top goal scorer in the 2025–26 La Liga season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>577232</td>
+      <td>48368309662638112013465916577402564922962355069006784733061258856322807009058</td>
+      <td>Will Hugo Duro be the top goal scorer in the 2025–26 La Liga season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>577239</td>
+      <td>25190149186348626497584661665153964321010101728496495635131758054890103740875</td>
+      <td>Will Daniel Raba be the top goal scorer in the 2025–26 La Liga season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>577281</td>
+      <td>102436772013076156944295871423877161254159297346169261958329577570286200792258</td>
+      <td>Will Lois Openda be the top goal scorer in the 2025–26 Bundesliga season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-28T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>577287</td>
+      <td>93601737054928362372096738986263364737270540163712701982280468693583918706009</td>
+      <td>Will Tim Kleindienst be the top goal scorer in the 2025–26 Bundesliga season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-28T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>578409</td>
+      <td>82528114818480344152617084597061064117368925723807111217877484504980669308487</td>
+      <td>Will Mason Greenwood be the top goal scorer in the 2025-26 Ligue 1 season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>578425</td>
+      <td>65758940957887162303470634944401084072071564833368993280002271233570003743669</td>
+      <td>Will Folarin Balogun be the top goal scorer in the 2025-26 Ligue 1 season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>578430</td>
+      <td>75836540540722372535702949203463410015986208642963894218305152979059465099524</td>
+      <td>Will Mostafa Mohamed be the top goal scorer in the 2025-26 Ligue 1 season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>579379</td>
+      <td>26248816332787216051982386909735593998804264053492651181818650064759534429675</td>
+      <td>Will Jonathan David be the top goal scorer in the 2025-26 Serie A season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-28T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>579401</td>
+      <td>10204855876586661546101434017772639318423007601969456972725552117374274782608</td>
+      <td>Will Andrea Pinamonti be the top goal scorer in the 2025-26 Serie A season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-28T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>582139</td>
+      <td>19774266338736810754136855524833852011672256769757063965013672335654144415078</td>
+      <td>Will Aston Villa finish in the top 4 of the EPL 2025–26 standings?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-27T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>582155</td>
+      <td>100952291322678954514417231357111610948515892742954751932425813530604840075554</td>
+      <td>Will Atletico Madrid finish in the top 4 of the La Liga 2025–26 standings?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>540818</td>
+      <td>88275040060084773376557187972215267513049848642895776801789297917961077894224</td>
+      <td>New Playboi Carti Album before GTA VI?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-07-31T12:00:00Z</td>
+    </tr>
+    <tr>
+      <td>553828</td>
+      <td>101738487887518832481587379955535423775326921556438741919099866785354159699479</td>
+      <td>Will the Colorado Avalanche win the 2026 NHL Stanley Cup?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-06-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>558962</td>
+      <td>98686749402500678753487703372528277029342097490180026723487433517076969282825</td>
+      <td>Will Jordan win the 2026 FIFA World Cup?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-07-20T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>558980</td>
+      <td>41004484905556820430171783088292854654441952667499527125436634397522798168110</td>
+      <td>Will Sweden win the 2026 FIFA World Cup?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-07-20T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>559658</td>
+      <td>38171024903091354977195167437673496224420673639143973968032407064172828043588</td>
+      <td>Will Kamala Harris win the 2028 Democratic presidential nomination?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>559679</td>
+      <td>113510300123120868861281132282742729065975487298059944817273881893086209196585</td>
+      <td>Will Bernie Sanders win the 2028 Democratic presidential nomination?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>561262</td>
+      <td>92909595831677784305960426832337551335132297174712723670055008600724483830120</td>
+      <td>Will James Talarico win the 2028 US Presidential Election?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>561975</td>
+      <td>13565458761220145250977753098276900790902214604876327357986816739576288755859</td>
+      <td>Will Marco Rubio win the 2028 Republican presidential nomination?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>561984</td>
+      <td>85795532452312461688342921814235563171225750416821603832877839950165564679042</td>
+      <td>Will Robert F. Kennedy Jr. win the 2028 Republican presidential nomination?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>565064</td>
+      <td>67109747366255871599717338045111308888043498275177238365560740200996017915657</td>
+      <td>Will the Republicans win the 2028 US Presidential Election?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>569345</td>
+      <td>43406345570240507916710279610949015003758662253082068993250923591377249551960</td>
+      <td>Will Roy Barreras win the 1st round of the 2026 Colombian presidential election?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-31T16:00:00Z</td>
+    </tr>
+    <tr>
+      <td>577175</td>
+      <td>54236330394497042999232692608534835969733131094441295535277724798165041782814</td>
+      <td>Will Liam Delap be the top goal scorer in the 2025–26 English Premier League se…</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-27T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>577190</td>
+      <td>99611234567111832279381235616973424305850563087425365084149737464676375626231</td>
+      <td>Will Florian Wirtz be the top goal scorer in the 2025–26 English Premier League…</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-27T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>577192</td>
+      <td>36957321876566438184393858443096197960859649862769029642561698350625783898308</td>
+      <td>Will Antoine Semenyo be the top goal scorer in the 2025–26 English Premier Leag…</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-27T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>577293</td>
+      <td>53184392184731073294596377638963528940590267478279064727563854235726442195657</td>
+      <td>Will Andrej Kramaric be the top goal scorer in the 2025–26 Bundesliga season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-28T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>578439</td>
+      <td>31507849369563522567790890517050530676056687832113251513996934588090774384117</td>
+      <td>Will Ferreira Vitinha be the top goal scorer in the 2025-26 Ligue 1 season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>578530</td>
+      <td>51788757462224867357599830611737523296280551271915216799084218426057319416095</td>
+      <td>Will Freiburg win the 2025-26 UEFA Europa League?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-24T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>579360</td>
+      <td>88142968044548951921048488179799265834432769008820620433284068962460922105320</td>
+      <td>Will Juventus finish in the top 4 in the 2025-26 Serie A season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-28T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>579378</td>
+      <td>75391652029652534214540080397229805970974975468104986584372965161226361755136</td>
+      <td>Will Moise Kean be the top goal scorer in the 2025-26 Serie A season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-28T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>579389</td>
+      <td>75666316113785904870346098802652291855819221048329646048618814075513401513164</td>
+      <td>Will Valentin Castellanos be the top goal scorer in the 2025-26 Serie A season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-28T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>593977</td>
+      <td>16165180365166795101253476583424570293978512340466383667319830236646927210547</td>
+      <td>Will Bernie endorse Alan Grayson for FL-Sen Nov 2 2026 ET?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-11-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>598936</td>
+      <td>13894524895366006997415301184483786855853683638290113202814526270024185311964</td>
+      <td>Will the next UK election be called by June 30, 2026?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-06-30T12:00:00Z</td>
+    </tr>
+    <tr>
+      <td>599306</td>
+      <td>69074333464069151404242315526218405459784935747253869832659873168984248759799</td>
+      <td>Will Dana Nessel win the 2026 Michigan Democratic Primary?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-08-04T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>540817</td>
+      <td>98022490269692409998126496127597032490334070080325855126491859374983463996227</td>
+      <td>New Rihanna Album before GTA VI?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-07-31T12:00:00Z</td>
+    </tr>
+    <tr>
+      <td>540819</td>
+      <td>90435811253665578014957380826505992530054077692143838383981805324273750424057</td>
+      <td>Will Jesus Christ return before GTA VI?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-07-31T12:00:00Z</td>
+    </tr>
+    <tr>
+      <td>540881</td>
+      <td>8441400852834915183759801017793514978104486628517653995211751018945988243154</td>
+      <td>GTA VI released before June 2026?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-31T12:00:00Z</td>
+    </tr>
+    <tr>
+      <td>553824</td>
+      <td>79397003434468715775480922117285203652110865791390656395657957066470661722480</td>
+      <td>Will the Carolina Hurricanes win the 2026 NHL Stanley Cup?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-06-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>558941</td>
+      <td>55935183786009449883683540312350046975246300613283087403691731856990327029236</td>
+      <td>Will Netherlands win the 2026 FIFA World Cup?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-07-20T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>558974</td>
+      <td>62131913648515148266463816694306031394539656598501514114816028349608560215534</td>
+      <td>Will Switzerland win the 2026 FIFA World Cup?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-07-20T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>559657</td>
+      <td>60590045489347122735554346200880179420435533609307820342798544098823516727807</td>
+      <td>Will Stephen A. Smith win the 2028 Democratic presidential nomination?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>559660</td>
+      <td>26468656392978559668331516709623917078428425933265692717836103090220693717685</td>
+      <td>Will Andy Beshear win the 2028 Democratic presidential nomination?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>559674</td>
+      <td>42119164854283656238382173699154739480090965550328051492328192273011556335098</td>
+      <td>Will Jared Polis win the 2028 Democratic presidential nomination?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>559690</td>
+      <td>55087250670040717711131370018408221134109122974378698780636020561523521220754</td>
+      <td>Will Kim Kardashian win the 2028 Democratic presidential nomination?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>561246</td>
+      <td>104480514270625615787868282411330496385404675495672110015326625654626015018993</td>
+      <td>Will Ron DeSantis win the 2028 US Presidential Election?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>561253</td>
+      <td>45015916581148592087728250896178171120552786117190685135618507471166113474733</td>
+      <td>Will Tucker Carlson win the 2028 US Presidential Election?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>562004</td>
+      <td>65830295349944471218641822318218876930376684645620468557619951782520997909982</td>
+      <td>Will Marjorie Taylor Greene win the 2028 Republican presidential nomination?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>564166</td>
+      <td>47252200832793247423089215877857667425039333476763845614656878203768571431091</td>
+      <td>Will Victor Wembanyama win the 2025–2026 NBA MVP?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-06-10T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>568117</td>
+      <td>82496570332984679554195177789706736795170417640692739176832196524671988217379</td>
+      <td>Will Trump resign by December 31, 2026?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-12-31T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>572734</td>
+      <td>47891421265650815165883328427019266875679075440812617437375575277711635613845</td>
+      <td>Will Manchester City finish in 2nd place in the 2025-26 English Premier League?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-27T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>576816</td>
+      <td>108773396196930868721203820307064091813005850377325910462158147076294221336978</td>
+      <td>Will Mallorca be relegated from La Liga after the 2025–26 season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>577164</td>
+      <td>78300931071701042474140195804986160795843314609787519334930755714412714896602</td>
+      <td>Will Joao Pedro be the top goal scorer in the 2025–26 English Premier League se…</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-27T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>577288</td>
+      <td>56323539615651816818267229259150871177627322204823867354832755297469690554470</td>
+      <td>Will Michy Batshuayi be the top goal scorer in the 2025–26 Bundesliga season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-28T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>577291</td>
+      <td>73011059187166137733275983046150182784910493074367934212798853099948144842604</td>
+      <td>Will Deniz Undav be the top goal scorer in the 2025–26 Bundesliga season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-28T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>578415</td>
+      <td>84746059472953295973329842300474297619200759549473138304042060833518673687103</td>
+      <td>Will Georges Mikautadze be the top goal scorer in the 2025-26 Ligue 1 season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>578417</td>
+      <td>14026854715617808876406041496385841299626926896300838895001508537977933576550</td>
+      <td>Will Pierre-Emerick Aubameyang be the top goal scorer in the 2025-26 Ligue 1 se…</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>578424</td>
+      <td>104532218292085858040411061557197223969482848999959446260630160853517733309125</td>
+      <td>Will Achraf Hakimi be the top goal scorer in the 2025-26 Ligue 1 season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>578427</td>
+      <td>28897900569012049707231792283525800148468664354459041209388120342793568888534</td>
+      <td>Will Fabian Ruiz be the top goal scorer in the 2025-26 Ligue 1 season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>578527</td>
+      <td>22910719015649869051507068343184433327817980956936716249207927684390736661048</td>
+      <td>Will Aston Villa win the 2025-26 UEFA Europa League?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-24T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>579381</td>
+      <td>80008485896062450085518615756511632966321304237025613359425784750605916435076</td>
+      <td>Will Ademola Lookman be the top goal scorer in the 2025-26 Serie A season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-28T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>582184</td>
+      <td>91775708991457109341035324736675910289566552771771352720902626661183359119543</td>
+      <td>Will Hoffenheim finish in the top 4 of the Bundesliga 2025–26 standings?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-28T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>582320</td>
+      <td>84306397887099119811991850161528768821442098509664991848498833440087082266176</td>
+      <td>Will Rennes finish in the top 4 of the Ligue 1 2025–26 standings?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>582717</td>
+      <td>332462812953361158016354695716232633373752944798478737086328444144960550554</td>
+      <td>Taylor Swift pregnant before marriage?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-08-31T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>593984</td>
+      <td>42727291944160720338673894242995707537338205213244876362644541975364071559864</td>
+      <td>Will Trump endorse Ken Paxton for TX-Sen by Nov 2 2026 ET?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-11-04T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>553856</td>
+      <td>49500299856831034491021962156746701298730459370557900271970866855042624695770</td>
+      <td>Will the Oklahoma City Thunder win the 2026 NBA Finals?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-07-01T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>558947</td>
+      <td>98803390175521456712653678280474920637934596234667490983228578374641217211132</td>
+      <td>Will Colombia win the 2026 FIFA World Cup?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-07-20T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>558952</td>
+      <td>99303605181956827630838461879484468077121754034387765735989859308848389894408</td>
+      <td>Will Canada win the 2026 FIFA World Cup?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-07-20T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>558959</td>
+      <td>33747305042007778221968790541070114008811587676172030120559423448386310500957</td>
+      <td>Will Iran win the 2026 FIFA World Cup?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-07-20T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>558970</td>
+      <td>61595193871140044336898809781418183952441527621084596848414908595268863899573</td>
+      <td>Will Cape Verde win the 2026 FIFA World Cup?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-07-20T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>559655</td>
+      <td>71169839497420596285841847514123589847893415750912355173877524195175834054354</td>
+      <td>Will Josh Shapiro win the 2028 Democratic presidential nomination?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>561985</td>
+      <td>109121432238307135312607668741094299588249627783575654034498708660414246884093</td>
+      <td>Will Brian Kemp win the 2028 Republican presidential nomination?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>561991</td>
+      <td>21684611233679565633387313395955873024927822291738934804105644401703825367322</td>
+      <td>Will Matt Gaetz win the 2028 Republican presidential nomination?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>562001</td>
+      <td>76572162491038773682779378100661251853152133818805423848523216103658476280587</td>
+      <td>Will Steve Bannon win the 2028 Republican presidential nomination?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>562003</td>
+      <td>10651968542740640896482407431367624536081358925965856338872110525887291512129</td>
+      <td>Will Kim Kardashian win the 2028 Republican presidential nomination?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>564213</td>
+      <td>92156510891798873020497715268024772851858076229893943637545856397683791106647</td>
+      <td>Will the Los Angeles Lakers win the NBA Western Conference Finals?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-06-16T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>568116</td>
+      <td>22094182676612877581056034720566110371610082057092726094559729674155018648896</td>
+      <td>Will Trump be impeached by end of 2026?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-12-31T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>569334</td>
+      <td>12516303356363467179885576472702473520609540998008534980142053225514923736128</td>
+      <td>Will Claudia López win the 1st round of the 2026 Colombian presidential electio…</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-31T16:00:00Z</td>
+    </tr>
+    <tr>
+      <td>569336</td>
+      <td>102456955097401421651876446896034115681794561141893258504967065325508688692283</td>
+      <td>Will Juan Daniel Oviedo win the 1st round of the 2026 Colombian presidential el…</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-31T16:00:00Z</td>
+    </tr>
+    <tr>
+      <td>572111</td>
+      <td>62239185941824652402752813729371423845548004986780601100316323331270822642667</td>
+      <td>James Norton announced as next James Bond?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-06-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>572117</td>
+      <td>54120517297787449950767396444302816721060398794472692356305596424687388939708</td>
+      <td>Pierce Brosnan announced as next James Bond?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-06-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>577189</td>
+      <td>75615194763825570253105529908925735637330457129633888605679989963612334234091</td>
+      <td>Will Kai Havertz be the top goal scorer in the 2025–26 English Premier League s…</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-27T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>577221</td>
+      <td>22702151217568226464490525917269671698635793471200188591890325057358807077490</td>
+      <td>Will Raphinha be the top goal scorer in the 2025–26 La Liga season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>577229</td>
+      <td>76794312778172154876533172710848055841220591544022724903757628442504975481665</td>
+      <td>Will Broja Iglesias be the top goal scorer in the 2025–26 La Liga season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>577234</td>
+      <td>110183118205658048480611552004818205608380030301879472767196181141473018245608</td>
+      <td>Will Vedat Muriqi be the top goal scorer in the 2025–26 La Liga season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>577246</td>
+      <td>74056431860682289842871849619463099581884627064723191566088662788504744554943</td>
+      <td>Will Antoine Griezmann be the top goal scorer in the 2025–26 La Liga season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>577276</td>
+      <td>87569871218748662090769146890327376821466803212836644352988286023370072840603</td>
+      <td>Will Harry Kane be the top goal scorer in the 2025–26 Bundesliga season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-28T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>577286</td>
+      <td>8013350309980067752092467553989532032941595361116376915087772932251249070671</td>
+      <td>Will Maximilian Beier be the top goal scorer in the 2025–26 Bundesliga season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-28T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>578411</td>
+      <td>73944224341187631304428893209762482633837672591436742366407059398002863809689</td>
+      <td>Will Matias Goncalo Ramos be the top goal scorer in the 2025-26 Ligue 1 season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>579394</td>
+      <td>34969317359066707467818300343575076572805390155612294308344602488690142710069</td>
+      <td>Will Kevin De Bruyne be the top goal scorer in the 2025-26 Serie A season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-28T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>579398</td>
+      <td>51943596956598942141465836584207695245377193094803992240669612937523261676398</td>
+      <td>Will Paulo Dybala be the top goal scorer in the 2025-26 Serie A season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-28T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>593974</td>
+      <td>33970361138937631470073795943535268274491124306414028184433322285876577197264</td>
+      <td>Will Bernie endorse Dan Osborn for NE-Sen by Nov 2 2026 ET?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-11-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>540843</td>
+      <td>21695138873211375451055566770107682325494206727818897067665810321709249824909</td>
+      <td>Will China invades Taiwan before GTA VI?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-07-31T12:00:00Z</td>
+    </tr>
+    <tr>
+      <td>553843</td>
+      <td>89876650777103845660381011502618435196005005316371719080379226306122186643898</td>
+      <td>Will the Philadelphia Flyers win the 2026 NHL Stanley Cup?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-06-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>553859</td>
+      <td>5771676627182954113677164857547228277089396639521594262964034606220001939923</td>
+      <td>Will the Minnesota Timberwolves win the 2026 NBA Finals?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-07-01T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>558961</td>
+      <td>80724786407275266937534613008558715581084712230616856739273522348302669402554</td>
+      <td>Will South Korea win the 2026 FIFA World Cup?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-07-20T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>558967</td>
+      <td>43907673646206657865778036957293730446366626078011238443367990170655175896145</td>
+      <td>Will Ghana win the 2026 FIFA World Cup?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-07-20T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>558983</td>
+      <td>89770121993255619705119104591644526712193505786928967250693522950895615785005</td>
+      <td>Will Bosnia-Herzegovina win the 2026 FIFA World Cup?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-07-20T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>559666</td>
+      <td>104464678880204778606895232389511543522030897731392516718349574106843434770446</td>
+      <td>Will Tim Walz win the 2028 Democratic presidential nomination?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>561235</td>
+      <td>35272507273162958827997790327967872292415567859334925862043618606081750011897</td>
+      <td>Will Wes Moore win the 2028 US Presidential Election?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>561250</td>
+      <td>26641906520532802078452346454133721131611596169940893262820937050881742190686</td>
+      <td>Will Elon Musk win the 2028 US Presidential Election?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>561996</td>
+      <td>78994573210477487932611223094751007094801552166562252085708682076112788032998</td>
+      <td>Will Tucker Carlson win the 2028 Republican presidential nomination?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>562002</td>
+      <td>36725157385158152303355940271421346899386884953712631735038848833359115722560</td>
+      <td>Will Erika Kirk win the 2028 Republican presidential nomination?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>562187</td>
+      <td>75262277240576503541125200255351734877619831936165222710769956674779076695947</td>
+      <td>Will John Cornyn win the 2026 Texas Republican Primary?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-26T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>562190</td>
+      <td>107927272895121873896592780561794303301515708678562694349024225854697593171909</td>
+      <td>Will Wesley Hunt win the 2026 Texas Republican Primary?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-26T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>565065</td>
+      <td>49084048476353771153083262278964615095037480324537117350127265918750912547378</td>
+      <td>Will the Democrats win the 2028 US Presidential Election?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>566731</td>
+      <td>37247697796314054477445671418600147171468572907588144854814679003872920679597</td>
+      <td>Will PSG win the 2025–26 French Ligue 1?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>566737</td>
+      <td>106893482875330829332347425550558141013488263650384566003078374608472351519383</td>
+      <td>Will Lens win the 2025–26 French Ligue 1?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>569364</td>
+      <td>75712298340810272859765060308006832993211601931382911468417184675550881103879</td>
+      <td>Will Juan Manuel Galán win the 2026 Colombian presidential election?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-06-21T14:00:00Z</td>
+    </tr>
+    <tr>
+      <td>569369</td>
+      <td>36553834009124167357981460132800746681781045509640776189348736916365216865880</td>
+      <td>Will Daniel Quintero win the 2026 Colombian presidential election?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-06-21T14:00:00Z</td>
+    </tr>
+    <tr>
+      <td>569372</td>
+      <td>54150466123374773726738402962617014073469969105711615831248994920187304132512</td>
+      <td>Will Juan Carlos Pinzón win the 2026 Colombian presidential election?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-06-21T14:00:00Z</td>
+    </tr>
+    <tr>
+      <td>572112</td>
+      <td>110217591945151157649327586817895909555659898136471568612407796254538901768830</td>
+      <td>Paul Mescal announced as next James Bond?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-06-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>572125</td>
+      <td>2539243778315573823923907482719197372899536309178051544334006233242009567404</td>
+      <td>Josh O'Connor announced as next James Bond?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-06-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>572770</td>
+      <td>49049273081613175499767461120333932313501982385378065447150899853192684932470</td>
+      <td>Will Manchester United finish in 3rd place in the 2025-26 English Premier Leagu…</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-27T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>572833</td>
+      <td>51084215309885045739879978888008792011574578362625692193849320436646719284629</td>
+      <td>Will Wolves finish in last place in the 2025-26 English Premier League?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-27T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>572834</td>
+      <td>52285973159765620862836623991941740750953184410516376600150680891418169782731</td>
+      <td>Will Burnley finish in last place in the 2025-26 English Premier League?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-27T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>576806</td>
+      <td>82530830359531082599459301187359663650918757634216209928665124966435653916942</td>
+      <td>Will St. Pauli be relegated from the Bundesliga after the 2025–26 season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-28T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>576811</td>
+      <td>98492537753301065350523114682826834628513433060415947350558755757411536571367</td>
+      <td>Will Osasuna be relegated from La Liga after the 2025–26 season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>577161</td>
+      <td>80365173313895983605325248892162569953987774602633505688541422929067192725254</td>
+      <td>Will Mohamed Salah be the top goal scorer in the 2025–26 English Premier League…</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-27T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>577162</td>
+      <td>72574656434993840186445307554025381492285372432846424590534736075839686478597</td>
+      <td>Will Viktor Gyokeres be the top goal scorer in the 2025–26 English Premier Leag…</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-27T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>577240</td>
+      <td>72088688491610101384722384206165707443638739290798571693187856704797119769987</td>
+      <td>Will Iago Aspas be the top goal scorer in the 2025–26 La Liga season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>577248</td>
+      <td>39110700308891033765082720771423327970968989496145639822830381828556135408196</td>
+      <td>Will Roberto Fernandez be the top goal scorer in the 2025–26 La Liga season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>577284</td>
+      <td>93167397740879213220913668801256024250509018532336830527062786853329354974190</td>
+      <td>Will Nick Woltemade be the top goal scorer in the 2025–26 Bundesliga season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-28T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>578398</td>
+      <td>22398187790187305120863916278812508331357975196340479087426628481830278112943</td>
+      <td>Will Cremonese be relegated from Serie A after the 2025-26 season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-28T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>578437</td>
+      <td>109799225437407056614471315465974790315843564622253197579433539240865919737380</td>
+      <td>Will Sambou Soumano be the top goal scorer in the 2025-26 Ligue 1 season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>578443</td>
+      <td>24576507866770585461615463218165025527211298250622675518505436289726168311229</td>
+      <td>Will Martin Satriano be the top goal scorer in the 2025-26 Ligue 1 season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>579388</td>
+      <td>8582590519872779911032859282717117180355048823419015715255405320483367520997</td>
+      <td>Will Gianluca Scamacca be the top goal scorer in the 2025-26 Serie A season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-28T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>579393</td>
+      <td>85441017084806463654810732133026202913371825852145022888238390717165382660001</td>
+      <td>Will Christian Pulisic be the top goal scorer in the 2025-26 Serie A season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-28T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>579399</td>
+      <td>104555404835604667954000362375618348132711036465200790582313648268412781952429</td>
+      <td>Will Francesco Camarda be the top goal scorer in the 2025-26 Serie A season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-28T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>597967</td>
+      <td>34554555827438551101000555305203609600029621153428996114009350892614396532498</td>
+      <td>Starmer out by June 30, 2026?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-06-30T12:00:00Z</td>
+    </tr>
+    <tr>
+      <td>553829</td>
+      <td>68803485030073596962715540294172682212192134248970512695855620898253368033218</td>
+      <td>Will the Vegas Golden Knights win the 2026 NHL Stanley Cup?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-06-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>553838</td>
+      <td>52393600221905688380980180540161090876971894580569515967716227210336633318551</td>
+      <td>Will the Minnesota Wild win the 2026 NHL Stanley Cup?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-06-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>558940</td>
+      <td>45415751658241142530386585138386640503488308219341470020075667342738719018629</td>
+      <td>Will Portugal win the 2026 FIFA World Cup?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-07-20T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>558955</td>
+      <td>39971087496427056640429359043364261029374524049464674733142166279730655826181</td>
+      <td>Will Ecuador win the 2026 FIFA World Cup?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-07-20T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>558972</td>
+      <td>23542782083949026234898323432000742558288032327930681121040136746492993951914</td>
+      <td>Will Saudi Arabia win the 2026 FIFA World Cup?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-07-20T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>558982</td>
+      <td>53465512181802150755993130711224070738002100921790051090044528012833736167995</td>
+      <td>Will Iraq win the 2026 FIFA World Cup?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-07-20T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>559667</td>
+      <td>83723134981785004242996949681785273460678873813693556756054904164484296299719</td>
+      <td>Will Michelle Obama win the 2028 Democratic presidential nomination?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>559678</td>
+      <td>41340056280794024415573839406074658402877379128871144681466050648033201160259</td>
+      <td>Will Liz Cheney win the 2028 Democratic presidential nomination?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>561236</td>
+      <td>4999047257294547885970323631312419427544062131054733229841947946130772277335</td>
+      <td>Will Gretchen Whitmer win the 2028 US Presidential Election?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>561240</td>
+      <td>105367778020161609482094090847463497982204321259381518614669619753184648647559</td>
+      <td>Will Stephen Smith win the 2028 US Presidential Election?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>561992</td>
+      <td>42282542821681724515855150589432262778581936160356547088323204270366545065655</td>
+      <td>Will Katie Britt win the 2028 Republican presidential nomination?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>562793</td>
+      <td>113287701564209339913693347405685749986285999146352375265161592243948562084773</td>
+      <td>Will the Democratic Party control the Senate after the 2026 Midterm elections?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-11-03T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>562828</td>
+      <td>34722410608062854697106861099776685947172185964394483545370684749662285977831</td>
+      <td>2026 Balance of Power: D Senate, D House</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-11-03T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>562832</td>
+      <td>35477631289241705233759154026285946627439635224019448868888132647783862821489</td>
+      <td>2026 Balance of Power: Other</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-11-03T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>564210</td>
+      <td>105874436620923713168019020245858616944322383958692280683224180064376992665538</td>
+      <td>Will the Oklahoma City Thunder win the NBA Western Conference Finals?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-06-16T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>569338</td>
+      <td>109710008834411230337090857031488261059821089034726354248807420936018491444380</td>
+      <td>Will Gustavo Bolívar win the 1st round of the 2026 Colombian presidential elect…</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-31T16:00:00Z</td>
+    </tr>
+    <tr>
+      <td>569344</td>
+      <td>33232052119491652564300969744259903933559547696830742958153653325470669042304</td>
+      <td>Will Abelardo de la Espriella win the 1st round of the 2026 Colombian president…</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-31T16:00:00Z</td>
+    </tr>
+    <tr>
+      <td>572123</td>
+      <td>37927260280375428448033753970844358590035155195795198096685170864149151675322</td>
+      <td>Theo James announced as next James Bond?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-06-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>577166</td>
+      <td>115525374107792247441862537671576247536802966403947578146994740913087078766607</td>
+      <td>Will Cole Palmer be the top goal scorer in the 2025–26 English Premier League s…</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-27T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>577186</td>
+      <td>67841192750148997275473648690260112080723046610172086481620702839701751895916</td>
+      <td>Will Nicolas Jackson be the top goal scorer in the 2025–26 English Premier Leag…</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-27T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>577235</td>
+      <td>12436606244684756212688349482021343426028351538039522454366335615620119043815</td>
+      <td>Will Dodi Lukebakio be the top goal scorer in the 2025–26 La Liga season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>577241</td>
+      <td>91203260296949109747095851381415926782789749145484395871735811789947699971761</td>
+      <td>Will Cristhian Stuani be the top goal scorer in the 2025–26 La Liga season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>577244</td>
+      <td>108812938192767854218949300916725095215503085851828138910431467866540044790765</td>
+      <td>Will Inaki Williams be the top goal scorer in the 2025–26 La Liga season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>577285</td>
+      <td>23177234539005086745924487565572514732873310188830333623513053312024465699839</td>
+      <td>Will Jamal Musiala be the top goal scorer in the 2025–26 Bundesliga season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-28T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>578403</td>
+      <td>12787908846201818836113906836317537483609531613584477341982605123655773837316</td>
+      <td>Will Cagliari be relegated from Serie A after the 2025-26 season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-28T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>578429</td>
+      <td>54514115878483631589280219768473481187943366848293796775155078988924711320634</td>
+      <td>Will Anssumane Fati be the top goal scorer in the 2025-26 Ligue 1 season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>578438</td>
+      <td>105674265636936122040214286728718821119631571611911917788328404979095463525498</td>
+      <td>Will Lassine Sinayoko be the top goal scorer in the 2025-26 Ligue 1 season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>578440</td>
+      <td>11845870649387515165673583985702735071849341038586868859226155459240016986208</td>
+      <td>Will Gauthier Hein be the top goal scorer in the 2025-26 Ligue 1 season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>579384</td>
+      <td>108406368173992145823099369167633547878391825339132506914365349249675061739524</td>
+      <td>Will Artem Dovbyk be the top goal scorer in the 2025-26 Serie A season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-28T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>582174</td>
+      <td>1640487768500822841149793856978083342565236884463958986407041301997586658292</td>
+      <td>Will Leverkusen finish in the top 4 of the Bundesliga 2025–26 standings?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-28T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>582318</td>
+      <td>19435319275490630458028840438715963481941725397052478895479118120838800668559</td>
+      <td>Will Lille finish in the top 4 of the Ligue 1 2025–26 standings?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>558934</td>
+      <td>4394372887385518214471608448209527405727552777602031099972143344338178308080</td>
+      <td>Will Spain win the 2026 FIFA World Cup?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-07-20T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>558964</td>
+      <td>29544965695734183971376022965555206180154533479443150154863135205600734339980</td>
+      <td>Will South Africa win the 2026 FIFA World Cup?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-07-20T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>559656</td>
+      <td>90227223115596293448966158151606153337847900483048338623540402385929720677904</td>
+      <td>Will Wes Moore win the 2028 Democratic presidential nomination?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>559675</td>
+      <td>58343456405874365460518182619380252930558598368174305791768670198253267891911</td>
+      <td>Will Jon Stewart win the 2028 Democratic presidential nomination?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>559694</td>
+      <td>20374050108659687356429749447884880983779889840007423115803042125707701269498</td>
+      <td>Will Ro Khanna win the 2028 Democratic presidential nomination?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>561237</td>
+      <td>50507496430692162923857760920722624157737138256097150616293040054748564876552</td>
+      <td>Will Andy Beshear win the 2028 US Presidential Election?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>561245</td>
+      <td>14253956839582698877884742930225331487593177635330318923853046874994118249367</td>
+      <td>Will Nikki Haley win the 2028 US Presidential Election?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>561255</td>
+      <td>40932864651005132434669457369564353816786330205469778285035893634458129671101</td>
+      <td>Will Ivanka Trump win the 2028 US Presidential Election?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>561257</td>
+      <td>88521269813605705303364598280494261510300497312149869577251450871617962933121</td>
+      <td>Will Michelle Obama win the 2028 US Presidential Election?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>561998</td>
+      <td>64219883837418173804780196379638150140562767673275103175135949850170609939649</td>
+      <td>Will Ivanka Trump win the 2028 Republican presidential nomination?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>566170</td>
+      <td>43478780997313571844864646081201368302664941062507392308569466005072068318763</td>
+      <td>Will Club Brugge win the 2025–26 Champions League?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-31T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>569454</td>
+      <td>112000997367369775705892760747740706713090189173150311174658104010356449962658</td>
+      <td>Will any presidential candidate win outright in the first round of the Colombia…</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-31T14:00:00Z</td>
+    </tr>
+    <tr>
+      <td>572122</td>
+      <td>41996233866104795222912410391357816274047224985506748724567566680863691247794</td>
+      <td>Jack Lowdon announced as next James Bond?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-06-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>572847</td>
+      <td>21510670340984986457969462283126353018850312101384289333564974414010858715850</td>
+      <td>Will Tottenham be relegated from the English Premier League after the 2025–26 s…</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-27T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>577167</td>
+      <td>107188258966978621463100332893906494250781495859540494974336129482194560136715</td>
+      <td>Will Benjamin Sesko be the top goal scorer in the 2025–26 English Premier Leagu…</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-27T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>577180</td>
+      <td>49541604524685067034733103567606780662654635021473570692999975492153111969210</td>
+      <td>Will Charalambos Kostoulas be the top goal scorer in the 2025–26 English Premie…</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-27T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>577183</td>
+      <td>47273346174724440037399535645384424716569244075116503754882902177445059533612</td>
+      <td>Will Morgan Rogers be the top goal scorer in the 2025–26 English Premier League…</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-27T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>577219</td>
+      <td>24428969314967049374579832885004941749071678905985050510703983608884666132158</td>
+      <td>Will Robert Lewandowski be the top goal scorer in the 2025–26 La Liga season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>577223</td>
+      <td>40355817413446270517300817460473958731033814018091765438985668051022432561988</td>
+      <td>Will Julian Alvarez be the top goal scorer in the 2025–26 La Liga season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>578426</td>
+      <td>76425119066913282272608925728427135098625354332925457867416832935603967874794</td>
+      <td>Will Matthis Abline be the top goal scorer in the 2025-26 Ligue 1 season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>578441</td>
+      <td>70213414272024566290274178038346169410853256049567983835564273578475466557067</td>
+      <td>Will Moses Simon be the top goal scorer in the 2025-26 Ligue 1 season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>578444</td>
+      <td>94270786003627425914859309722697641658529966934724207480612363569816516620151</td>
+      <td>Will Abdoulaye Toure be the top goal scorer in the 2025-26 Ligue 1 season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>579395</td>
+      <td>65839570564114803270632088459120462864948343166007429131471128901631885684585</td>
+      <td>Will Assane Diao be the top goal scorer in the 2025-26 Serie A season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-28T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>593973</td>
+      <td>82924591030419390649945107956366329459342453014204495918712243498287775914589</td>
+      <td>Will Bernie endorse Kshama Sawant for WA-09 by Nov 2 2026 ET?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-11-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>593978</td>
+      <td>107080387770503661967711176882937155612989847930086034775329452354985736188978</td>
+      <td>Will Bernie endorse Zach Wahls for IA-Sen Nov 2 2026 ET?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-11-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>558939</td>
+      <td>81739002353269632749850710185641576213562066971072676369728657545679630163887</td>
+      <td>Will Germany win the 2026 FIFA World Cup?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-07-20T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>558965</td>
+      <td>32169302633723235235251659810064817019484855501133685217130365128535248672349</td>
+      <td>Will Senegal win the 2026 FIFA World Cup?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-07-20T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>558966</td>
+      <td>58374167250364215964582274356498746399676421878376948523944979542572589542202</td>
+      <td>Will Ivory Coast win the 2026 FIFA World Cup?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-07-20T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>558985</td>
+      <td>18704778540677036028551740861729937822696511439974613107767625408338509619395</td>
+      <td>Will Turkiye win the 2026 FIFA World Cup?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-07-20T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>559654</td>
+      <td>91031279171981959197361710127213577102576826515163085396576756946418341946256</td>
+      <td>Will Pete Buttigieg win the 2028 Democratic presidential nomination?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>559665</td>
+      <td>50887272939612765629559172143901565817521391945540156085421963433918821328137</td>
+      <td>Will Cory Booker win the 2028 Democratic presidential nomination?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>559680</td>
+      <td>81633484456710374417231462107666791993850637546563366185897100962157481970040</td>
+      <td>Will Phil Murphy win the 2028 Democratic presidential nomination?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>559688</td>
+      <td>102504892414163237174864879683522880588750452841477290216845150938663289742135</td>
+      <td>Will Andrew Yang win the 2028 Democratic presidential nomination?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>560317</td>
+      <td>350977769852917329387037893294763093471844346281449484439085576212613048126</td>
+      <td>Putin out as President of Russia by December 31, 2026?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-12-31T18:30:00Z</td>
+    </tr>
+    <tr>
+      <td>561229</td>
+      <td>16040015440196279900485035793550429453516625694844857319147506590755961451627</td>
+      <td>Will JD Vance win the 2028 US Presidential Election?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>561230</td>
+      <td>98250445447699368679516529207365255018790721464590833209064266254238063117329</td>
+      <td>Will Gavin Newsom win the 2028 US Presidential Election?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>561238</td>
+      <td>631059815958854406224163480574507434200946764542129005247984171366597476420</td>
+      <td>Will Glenn Youngkin win the 2028 US Presidential Election?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>561256</td>
+      <td>94621929236241392639802280031607240386237812521756048982107414565863464212526</td>
+      <td>Will Zohran Mamdani win the 2028 US Presidential Election?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>561259</td>
+      <td>45264462342307496826883801236629887275526404999716050689931105511159370296978</td>
+      <td>Will Ro Khanna win the 2028 US Presidential Election?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>561999</td>
+      <td>45742939946094874824687417208711661205131461760422331277735745393193805349457</td>
+      <td>Will Tom Brady win the 2028 Republican presidential nomination?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>562006</td>
+      <td>57919459237478987490046512369779809927967587873586488155446781256559839871449</td>
+      <td>Will Eric Trump win the 2028 Republican presidential nomination?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>562189</td>
+      <td>21186780488327911840011813665635909989130966340151208407558076091167956134393</td>
+      <td>Will Beth Van Duyne win the 2026 Texas Republican Primary?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-26T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>567621</td>
+      <td>94559586571241563470235664821564670251180951772614764383113614156422396181162</td>
+      <td>Will China invade Taiwan by end of 2026?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-12-31T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>569335</td>
+      <td>48659756136284565019223821348790383206344687947238147520094323320808293530767</td>
+      <td>Will David Luna Sánchez win the 1st round of the 2026 Colombian presidential el…</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-31T16:00:00Z</td>
+    </tr>
+    <tr>
+      <td>569356</td>
+      <td>111233749945390693132335511891715724694881884819987764738034083584495542889312</td>
+      <td>Will Vicky Dávila win the 2026 Colombian presidential election?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-06-21T14:00:00Z</td>
+    </tr>
+    <tr>
+      <td>569360</td>
+      <td>112555322065982091470513953234842603626356443236936103808494470812727562408795</td>
+      <td>Will Juan Daniel Oviedo win the 2026 Colombian presidential election?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-06-21T14:00:00Z</td>
+    </tr>
+    <tr>
+      <td>569371</td>
+      <td>107683978284338345514269480869866022278445451292438352236628035370370763457098</td>
+      <td>Will Enrique Peñalosa win the 2026 Colombian presidential election?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-06-21T14:00:00Z</td>
+    </tr>
+    <tr>
+      <td>573647</td>
+      <td>71552623345730992280501476931299615437386807576519105089437764117985071980606</td>
+      <td>Will GPT-6 be released before GTA VI?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-07-31T12:00:00Z</td>
+    </tr>
+    <tr>
+      <td>577172</td>
+      <td>10645904022643906852973817125982125793552212677082290653082149741205114933184</td>
+      <td>Will Jean-Philippe Mateta be the top goal scorer in the 2025–26 English Premier…</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-27T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>577218</td>
+      <td>50990718602111286221499412828092223474799500548329402570398939983325937296388</td>
+      <td>Will Kylian Mbappe be the top goal scorer in the 2025–26 La Liga season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>577292</td>
+      <td>88141572307574703189103808906541737578361491725632656938888428716809889579606</td>
+      <td>Will Robert Glatzel be the top goal scorer in the 2025–26 Bundesliga season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-28T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>578413</td>
+      <td>6628066868005776145586907193436681915482578143366232194436463612171763302536</td>
+      <td>Will Desire Doue be the top goal scorer in the 2025-26 Ligue 1 season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>578414</td>
+      <td>14377042763730146025619570576609602968391678990859746919876737120176493786566</td>
+      <td>Will Mika Biereth be the top goal scorer in the 2025-26 Ligue 1 season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>578420</td>
+      <td>75728249553233167911688073955476268152182187346444662774572629313439990648306</td>
+      <td>Will Emanuel Emegha be the top goal scorer in the 2025-26 Ligue 1 season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>578435</td>
+      <td>102806472019833927735302994617458212067757017111182241585358909177614581902882</td>
+      <td>Will Wesley Said be the top goal scorer in the 2025-26 Ligue 1 season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>578442</td>
+      <td>19752459738586030081150448435376926802043310249655122968635848412082634538317</td>
+      <td>Will Santiago Hidalgo be the top goal scorer in the 2025-26 Ligue 1 season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>579396</td>
+      <td>15748867803240030554397772295019053995517212381587901226129718466021577877821</td>
+      <td>Will Mehdi Taremi be the top goal scorer in the 2025-26 Serie A season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-28T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>582146</td>
+      <td>11600560175522732518218207224930379575322040390975172789955998988072544873725</td>
+      <td>Will Brighton finish in the top 4 of the EPL 2025–26 standings?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-27T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>593972</td>
+      <td>7096166888327966243811396544854606771946352128513885963401994819079689910004</td>
+      <td>Will Bernie endorse James Talarico for TX-Sen by Nov 2 2026 ET?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-11-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>597964</td>
+      <td>16201530957950630406397949502319734794139620443510795733205872225099141120819</td>
+      <td>Macron out by June 30, 2026?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-06-30T12:00:00Z</td>
+    </tr>
+    <tr>
+      <td>599303</td>
+      <td>28227838360096074788232992585368970461718254845788738931649369286727917170476</td>
+      <td>Will Mallory McMorrow win the 2026 Michigan Democratic Primary?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-08-04T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>540820</td>
+      <td>108999723207897941876452935557011604067917389120996960199512481363958770540884</td>
+      <td>Trump out as President before GTA VI?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-07-31T12:00:00Z</td>
+    </tr>
+    <tr>
+      <td>558944</td>
+      <td>97239126062673310243763617236644392945530356142765650402171508075574679292913</td>
+      <td>Will Uruguay win the 2026 FIFA World Cup?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-07-20T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>558968</td>
+      <td>30499731947464516579580181356221397335865912996104577000510883912653418218808</td>
+      <td>Will Egypt win the 2026 FIFA World Cup?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-07-20T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>558969</td>
+      <td>58392024727359233794992635293106675983094683080284912908526627785964160484939</td>
+      <td>Will Algeria win the 2026 FIFA World Cup?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-07-20T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>558971</td>
+      <td>18605216520960122093689427575806651607517827372535894526532079999408408169156</td>
+      <td>Will Qatar win the 2026 FIFA World Cup?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-07-20T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>558975</td>
+      <td>88168215299416146215691671077998911754346458567817860712850392736799004561327</td>
+      <td>Will Austria win the 2026 FIFA World Cup?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-07-20T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>559661</td>
+      <td>70071592420137476676935286377781779672157004436137616627487590484756055232944</td>
+      <td>Will Jon Ossoff win the 2028 Democratic presidential nomination?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>559662</td>
+      <td>58378309871183461257693288827678410871907006920578755035402846056315798427503</td>
+      <td>Will Mark Cuban win the 2028 Democratic presidential nomination?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>559664</td>
+      <td>52310257194926233099477326083312959938983447523839326865869372741334281264830</td>
+      <td>Will Raphael Warnock win the 2028 Democratic presidential nomination?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>561232</td>
+      <td>35629456194498013232473191985311930903993567273832459837879398120893197410860</td>
+      <td>Will Pete Buttigieg win the 2028 US Presidential Election?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>561234</td>
+      <td>11171618905857319805355893398009978356002287408842633593535559412449299952250</td>
+      <td>Will Marco Rubio win the 2028 US Presidential Election?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>561254</td>
+      <td>24863363384036117015867671383779186335047493791693657275104567365292353535818</td>
+      <td>Will Kim Kardashian win the 2028 US Presidential Election?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>561263</td>
+      <td>67028631656597977031363620447645908995417871899828777750494099295092202422178</td>
+      <td>Will Eric Trump win the 2028 US Presidential Election?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>561264</td>
+      <td>19127703543758281171764934244436807153695715307017908811054254126168591609122</td>
+      <td>Will Pete Hegseth win the 2028 US Presidential Election?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>561994</td>
+      <td>46777072088650922464797852907503479539785178123001199763117403684202580813104</td>
+      <td>Will Kristi Noem win the 2028 Republican presidential nomination?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>566140</td>
+      <td>76184513907290761912636659055080401703643418316153242056949287928791438454394</td>
+      <td>Will Arsenal win the 2025–26 Champions League?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-31T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>566187</td>
+      <td>71634047218945647363395171891674404459556716906851450020664198669471161667814</td>
+      <td>Will Arsenal win the 2025–26 English Premier League?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-27T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>569347</td>
+      <td>9923011246923572238814851524588176780015983689281865964356210838183555284870</td>
+      <td>Will Juan Carlos Pinzón win the 1st round of the 2026 Colombian presidential el…</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-31T16:00:00Z</td>
+    </tr>
+    <tr>
+      <td>569367</td>
+      <td>100491958886776974191121583503513146470234388396360962605267069217658465802580</td>
+      <td>Will Mauricio Cardenas win the 2026 Colombian presidential election?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-06-21T14:00:00Z</td>
+    </tr>
+    <tr>
+      <td>569374</td>
+      <td>21277635529916941493247806594681449972370468950858577155451325042563981647561</td>
+      <td>Will Carlos Felipe Córdoba win the 2026 Colombian presidential election?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-06-21T14:00:00Z</td>
+    </tr>
+    <tr>
+      <td>572110</td>
+      <td>114423403729258777359504929942890771536329559486526860556796374176881874914899</td>
+      <td>Aaron Taylor-Johnson announced as next James Bond?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-06-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>572118</td>
+      <td>39037164839963127351677281834973830068857637934397064740463100609381313849620</td>
+      <td>Tom Holland announced as next James Bond?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-06-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>576812</td>
+      <td>67823569131506101019276162450364599928274456221340747718977837995127190081124</td>
+      <td>Will Alavés be relegated from La Liga after the 2025–26 season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>577181</td>
+      <td>104557929326796528193056837422262406792037056098476641689006301544675050508792</td>
+      <td>Will Bruno Fernandes be the top goal scorer in the 2025–26 English Premier Leag…</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-27T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>577228</td>
+      <td>105745394011617053647384212072423899373042863466923232377475057902735593128457</td>
+      <td>Will Marcus Rashford be the top goal scorer in the 2025–26 La Liga season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>577236</td>
+      <td>73040552226217734695850503696187376710006575449764477997853420807432098137837</td>
+      <td>Will Gorka Guruzeta be the top goal scorer in the 2025–26 La Liga season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>577238</td>
+      <td>60301519933335336364820582307817349741317665540686207245282394805552819791374</td>
+      <td>Will Dani Olmo be the top goal scorer in the 2025–26 La Liga season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>577296</td>
+      <td>76314120704895570216363719360303120994834914074725880204393164758332011771623</td>
+      <td>Will Yussuf Poulsen be the top goal scorer in the 2025–26 Bundesliga season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-28T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>578421</td>
+      <td>45603919170425641011567569321890214611951598349156624506328620762911473806643</td>
+      <td>Will Terem Moffi be the top goal scorer in the 2025-26 Ligue 1 season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>578422</td>
+      <td>13392052459035460654980651968199812057638609156277336207317471291054900506107</td>
+      <td>Will Ludovic Ajorque be the top goal scorer in the 2025-26 Ligue 1 season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>578423</td>
+      <td>20341861656764765704634182784163626233467994126512907775016283004214772644378</td>
+      <td>Will Breel Embolo be the top goal scorer in the 2025-26 Ligue 1 season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>578434</td>
+      <td>60113968169454549774494538137788883558694778475712994795864491005217873097621</td>
+      <td>Will Frank Magri be the top goal scorer in the 2025-26 Ligue 1 season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>599309</td>
+      <td>8922710639437477954990654098858414058444921382508505451184351067105680225969</td>
+      <td>Will Kristen McDonald Rivet win the 2026 Michigan Democratic Primary?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-08-04T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>553848</td>
+      <td>1755198236548058730692725634969806667163093356894670716555961840777456036471</td>
+      <td>Will the Anaheim Ducks win the 2026 NHL Stanley Cup?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-06-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>559669</td>
+      <td>10521981432803570450946212503203364998108630328528216082760514453664705157397</td>
+      <td>Will Rahm Emanuel win the 2028 Democratic presidential nomination?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>559683</td>
+      <td>48218088132821386640274752564592889805082274744128282833036735027928992155024</td>
+      <td>Will George Clooney win the 2028 Democratic presidential nomination?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>561231</td>
+      <td>8113830512143065501177519557124858581375945005490796772950589720955457782465</td>
+      <td>Will Alexandria Ocasio-Cortez win the 2028 US Presidential Election?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>561243</td>
+      <td>11807691644868166983390207408868795383945915035851758101409310535538572683733</td>
+      <td>Will Donald Trump win the 2028 US Presidential Election?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>561982</td>
+      <td>35019878675696902444730611385908114488958639217305639231975258218416576501435</td>
+      <td>Will Sarah Huckabee Sanders win the 2028 Republican presidential nomination?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>562005</td>
+      <td>99700879015134724880665931256853704724897234270130475786057704135245843006310</td>
+      <td>Will Thomas Massie win the 2028 Republican presidential nomination?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>562802</td>
+      <td>83247781037352156539108067944461291821683755894607244160607042790356561625563</td>
+      <td>Will the Democratic Party control the House after the 2026 Midterm elections?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-11-03T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>562803</td>
+      <td>65139230827417363158752884968303867495725894165574887635816574090175320800482</td>
+      <td>Will the Republican Party control the House after the 2026 Midterm elections?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-11-03T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>564195</td>
+      <td>5252381880374485440665230178984721306055940128786215274896991682225319468348</td>
+      <td>Will the New York Knicks win the NBA Eastern Conference Finals?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-06-13T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>564198</td>
+      <td>108446172107941165064806998519652737542801121226691431615334275432295450338136</td>
+      <td>Will the Detroit Pistons win the NBA Eastern Conference Finals?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-06-13T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>569359</td>
+      <td>29634269883198564591373707667338539580309224908853967914175595169149205026965</td>
+      <td>Will David Luna Sánchez win the 2026 Colombian presidential election?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-06-21T14:00:00Z</td>
+    </tr>
+    <tr>
+      <td>569370</td>
+      <td>89197674428783317925181961175064005674601073120281612991629461250109749011039</td>
+      <td>Will Roy Barreras win the 2026 Colombian presidential election?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-06-21T14:00:00Z</td>
+    </tr>
+    <tr>
+      <td>569373</td>
+      <td>62446510551119788095477835528576672715047217994292762496431912510269665561591</td>
+      <td>Will Paloma Valencia win the 2026 Colombian presidential election?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-06-21T14:00:00Z</td>
+    </tr>
+    <tr>
+      <td>576813</td>
+      <td>112531231708739618267841842902277713294609849047882018520112697425615973932768</td>
+      <td>Will Oviedo be relegated from La Liga after the 2025–26 season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>576814</td>
+      <td>24180997050900289922888668783032140792834639051465714884678970063144738585273</td>
+      <td>Will Valencia be relegated from La Liga after the 2025–26 season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>577173</td>
+      <td>41859180672365961400174931961103956629778260294033021488774095120237032437600</td>
+      <td>Will Yoane Wissa be the top goal scorer in the 2025–26 English Premier League s…</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-27T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>577222</td>
+      <td>44227097530829963499576501282186404645897936156929334280113391423971987257194</td>
+      <td>Will Ante Budimir be the top goal scorer in the 2025–26 La Liga season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>577226</td>
+      <td>65766553373983986285773386056008797086838930377262355718066864177786956960253</td>
+      <td>Will Ferran Torres be the top goal scorer in the 2025–26 La Liga season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>577243</td>
+      <td>22440526641822362681904932185789972209232343897283048384344291619576375972156</td>
+      <td>Will Abel Ruiz be the top goal scorer in the 2025–26 La Liga season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>577280</td>
+      <td>102376165613363136742721000249129649340591318769760895202636036152231642180566</td>
+      <td>Will Jonathan Burkardt be the top goal scorer in the 2025–26 Bundesliga season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-28T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>577289</td>
+      <td>10134904388540700634522656115458142735286617187949700358160575419238829110702</td>
+      <td>Will Karim Adeyemi be the top goal scorer in the 2025–26 Bundesliga season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-28T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>577290</td>
+      <td>54329595038133145577519568384351459887428825578495995657981138893910948687059</td>
+      <td>Will Ermedin Demirovic be the top goal scorer in the 2025–26 Bundesliga season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-28T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>578408</td>
+      <td>78000697639452073085570984496985678065073542895422366163390609289566972442226</td>
+      <td>Will Ousmane Dembele be the top goal scorer in the 2025-26 Ligue 1 season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>578432</td>
+      <td>19754312017656353757299924344337146968700452067284097837890177960198136555889</td>
+      <td>Will Esteban Lepaul be the top goal scorer in the 2025-26 Ligue 1 season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>579392</td>
+      <td>9631642813107901701676264622256815717533649416620874375476245755135724221724</td>
+      <td>Will Kenan Yildiz be the top goal scorer in the 2025-26 Serie A season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-28T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>593975</td>
+      <td>78994096084018614649961134380557835172033452849084058029827070275341232468538</td>
+      <td>Will Bernie endorse Antonio Delgado for NY-Gov by Nov 2 2026 ET?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-11-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>593988</td>
+      <td>53825553579064311342930323717934845048601008937905537626135620452708007966684</td>
+      <td>Will Trump endorse Susan Collins for ME-Sen by Nov 2 2026 ET?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-11-04T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>553866</td>
+      <td>102227184035967850089766981958743064457339118173548431660886438726896222843254</td>
+      <td>Will the San Antonio Spurs win the 2026 NBA Finals?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-07-01T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>558935</td>
+      <td>115556263888245616435851357148058235707004733438163639091106356867234218207169</td>
+      <td>Will England win the 2026 FIFA World Cup?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-07-20T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>558936</td>
+      <td>108233603819467706476318984012158651931658302669301887462181073562758483842092</td>
+      <td>Will France win the 2026 FIFA World Cup?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-07-20T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>558958</td>
+      <td>43661509251351142169227141691164122649250455115438867334436875294380701133091</td>
+      <td>Will Australia win the 2026 FIFA World Cup?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-07-20T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>558960</td>
+      <td>90538013438399246674125939147272424357773921253199632436930218305581040235987</td>
+      <td>Will Uzbekistan win the 2026 FIFA World Cup?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-07-20T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>559681</td>
+      <td>100561779829530520068956424581003844045516012444425572625523659025114550346085</td>
+      <td>Will LeBron James win the 2028 Democratic presidential nomination?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>559684</td>
+      <td>46211769122513729244602558513001215391004042100934296321661285791281233261657</td>
+      <td>Will Chelsea Clinton win the 2028 Democratic presidential nomination?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>561241</td>
+      <td>70948731404464821824516595498024506131170394300814446118501620719416471444076</td>
+      <td>Will JB Pritzker win the 2028 US Presidential Election?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>561249</td>
+      <td>58585097107933138034126275600204468509993701936571284309823871593297754181479</td>
+      <td>Will Greg Abbott win the 2028 US Presidential Election?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>561251</td>
+      <td>39223330966352513418907732239455948906399882924787587183466504819170775983376</td>
+      <td>Will LeBron James win the 2028 US Presidential Election?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>561980</td>
+      <td>30919109558246209971545892228598482722881502507049010402392877610451001659386</td>
+      <td>Will Nikki Haley win the 2028 Republican presidential nomination?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>561988</td>
+      <td>16959950591508656523048029588253513417107455151269158025695062757254216051157</td>
+      <td>Will Josh Hawley win the 2028 Republican presidential nomination?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>564218</td>
+      <td>6842047670820419171425914468337077680927367717837404858652329372722501774629</td>
+      <td>Will the San Antonio Spurs win the NBA Western Conference Finals?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-06-16T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>569366</td>
+      <td>87037476560262355019736573472997730954875286944171789280729969665019434635807</td>
+      <td>Will Abelardo de la Espriella&nbsp;&nbsp;win the 2026 Colombian presidential election?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-06-21T14:00:00Z</td>
+    </tr>
+    <tr>
+      <td>572114</td>
+      <td>53695778447324103637087569580285444889959041738544438526713792782477913379777</td>
+      <td>Jacob Elordi announced as next James Bond?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-06-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>572119</td>
+      <td>88217367032380103395167682111051594395803346118218216383029818059516080329712</td>
+      <td>Henry Cavill announced as next James Bond?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-06-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>572124</td>
+      <td>86364606957252189309982179038306524287216246431215333838823307925824277620329</td>
+      <td>James Collier announced as next James Bond?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-06-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>576809</td>
+      <td>326249926991904070073010803104207206354477727492250795782920470483133549187</td>
+      <td>Will Espanyol be relegated from La Liga after the 2025–26 season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>577163</td>
+      <td>91363015704893492073568830399375035872276923274131092245805554034196213248667</td>
+      <td>Will Alexander Isak be the top goal scorer in the 2025–26 English Premier Leagu…</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-27T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>577179</td>
+      <td>110987038017115137467642994123824186017997884207034130837015664299010910680722</td>
+      <td>Will Evanilson be the top goal scorer in the 2025–26 English Premier League sea…</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-27T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>577294</td>
+      <td>38966153695292251303244152044268630330033580269266738868503907046849339108583</td>
+      <td>Will Jonas Wind be the top goal scorer in the 2025–26 Bundesliga season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-28T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>578410</td>
+      <td>55333344114721700788556183925135765401516909971164443646439591054655254196072</td>
+      <td>Will Khvicha Kvaratskhelia be the top goal scorer in the 2025-26 Ligue 1 season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>579359</td>
+      <td>13820543195176013549251114706218910217480366124790012373023740782320928041896</td>
+      <td>Will AC Milan finish in the top 4 in the 2025-26 Serie A season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-28T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>579361</td>
+      <td>69066199090298523405472673978759236532845453745330535138976218928444076440632</td>
+      <td>Will Roma finish in the top 4 in the 2025-26 Serie A season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-28T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>579385</td>
+      <td>13832373132200807420774220505890690365912350060680862078252002549729850223859</td>
+      <td>Will Ciro Immobile be the top goal scorer in the 2025-26 Serie A season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-28T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>582134</td>
+      <td>87777841345513205611673717017702149318191711656473186402778262899703473689863</td>
+      <td>Will Liverpool finish in the top 4 of the EPL 2025–26 standings?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-27T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>582138</td>
+      <td>51695045148799175684172272379992088967817952288318390606428003376915476428349</td>
+      <td>Will Manchester United finish in the top 4 of the EPL 2025–26 standings?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-27T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>582177</td>
+      <td>30147030202509174212759073069911425827714187500974789502091934971921103612430</td>
+      <td>Will Stuttgart finish in the top 4 of the Bundesliga 2025–26 standings?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-28T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>599305</td>
+      <td>74768395815166461619548348007728690058055087254143355558596876906836785272025</td>
+      <td>Will Abdul El-Sayed win the 2026 Michigan Democratic Primary?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-08-04T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>553851</td>
+      <td>86989765000750155883097827320609652927052275812009422751609183177638176999827</td>
+      <td>Will the Buffalo Sabres win the 2026 NHL Stanley Cup?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-06-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>558954</td>
+      <td>86035858416252385053603758548087253570549129844230230783932738372075949702177</td>
+      <td>Will Tunisia win the 2026 FIFA World Cup?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-07-20T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>558978</td>
+      <td>69020832226510184384177497367584971770730339593583713190288186699694495509961</td>
+      <td>Will Curaçao win the 2026 FIFA World Cup?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-07-20T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>559668</td>
+      <td>92325249719485031139867422012514654102580961954747753469470405147070256604118</td>
+      <td>Will Mark Kelly win the 2028 Democratic presidential nomination?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>559682</td>
+      <td>11343337042526652606304508556838778144915122118685013460142819817079620240439</td>
+      <td>Will Hunter Biden win the 2028 Democratic presidential nomination?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>561993</td>
+      <td>70663522560386702809794077554934323058266367604787739541440326847712418734032</td>
+      <td>Will John Thune win the 2028 Republican presidential nomination?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>562186</td>
+      <td>43891259347116330522865864075089973515827852946539612217753302847337982135578</td>
+      <td>Will Ken Paxton win the 2026 Texas Republican Primary?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-26T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>562794</td>
+      <td>51939490109676186832507970701169130490548061087912630009168726706475001411420</td>
+      <td>Will the Republican Party control the Senate after the 2026 Midterm elections?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-11-03T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>566136</td>
+      <td>104259436423064082971150541232006260758664018969024622611484550356541952860834</td>
+      <td>Will PSG win the 2025–26 Champions League?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-31T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>569365</td>
+      <td>80201140209960826248352000586932595636659282485774269449093899277382388462647</td>
+      <td>Will Germán Vargas Lleras win the 2026 Colombian presidential election?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-06-21T14:00:00Z</td>
+    </tr>
+    <tr>
+      <td>572733</td>
+      <td>41879359148780845295615263000408291680081615331847709002992242978010776986457</td>
+      <td>Will Arsenal finish in 2nd place in the 2025-26 English Premier League?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-27T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>577178</td>
+      <td>79391923363755133111783673620134908690733495531408389463553631418324945230516</td>
+      <td>Will Jarrod Bowen be the top goal scorer in the 2025–26 English Premier League …</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-27T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>577193</td>
+      <td>94698462356821008886945382884944052512244489494440121923200098780254056757984</td>
+      <td>Will Igor Thiago be the top goal scorer in the 2025–26 English Premier League s…</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-27T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>577220</td>
+      <td>67038866817302942551959484913198849155750799193273634269443232905877417785248</td>
+      <td>Will Alexander Sorloth be the top goal scorer in the 2025–26 La Liga season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>577227</td>
+      <td>81184350352957081203802864112311089209552939430128547953657640601934627386250</td>
+      <td>Will Lamine Yamal be the top goal scorer in the 2025–26 La Liga season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>578412</td>
+      <td>90724967815480747140561257870155621333772654849500658512690996416242153895163</td>
+      <td>Will Bradley Barcola be the top goal scorer in the 2025-26 Ligue 1 season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>578419</td>
+      <td>4398033374608653443924730853439421956542194748913003188657949648047766981258</td>
+      <td>Will Olivier Giroud be the top goal scorer in the 2025-26 Ligue 1 season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>578433</td>
+      <td>38254832754831293189787489448942211563159396640979595090070135292352172276950</td>
+      <td>Will Cheikh Sabaly be the top goal scorer in the 2025-26 Ligue 1 season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>579380</td>
+      <td>97684905927345553455494278582909124912046930226695064344571162061840768197777</td>
+      <td>Will Marcus Thuram be the top goal scorer in the 2025-26 Serie A season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-28T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>579390</td>
+      <td>109640077458429003429099589575790191285962731756682771459540728257501295151017</td>
+      <td>Will Riccardo Orsolini be the top goal scorer in the 2025-26 Serie A season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-28T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>582144</td>
+      <td>88666545564577779070588634378130208845504281999300353973035005332228114713799</td>
+      <td>Will Bournemouth finish in the top 4 of the EPL 2025–26 standings?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-27T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>558937</td>
+      <td>27576533317283401577758999384642760405921738493660383550832555714312627457443</td>
+      <td>Will Brazil win the 2026 FIFA World Cup?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-07-20T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>558938</td>
+      <td>18812649149814341758733697580460697418474693998558159483117100240528657629879</td>
+      <td>Will Argentina win the 2026 FIFA World Cup?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-07-20T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>558943</td>
+      <td>94603648636330087039501304492699481091005420017442244191603206509188088089447</td>
+      <td>Will USA win the 2026 FIFA World Cup?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-07-20T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>558946</td>
+      <td>30815807067456631524510535002617106205417832891402132396713720656146245200000</td>
+      <td>Will Belgium win the 2026 FIFA World Cup?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-07-20T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>558963</td>
+      <td>69910730841487615802736046038473620030754616421912831175284551372639933569112</td>
+      <td>Will Morocco win the 2026 FIFA World Cup?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-07-20T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>561252</td>
+      <td>76252402837334795047528042167618984089231134882494719641438604550246396692717</td>
+      <td>Will Dwayne 'The Rock' Johnson win the 2028 US Presidential Election?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>561973</td>
+      <td>3039641309958397001906153616677074061284510636204155275446291716739429262374</td>
+      <td>Will Donald Trump win the 2028 Republican presidential nomination?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>561983</td>
+      <td>51109358167525503124101840618196204295486048568333812245607026343682053354150</td>
+      <td>Will Greg Abbott win the 2028 Republican presidential nomination?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>561995</td>
+      <td>110467341601356058460373968989438018821471776813704553223329002744055822742107</td>
+      <td>Will Mike Pence win the 2028 Republican presidential nomination?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2028-11-07T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>562830</td>
+      <td>6302359956133594764084277082169634158291609371270652093164054687145970756151</td>
+      <td>2026 Balance of Power: R Senate, D House</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-11-03T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>563650</td>
+      <td>43377185540092441472523885859099478235201860627294255832516299903130560463298</td>
+      <td>SCOTUS accepts sports event contract case by July 31, 2026?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-07-31T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>564194</td>
+      <td>26510384225806040730267502985578081313836463589753281281933174278980674429194</td>
+      <td>Will the Cleveland Cavaliers win the NBA Eastern Conference Finals?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-06-13T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>567690</td>
+      <td>60482166031720291380868655057144166386114272673178755337360544583400474201659</td>
+      <td>Erdoğan out by December 31, 2026?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-12-31T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>569332</td>
+      <td>39801986283615413172004632209722689673630350670628652772852050084294532881656</td>
+      <td>Will Vicky Dávila win the 1st round of the 2026 Colombian presidential election?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-31T16:00:00Z</td>
+    </tr>
+    <tr>
+      <td>569342</td>
+      <td>77948970922967013320765099624654609581945232484076127193275914408760472466885</td>
+      <td>Will Paloma Valencia win the 1st round of the 2026 Colombian presidential elect…</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-31T16:00:00Z</td>
+    </tr>
+    <tr>
+      <td>569349</td>
+      <td>13029278070705688134577821030612277494815895676220866840087054352558704333924</td>
+      <td>Will Enrique Peñalosa win the 1st round of the 2026 Colombian presidential elec…</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-31T16:00:00Z</td>
+    </tr>
+    <tr>
+      <td>573655</td>
+      <td>13915689317269078219168496739008737517740566192006337297676041270492637394586</td>
+      <td>Will Bitcoin hit $150k by June 30, 2026?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-07-01T04:00:00Z</td>
+    </tr>
+    <tr>
+      <td>576805</td>
+      <td>15686267968724506736881723209369329406911403447121497634625563302033376191007</td>
+      <td>Will FC Heidenheim be relegated from the Bundesliga after the 2025–26 season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-28T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>577160</td>
+      <td>31953493273605091846063767682320550763614773521778373247731663047594886040157</td>
+      <td>Will Erling Haaland be the top goal scorer in the 2025–26 English Premier Leagu…</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-27T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>577165</td>
+      <td>113538140807961528328992033738846637513234963111319913499967108133450953646650</td>
+      <td>Will Hugo Ekitike be the top goal scorer in the 2025–26 English Premier League …</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-27T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>577174</td>
+      <td>65423010509110378012139184005666383471785256194188331590421933980074567091246</td>
+      <td>Will Matheus Cunha be the top goal scorer in the 2025–26 English Premier League…</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-27T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>577182</td>
+      <td>82115621880923175579102966718566549811955421198728744722120513236749387693264</td>
+      <td>Will Chris Wood be the top goal scorer in the 2025–26 English Premier League se…</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-27T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>577247</td>
+      <td>98286904268100078035776152708720247190143751657794196422985487083520781931503</td>
+      <td>Will Jude Bellingham be the top goal scorer in the 2025–26 La Liga season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>577279</td>
+      <td>43833651780965158851163300043127463472147134401838564791175946042179880465250</td>
+      <td>Will Michael Olise be the top goal scorer in the 2025–26 Bundesliga season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-28T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>579366</td>
+      <td>86033201962358019863569921240513943065377849013955188698735794121643719376894</td>
+      <td>Will Como finish in the top 4 in the 2025-26 Serie A season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-28T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>579377</td>
+      <td>70986225091305640716380959980097630324023483012603076578303483234874338420152</td>
+      <td>Will Lautaro Martinez be the top goal scorer in the 2025-26 Serie A season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-28T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>579387</td>
+      <td>87256694321538307701149225110867795647478629016366905311509543193583990433215</td>
+      <td>Will Lorenzo Lucca be the top goal scorer in the 2025-26 Serie A season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-28T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>579391</td>
+      <td>60651073159649493827648836774367420494006257396821577347013988824017780062856</td>
+      <td>Will Romelu Lukaku be the top goal scorer in the 2025-26 Serie A season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-28T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>579402</td>
+      <td>85705345592842476414916106909923556814885659650540063661632454204175433578337</td>
+      <td>Will Santiago Castro be the top goal scorer in the 2025-26 Serie A season?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-28T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>582158</td>
+      <td>81304145828607624927593781798310463714484865200409152894719292343497594428963</td>
+      <td>Will Betis finish in the top 4 of the La Liga 2025–26 standings?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-30T00:00:00Z</td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+
+<footer>polymarket-arb — research only, no trading</footer>
+</body>
+</html>

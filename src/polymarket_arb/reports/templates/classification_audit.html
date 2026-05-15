@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+
+{% block title %}Classification Audit{% endblock %}
+{% block title_heading %}Classification Audit{% endblock %}
+
+{% block content %}
+<div class="summary-grid">
+{% for label, value in summary.items() %}
+  <div class="summary-card">
+    <div class="value">{{ value }}</div>
+    <div class="label">{{ label | replace("_", " ") | title }}</div>
+  </div>
+{% endfor %}
+</div>
+
+<h2>Charts</h2>
+{% for chart in charts %}
+  <img class="chart-img" src="{{ chart }}" alt="{{ chart }}">
+{% endfor %}
+
+<h2>Relationship Family Counts</h2>
+<table class="report-table">
+<thead><tr><th>Family</th><th>Count</th></tr></thead>
+<tbody>
+{% for key, count in family_counts.items() %}
+<tr><td>{{ key }}</td><td>{{ count }}</td></tr>
+{% endfor %}
+</tbody>
+</table>
+
+<h2>Relationship Subtype Counts</h2>
+<table class="report-table">
+<thead><tr><th>Subtype</th><th>Count</th></tr></thead>
+<tbody>
+{% for key, count in subtype_counts.items() %}
+<tr><td>{{ key }}</td><td>{{ count }}</td></tr>
+{% endfor %}
+</tbody>
+</table>
+
+<h2>Accepted Strategy Eligible</h2>
+{% if accepted_table %}{{ accepted_table | safe }}{% else %}<p class="empty-state">No strategy-eligible accepted pairs.</p>{% endif %}
+
+<h2>Mixed Subtype Rejections</h2>
+{% if mixed_table %}{{ mixed_table | safe }}{% else %}<p class="empty-state">No mixed-subtype rows.</p>{% endif %}
+
+<h2>Candidate To Party Examples</h2>
+{% if candidate_party_table %}{{ candidate_party_table | safe }}{% else %}<p class="empty-state">No candidate-to-party examples.</p>{% endif %}
+
+<h2>Nomination To General Examples</h2>
+{% if nomination_general_table %}{{ nomination_general_table | safe }}{% else %}<p class="empty-state">No nomination-to-general examples.</p>{% endif %}
+
+<h2>Same Reference Only Examples</h2>
+{% if same_reference_table %}{{ same_reference_table | safe }}{% else %}<p class="empty-state">No same-reference-only examples.</p>{% endif %}
+
+<h2>Broad Same Topic No Trade</h2>
+{% if same_topic_table %}{{ same_topic_table | safe }}{% else %}<p class="empty-state">No same-topic examples.</p>{% endif %}
+
+<h2>Manual Review</h2>
+{% if manual_table %}{{ manual_table | safe }}{% else %}<p class="empty-state">No manual-review examples.</p>{% endif %}
+
+<h2>Rejection Reasons</h2>
+<table class="report-table">
+<thead><tr><th>Reason</th><th>Count</th></tr></thead>
+<tbody>
+{% for key, count in rejection_counts.items() %}
+<tr><td>{{ key }}</td><td>{{ count }}</td></tr>
+{% endfor %}
+</tbody>
+</table>
+
+<h2>Validation</h2>
+<p>No-thinking check: <span class="status-{{ no_thinking_check | lower }}">{{ no_thinking_check }}</span></p>
+
+<h2>Downloads</h2>
+<ul>
+  <li><a href="classification_audit_all.csv">All classifications</a></li>
+  <li><a href="accepted_strategy_eligible.csv">Accepted strategy eligible</a></li>
+  <li><a href="mixed_subtype.csv">Mixed subtype</a></li>
+  <li><a href="manual_review.csv">Manual review</a></li>
+  <li><a href="rejected.csv">Rejected</a></li>
+  <li><a href="same_reference_only.csv">Same reference only</a></li>
+  <li><a href="bundles.csv">Bundles</a></li>
+</ul>
+{% endblock %}

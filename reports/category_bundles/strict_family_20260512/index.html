@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Category Bundle Report — strict_family_20260512</title>
+<style>
+  body { font-family: monospace; font-size: 13px; margin: 20px; background: #fafafa; color: #222; }
+  h1 { font-size: 1.4em; border-bottom: 2px solid #333; padding-bottom: 6px; }
+  h2 { font-size: 1.15em; margin-top: 2em; border-bottom: 1px solid #aaa; padding-bottom: 4px; }
+  h3 { font-size: 1em; margin-top: 1.5em; }
+  .summary-grid { display: flex; flex-wrap: wrap; gap: 12px; margin: 1em 0; }
+  .summary-card { background: #fff; border: 1px solid #ccc; border-radius: 4px;
+                  padding: 12px 18px; min-width: 140px; text-align: center; }
+  .summary-card .value { font-size: 1.8em; font-weight: bold; color: #1a73e8; }
+  .summary-card .label { font-size: 0.85em; color: #555; }
+  table.report-table { border-collapse: collapse; width: 100%; margin: 0.5em 0; }
+  table.report-table th { background: #333; color: #fff; padding: 5px 8px; text-align: left;
+                           position: sticky; top: 0; }
+  table.report-table td { padding: 4px 8px; border-bottom: 1px solid #ddd; }
+  table.report-table tr:nth-child(even) { background: #f5f5f5; }
+  .status-pass { color: #2e7d32; font-weight: bold; }
+  .status-warn { color: #e65100; font-weight: bold; }
+  .status-fail { color: #c62828; font-weight: bold; }
+  .chart-img { max-width: 100%; height: auto; margin: 0.5em 0; }
+  .empty-state { color: #888; font-style: italic; padding: 1em; }
+  footer { margin-top: 3em; font-size: 0.8em; color: #888; border-top: 1px solid #ddd; padding-top: 8px; }
+</style>
+</head>
+<body>
+
+<h1>Category Bundle Report: strict_family_20260512</h1>
+<p style="color:#666">Generated: 2026-05-12T08:33:35Z</p>
+
+
+
+
+<div class="summary-grid">
+  <div class="summary-card">
+    <div class="value">3</div>
+    <div class="label">Outcome Spaces</div>
+  </div>
+  <div class="summary-card">
+    <div class="value">0</div>
+    <div class="label">Complete Bundles</div>
+  </div>
+  <div class="summary-card">
+    <div class="value">3</div>
+    <div class="label">Analysis Only</div>
+  </div>
+  <div class="summary-card">
+    <div class="value">0</div>
+    <div class="label">Opportunities</div>
+  </div>
+  <div class="summary-card">
+    <div class="value">0</div>
+    <div class="label">Bundle Trades</div>
+  </div>
+  <div class="summary-card">
+    <div class="value">0.0</div>
+    <div class="label">Net PnL (USDC)</div>
+  </div>
+</div>
+
+<h2>Credibility Verdict</h2>
+<div style="font-size:2em; font-weight:bold; color:#888888; padding:12px 0;">
+  DATA_INSUFFICIENT
+</div>
+<p>No complete category bundle opportunities passed price, completeness, and net-edge gates.</p>
+
+<h2>Strategy Funnel Audit</h2>
+
+<table class="report-table">
+<thead><tr><th>Stage</th><th>Count</th></tr></thead>
+<tbody>
+
+<tr><td>accepted_relationships_loaded</td><td>94</td></tr>
+
+<tr><td>analysis_only_outcome_spaces</td><td>3</td></tr>
+
+<tr><td>candidates_accepted_for_simulation</td><td>0</td></tr>
+
+<tr><td>complete_outcome_spaces</td><td>0</td></tr>
+
+<tr><td>gross_violations_found</td><td>0</td></tr>
+
+<tr><td>net_violations_after_costs</td><td>0</td></tr>
+
+<tr><td>outcome_spaces_loaded</td><td>3</td></tr>
+
+<tr><td>outcome_spaces_with_aligned_price_series</td><td>3</td></tr>
+
+<tr><td>outcome_spaces_with_price_history</td><td>3</td></tr>
+
+<tr><td>ticks_evaluated</td><td>1132</td></tr>
+
+<tr><td>trades_executed</td><td>0</td></tr>
+
+</tbody>
+</table>
+
+<h3>Funnel Rejections</h3>
+<table class="report-table">
+<thead><tr><th>Reason</th><th>Count</th></tr></thead>
+<tbody>
+
+<tr><td>alignment_failed</td><td>0</td></tr>
+
+<tr><td>cash_limit</td><td>0</td></tr>
+
+<tr><td>incomplete_or_unknown_outcome_space</td><td>1132</td></tr>
+
+<tr><td>missing_price_history</td><td>0</td></tr>
+
+<tr><td>net_edge_below_threshold</td><td>0</td></tr>
+
+<tr><td>unsupported_trade_structure</td><td>0</td></tr>
+
+</tbody>
+</table>
+
+
+
+<h2>Hard-arb Eligible Complete Bundles</h2>
+
+<p class="empty-state">No configured-complete bundles were found.</p>
+
+
+<h2>Interesting But Incomplete/Uncertain Bundles</h2>
+
+<table class="report-table">
+<thead><tr>
+  <th>Outcome Space</th><th>Candidates</th><th>Known Total</th>
+  <th>Completeness</th><th>Warning</th><th>Best Basket</th><th>Reason</th>
+</tr></thead>
+<tbody>
+
+<tr>
+  <td>2028_democratic_presidential_nomination</td>
+  <td>19</td>
+  <td></td>
+  <td>unknown</td>
+  <td>known_total_candidates is not configured</td>
+  <td>none</td>
+  <td>incomplete_or_unknown_outcome_space</td>
+</tr>
+
+<tr>
+  <td>2028 Republican presidential nomination</td>
+  <td>26</td>
+  <td></td>
+  <td>unknown</td>
+  <td>known_total_candidates is not configured</td>
+  <td>none</td>
+  <td>incomplete_or_unknown_outcome_space</td>
+</tr>
+
+<tr>
+  <td>2028_us_presidential_election</td>
+  <td>36</td>
+  <td></td>
+  <td>unknown</td>
+  <td>known_total_candidates is not configured</td>
+  <td>none</td>
+  <td>incomplete_or_unknown_outcome_space</td>
+</tr>
+
+</tbody>
+</table>
+
+
+<h2>Accepted Opportunities</h2>
+
+<p class="empty-state">No bundle opportunities were accepted for simulation.</p>
+
+
+<h2>Example Trades</h2>
+
+<p class="empty-state">No simulated trades.</p>
+
+
+<h2>Downloads</h2>
+<ul>
+  <li><a href="metrics.json">metrics.json</a></li>
+  <li><a href="funnel_audit.json">Funnel audit (JSON)</a></li>
+  <li><a href="bundle_scan.csv">Bundle scan (CSV)</a></li>
+  <li><a href="bundle_opportunities.csv">Bundle opportunities (CSV)</a></li>
+  <li><a href="trades.csv">Trades (CSV)</a></li>
+</ul>
+
+
+
+<footer>polymarket-arb — research only, no trading</footer>
+</body>
+</html>

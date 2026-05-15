@@ -1,0 +1,15 @@
+market_id,token_id,question,coverage_score,price_points,trade_points,recommended,largest_gap_ms,first_price_ts,last_price_ts,has_semantics,has_score,has_implications
+540844,0xbb57ccf5853a85487bc3d83d04d669310d28c6c810758953b9d9b91d1aee89d2,Will bitcoin hit $1m before GTA VI?,0.5,0,0,False,0,,,True,True,True
+540817,0x1fad72fae204143ff1c3035e99e7c0f65ea8d5cd9bd1070987bd1a3316f772be,New Rihanna Album before GTA VI?,0.5,0,0,False,0,,,True,True,True
+540843,0x7b49b9bacb5f435bc10f3b100ff59e2fdd346f7f92a9001881bc9825a0af0f11,Will China invades Taiwan before GTA VI?,0.5,0,0,False,0,,,True,True,True
+553843,0xd66cbb60c333c2eed61717370755c18bc7e494fed90cb507cd9b49c77100951d,Will the Philadelphia Flyers win the 2026 NHL Stanley Cup?,0.5,0,0,False,0,,,True,True,True
+540819,0x32b09f6390252b37d674501527e709016d55581b2c1e544bd4b8167f5f732f4c,Will Jesus Christ return before GTA VI?,0.5,0,0,False,0,,,True,True,True
+553849,0x52847ca1413b76a5570b97c0c432e38dbe61b0140f9d45e912604591b08f6fca,Will the Montreal Canadiens win the 2026 NHL Stanley Cup?,0.5,0,0,False,0,,,True,True,True
+553824,0xf7b5491e70b477d451afe7d9c1fde4bf1a927e69ff289d294b96df164f6c10f0,Will the Carolina Hurricanes win the 2026 NHL Stanley Cup?,0.5,0,0,False,0,,,True,True,True
+540881,0xcccb7e7613a087c132b69cbf3a02bece3fdcb824c1da54ae79acc8d4a562d902,GTA VI released before June 2026?,0.5,0,0,False,0,,,True,True,True
+540818,0x50ddb9cd80d5c271664a2ebb7fcaed1d0a148d82c8e8d314d830f75a944c3dcc,New Playboi Carti Album before GTA VI?,0.4,0,0,False,0,,,True,False,True
+553829,0x89389a6b1439856a8d366234c795d72865c927a1aa3cf9d4cc04a3a400defde1,Will the Vegas Golden Knights win the 2026 NHL Stanley Cup?,0.4,0,0,False,0,,,True,False,True
+553828,0xf8f63bb47b2a7c2e0c1be3cedf4075079b11c07476d76a9469065b0c4791961a,Will the Colorado Avalanche win the 2026 NHL Stanley Cup?,0.4,0,0,False,0,,,True,False,True
+540820,0x84f8b70331323c2fba97d7ceaa9a35fb645a0770d0dbff169d07f24f376766e9,Trump out as President before GTA VI?,0.4,0,0,False,0,,,True,False,True
+553848,0xceb5e0c99a9195da148d79693f3c6819d44d4d3d7e5be77931e174a3eebe4a85,Will the Anaheim Ducks win the 2026 NHL Stanley Cup?,0.4,0,0,False,0,,,True,False,True
+553838,0x0d082a85f48a5226b1205acdb6e95ead2fe373acabcf6c471f5895f86f42a276,Will the Minnesota Wild win the 2026 NHL Stanley Cup?,0.4,0,0,False,0,,,True,False,True

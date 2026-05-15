@@ -1,0 +1,42 @@
+[
+  {
+    "id": "9001",
+    "conditionId": null,
+    "slug": "invalid-no-condition-id",
+    "question": "Missing conditionId",
+    "outcomes": "[\"Yes\", \"No\"]",
+    "outcomePrices": "[\"0.5\", \"0.5\"]",
+    "clobTokenIds": "[\"tok_a\", \"tok_b\"]",
+    "active": true, "closed": false, "archived": false
+  },
+  {
+    "id": "9002",
+    "conditionId": "0xcond9002",
+    "slug": "invalid-too-few-outcomes",
+    "question": "Only one outcome",
+    "outcomes": "[\"Yes\"]",
+    "outcomePrices": "[\"1.00\"]",
+    "clobTokenIds": "[\"tok_only\"]",
+    "active": true, "closed": false, "archived": false
+  },
+  {
+    "id": "9003",
+    "conditionId": "0xcond9003",
+    "slug": "invalid-length-mismatch",
+    "question": "Outcomes and prices disagree in length",
+    "outcomes": "[\"Yes\", \"No\", \"Maybe\"]",
+    "outcomePrices": "[\"0.5\", \"0.5\"]",
+    "clobTokenIds": "[\"tok_a\", \"tok_b\", \"tok_c\"]",
+    "active": true, "closed": false, "archived": false
+  },
+  {
+    "id": "9004",
+    "conditionId": "0xcond9004",
+    "slug": "invalid-no-clob-tokens",
+    "question": "Missing clobTokenIds",
+    "outcomes": "[\"Yes\", \"No\"]",
+    "outcomePrices": "[\"0.5\", \"0.5\"]",
+    "clobTokenIds": "[]",
+    "active": true, "closed": false, "archived": false
+  }
+]

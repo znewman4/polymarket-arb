@@ -1,0 +1,15 @@
+market_id,question,confidence,ambiguity,market_type,flags,needs_review,model,prompt_version
+553838,Will the Minnesota Wild win the 2026 NHL Stanley Cup?,0.9000,0.2167,binary,"[""The market resolution depends on the NHL's determination of impossibility"", 'The exact date of the Stanley Cup final is not specified']",True,deepseek-r1:8b,market_semantics_v1
+553829,Will the Vegas Golden Knights win the 2026 NHL Stanley Cup?,1.0000,0.0000,binary,[],False,deepseek-r1:8b,market_semantics_v1
+553848,Will the Anaheim Ducks win the 2026 NHL Stanley Cup?,0.9500,0.1938,binary,['Temporal resolution is specific date'],False,deepseek-r1:8b,market_semantics_v1
+540820,Trump out as President before GTA VI?,0.8500,0.2281,binary,"[""Definition of 'cease to be President' (e.g., resignation, removal, death)"", ""Credibility of reporting sources for Trump's departure"", ""Interpretation of 'official release' for GTA VI""]",True,deepseek-r1:8b,market_semantics_v1
+553824,Will the Carolina Hurricanes win the 2026 NHL Stanley Cup?,0.9500,0.2125,binary,"['Temporal resolution is specific to 2026', 'NHL rules may affect impossibility']",False,deepseek-r1:8b,market_semantics_v1
+540819,Will Jesus Christ return before GTA VI?,0.7000,0.2333,binary,"[""Temporal ambiguity due to vague definition of 'return'"", ""Source ambiguity for Jesus' return""]",True,deepseek-r1:8b,market_semantics_v1
+540881,GTA VI released before June 2026?,0.9500,0.5125,binary,"['Release definition includes only official sources', 'vague_deadline']",True,deepseek-r1:8b,market_semantics_v1
+553828,Will the Colorado Avalanche win the 2026 NHL Stanley Cup?,0.9000,0.2167,binary,"['Temporal resolution depends on NHL schedule', ""Definition of 'win' may include playoffs""]",True,deepseek-r1:8b,market_semantics_v1
+540817,New Rihanna Album before GTA VI?,0.8500,0.2208,binary,"[""Definition of 'new' album is not explicitly defined (could be interpreted as any new release)"", 'Potential for multiple releases or editions to be considered']",True,deepseek-r1:8b,market_semantics_v1
+553843,Will the Philadelphia Flyers win the 2026 NHL Stanley Cup?,1.0000,0.0000,binary,[],False,deepseek-r1:8b,market_semantics_v1
+540843,Will China invades Taiwan before GTA VI?,0.8500,0.2281,binary,"['Military offensive definition', 'GTA VI release definition', 'Deadline interpretation']",True,deepseek-r1:8b,market_semantics_v1
+540818,New Playboi Carti Album before GTA VI?,0.8500,0.2208,binary,"['Release definitions may vary (e.g., what constitutes an official release)', 'Potential for multiple albums or re-releases to be considered']",True,deepseek-r1:8b,market_semantics_v1
+553849,Will the Montreal Canadiens win the 2026 NHL Stanley Cup?,1.0000,0.0000,binary,[],False,deepseek-r1:8b,market_semantics_v1
+540844,Will bitcoin hit $1m before GTA VI?,0.9000,0.2167,binary,"['Temporal resolution is vague', 'Release definition may be ambiguous']",True,deepseek-r1:8b,market_semantics_v1

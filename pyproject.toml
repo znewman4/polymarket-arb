@@ -1,0 +1,64 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "polymarket-arb"
+version = "0.0.1"
+description = "Polymarket research, replay and (later) execution platform — Phase 0 foundation."
+requires-python = ">=3.10"
+readme = "README.md"
+authors = [{ name = "znewman4" }]
+
+dependencies = [
+  "httpx[http2]>=0.27,<1.0",
+  "pydantic>=2.6,<3.0",
+  "pydantic-settings>=2.2,<3.0",
+  "loguru>=0.7,<1.0",
+  "click>=8.1,<9.0",
+  "pyarrow>=15.0",
+  "pandas>=2.2",
+  "duckdb>=1.0",
+  "tenacity>=8.2,<10.0",
+  "PyYAML>=6.0",
+  "uuid7>=0.1.0",
+  "matplotlib>=3.8,<4.0",
+  "jinja2>=3.1,<4.0",
+]
+
+[project.optional-dependencies]
+dev = [
+  "pytest>=8.0",
+  "pytest-asyncio>=0.23",
+  "pytest-cov>=5.0",
+  "respx>=0.20",
+  "ruff>=0.4",
+  "mypy>=1.10",
+]
+
+[project.scripts]
+polymarket-arb = "polymarket_arb.cli:cli"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/polymarket_arb"]
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+filterwarnings = [
+  "ignore::DeprecationWarning:pkg_resources",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "SIM", "RUF"]
+ignore = ["E501"]
+
+[tool.mypy]
+python_version = "3.10"
+strict_optional = true
+warn_unused_ignores = true
+ignore_missing_imports = true

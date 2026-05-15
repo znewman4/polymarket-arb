@@ -1,0 +1,499 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Context Rules Report</title>
+<style>
+  body { font-family: monospace; font-size: 13px; margin: 20px; background: #fafafa; color: #222; }
+  h1 { font-size: 1.4em; border-bottom: 2px solid #333; padding-bottom: 6px; }
+  h2 { font-size: 1.15em; margin-top: 2em; border-bottom: 1px solid #aaa; padding-bottom: 4px; }
+  h3 { font-size: 1em; margin-top: 1.5em; }
+  .summary-grid { display: flex; flex-wrap: wrap; gap: 12px; margin: 1em 0; }
+  .summary-card { background: #fff; border: 1px solid #ccc; border-radius: 4px;
+                  padding: 12px 18px; min-width: 140px; text-align: center; }
+  .summary-card .value { font-size: 1.8em; font-weight: bold; color: #1a73e8; }
+  .summary-card .label { font-size: 0.85em; color: #555; }
+  table.report-table { border-collapse: collapse; width: 100%; margin: 0.5em 0; }
+  table.report-table th { background: #333; color: #fff; padding: 5px 8px; text-align: left;
+                           position: sticky; top: 0; }
+  table.report-table td { padding: 4px 8px; border-bottom: 1px solid #ddd; }
+  table.report-table tr:nth-child(even) { background: #f5f5f5; }
+  .status-pass { color: #2e7d32; font-weight: bold; }
+  .status-warn { color: #e65100; font-weight: bold; }
+  .status-fail { color: #c62828; font-weight: bold; }
+  .chart-img { max-width: 100%; height: auto; margin: 0.5em 0; }
+  .empty-state { color: #888; font-style: italic; padding: 1em; }
+  footer { margin-top: 3em; font-size: 0.8em; color: #888; border-top: 1px solid #ddd; padding-top: 8px; }
+</style>
+</head>
+<body>
+
+<h1>Polymarket Arb Report</h1>
+<p style="color:#666">Generated: 2026-05-15T10:55:28Z</p>
+
+
+
+<h1>Context Rules Report</h1>
+<p class="subtitle">Generated 2026-05-15T10:55:28Z · run 20260515_105528_403bbd</p>
+
+<div class="summary-grid">
+  <div class="summary-card"><div class="value">7</div><div class="label">Rules</div></div>
+  <div class="summary-card"><div class="value">7</div><div class="label">Needs Review</div></div>
+</div>
+
+<h2>Sources</h2>
+<table class="dataframe report-table">
+  <thead>
+    <tr style="text-align: right;">
+      <th>context_source_id</th>
+      <th>context_space_id</th>
+      <th>source_type</th>
+      <th>source_tier</th>
+      <th>title</th>
+      <th>url</th>
+      <th>domain</th>
+      <th>publisher</th>
+      <th>retrieved_at_ms</th>
+      <th>effective_start_ms</th>
+      <th>effective_end_ms</th>
+      <th>raw_path</th>
+      <th>content_hash</th>
+      <th>status</th>
+      <th>schema_version</th>
+      <th>ingested_ts_ms</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>nba_terms_same_scope_v1_source</td>
+      <td>nba_championship_conference_progression</td>
+      <td>manual_terms</td>
+      <td>1</td>
+      <td>Manual NBA market terms rule</td>
+      <td>manual://nba_market_terms</td>
+      <td>manual</td>
+      <td>local_curated</td>
+      <td>1778842243840</td>
+      <td>0</td>
+      <td>None</td>
+      <td>manual://nba_market_terms</td>
+      <td>731e94fd2983fb776c500664c867077a9a4b2eac28fd4769b8459398cb15680f</td>
+      <td>registered</td>
+      <td>1</td>
+      <td>1778842243840</td>
+    </tr>
+    <tr>
+      <td>nba_world_championship_conference_v1_source</td>
+      <td>nba_championship_conference_progression</td>
+      <td>manual_context</td>
+      <td>1</td>
+      <td>Manual NBA progression rule</td>
+      <td>manual://nba_championship_conference_progression</td>
+      <td>manual</td>
+      <td>local_curated</td>
+      <td>1778842243840</td>
+      <td>0</td>
+      <td>None</td>
+      <td>manual://nba_championship_conference_progression</td>
+      <td>1590a75a09f6adee2d0c97b786ec49aff53aa1a2169fbb2574a1f2dcdd441049</td>
+      <td>registered</td>
+      <td>1</td>
+      <td>1778842243840</td>
+    </tr>
+    <tr>
+      <td>epl_world_exact_exclusive_v1_source</td>
+      <td>premier_league_finish_position</td>
+      <td>manual_context</td>
+      <td>1</td>
+      <td>Manual EPL exact-position rule</td>
+      <td>manual://premier_league_exact_positions</td>
+      <td>manual</td>
+      <td>local_curated</td>
+      <td>1778842243840</td>
+      <td>0</td>
+      <td>None</td>
+      <td>manual://premier_league_exact_positions</td>
+      <td>00400a17bbe76f01476c80ffba90479a3c66fd2ab5e0dc49d2a354dd44c7beb0</td>
+      <td>registered</td>
+      <td>1</td>
+      <td>1778842243840</td>
+    </tr>
+    <tr>
+      <td>epl_terms_same_scope_v1_source</td>
+      <td>premier_league_finish_position</td>
+      <td>manual_terms</td>
+      <td>1</td>
+      <td>Manual EPL market terms rule</td>
+      <td>manual://premier_league_market_terms</td>
+      <td>manual</td>
+      <td>local_curated</td>
+      <td>1778842243840</td>
+      <td>0</td>
+      <td>None</td>
+      <td>manual://premier_league_market_terms</td>
+      <td>2757e0c07e12cadb15bfe086fa45012049b9e8952cb14459db18132baef61517</td>
+      <td>registered</td>
+      <td>1</td>
+      <td>1778842243840</td>
+    </tr>
+    <tr>
+      <td>epl_world_exact_topn_v1_source</td>
+      <td>premier_league_finish_position</td>
+      <td>manual_context</td>
+      <td>1</td>
+      <td>Manual EPL ranking rule</td>
+      <td>manual://premier_league_finish_position</td>
+      <td>manual</td>
+      <td>local_curated</td>
+      <td>1778842243840</td>
+      <td>0</td>
+      <td>None</td>
+      <td>manual://premier_league_finish_position</td>
+      <td>5d68794757d81596634ccf923caf9731e2157a6a308b30ef108e34f2f3d16262</td>
+      <td>registered</td>
+      <td>1</td>
+      <td>1778842243840</td>
+    </tr>
+    <tr>
+      <td>same_reference_not_tradeable_v1_source</td>
+      <td>same_reference_clock_before_gta_vi</td>
+      <td>manual_context</td>
+      <td>1</td>
+      <td>Manual same-reference clock rule</td>
+      <td>manual://same_reference_clock</td>
+      <td>manual</td>
+      <td>local_curated</td>
+      <td>1778842243840</td>
+      <td>0</td>
+      <td>None</td>
+      <td>manual://same_reference_clock</td>
+      <td>01f332a0bab474006474b57d88a35d1740f2335fdf7c629f63f9ce68caae1737</td>
+      <td>registered</td>
+      <td>1</td>
+      <td>1778842243840</td>
+    </tr>
+    <tr>
+      <td>us_nomination_general_not_deterministic_v1_source</td>
+      <td>us_2028_presidential_nomination_general</td>
+      <td>manual_context</td>
+      <td>1</td>
+      <td>Manual nomination/general dependency rule</td>
+      <td>manual://us_2028_nomination_general</td>
+      <td>manual</td>
+      <td>local_curated</td>
+      <td>1778842243840</td>
+      <td>0</td>
+      <td>None</td>
+      <td>manual://us_2028_nomination_general</td>
+      <td>dfbdcd898355a7000b0f508d725cfbfdb25507e996e9e3fb59403879da12ddc4</td>
+      <td>registered</td>
+      <td>1</td>
+      <td>1778842243840</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Documents</h2>
+<table class="dataframe report-table">
+  <thead>
+    <tr style="text-align: right;">
+      <th>context_document_id</th>
+      <th>context_source_id</th>
+      <th>context_space_id</th>
+      <th>url</th>
+      <th>title</th>
+      <th>retrieved_at_ms</th>
+      <th>raw_path</th>
+      <th>cleaned_text_path</th>
+      <th>content_excerpt</th>
+      <th>content_hash</th>
+      <th>extraction_status</th>
+      <th>error_message</th>
+      <th>schema_version</th>
+      <th>ingested_ts_ms</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>nba_terms_same_scope_v1_document</td>
+      <td>nba_terms_same_scope_v1_source</td>
+      <td>nba_championship_conference_progression</td>
+      <td>manual://nba_market_terms</td>
+      <td>Manual NBA market terms rule</td>
+      <td>1778842243840</td>
+      <td>manual://nba_market_terms</td>
+      <td>None</td>
+      <td>Use only matching Polymarket NBA markets with same league, season, and team scope.</td>
+      <td>731e94fd2983fb776c500664c867077a9a4b2eac28fd4769b8459398cb15680f</td>
+      <td>cleaned</td>
+      <td>None</td>
+      <td>1</td>
+      <td>1778842243840</td>
+    </tr>
+    <tr>
+      <td>nba_world_championship_conference_v1_document</td>
+      <td>nba_world_championship_conference_v1_source</td>
+      <td>nba_championship_conference_progression</td>
+      <td>manual://nba_championship_conference_progression</td>
+      <td>Manual NBA progression rule</td>
+      <td>1778842243840</td>
+      <td>manual://nba_championship_conference_progression</td>
+      <td>None</td>
+      <td>NBA champion must win its conference playoff path before the NBA Finals.</td>
+      <td>1590a75a09f6adee2d0c97b786ec49aff53aa1a2169fbb2574a1f2dcdd441049</td>
+      <td>cleaned</td>
+      <td>None</td>
+      <td>1</td>
+      <td>1778842243840</td>
+    </tr>
+    <tr>
+      <td>epl_world_exact_exclusive_v1_document</td>
+      <td>epl_world_exact_exclusive_v1_source</td>
+      <td>premier_league_finish_position</td>
+      <td>manual://premier_league_exact_positions</td>
+      <td>Manual EPL exact-position rule</td>
+      <td>1778842243840</td>
+      <td>manual://premier_league_exact_positions</td>
+      <td>None</td>
+      <td>A team cannot finish in two different exact league positions in the same season.</td>
+      <td>00400a17bbe76f01476c80ffba90479a3c66fd2ab5e0dc49d2a354dd44c7beb0</td>
+      <td>cleaned</td>
+      <td>None</td>
+      <td>1</td>
+      <td>1778842243840</td>
+    </tr>
+    <tr>
+      <td>epl_terms_same_scope_v1_document</td>
+      <td>epl_terms_same_scope_v1_source</td>
+      <td>premier_league_finish_position</td>
+      <td>manual://premier_league_market_terms</td>
+      <td>Manual EPL market terms rule</td>
+      <td>1778842243840</td>
+      <td>manual://premier_league_market_terms</td>
+      <td>None</td>
+      <td>Use only matching Polymarket finish markets with same league, season, and team scope.</td>
+      <td>2757e0c07e12cadb15bfe086fa45012049b9e8952cb14459db18132baef61517</td>
+      <td>cleaned</td>
+      <td>None</td>
+      <td>1</td>
+      <td>1778842243840</td>
+    </tr>
+    <tr>
+      <td>epl_world_exact_topn_v1_document</td>
+      <td>epl_world_exact_topn_v1_source</td>
+      <td>premier_league_finish_position</td>
+      <td>manual://premier_league_finish_position</td>
+      <td>Manual EPL ranking rule</td>
+      <td>1778842243840</td>
+      <td>manual://premier_league_finish_position</td>
+      <td>None</td>
+      <td>A team finishing exactly third also finishes inside the top four.</td>
+      <td>5d68794757d81596634ccf923caf9731e2157a6a308b30ef108e34f2f3d16262</td>
+      <td>cleaned</td>
+      <td>None</td>
+      <td>1</td>
+      <td>1778842243840</td>
+    </tr>
+    <tr>
+      <td>same_reference_not_tradeable_v1_document</td>
+      <td>same_reference_not_tradeable_v1_source</td>
+      <td>same_reference_clock_before_gta_vi</td>
+      <td>manual://same_reference_clock</td>
+      <td>Manual same-reference clock rule</td>
+      <td>1778842243840</td>
+      <td>manual://same_reference_clock</td>
+      <td>None</td>
+      <td>Sharing a reference event does not make two independent markets complements.</td>
+      <td>01f332a0bab474006474b57d88a35d1740f2335fdf7c629f63f9ce68caae1737</td>
+      <td>cleaned</td>
+      <td>None</td>
+      <td>1</td>
+      <td>1778842243840</td>
+    </tr>
+    <tr>
+      <td>us_nomination_general_not_deterministic_v1_document</td>
+      <td>us_nomination_general_not_deterministic_v1_source</td>
+      <td>us_2028_presidential_nomination_general</td>
+      <td>manual://us_2028_nomination_general</td>
+      <td>Manual nomination/general dependency rule</td>
+      <td>1778842243840</td>
+      <td>manual://us_2028_nomination_general</td>
+      <td>None</td>
+      <td>Winning a party nomination is not the same proposition as winning the general election.</td>
+      <td>dfbdcd898355a7000b0f508d725cfbfdb25507e996e9e3fb59403879da12ddc4</td>
+      <td>cleaned</td>
+      <td>None</td>
+      <td>1</td>
+      <td>1778842243840</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Rules</h2>
+<table class="dataframe report-table">
+  <thead>
+    <tr style="text-align: right;">
+      <th>context_rule_id</th>
+      <th>context_space_id</th>
+      <th>context_type</th>
+      <th>rule_type</th>
+      <th>rule_json</th>
+      <th>source_document_ids_json</th>
+      <th>quoted_evidence_json</th>
+      <th>confidence</th>
+      <th>needs_manual_review</th>
+      <th>human_review_status</th>
+      <th>human_review_notes</th>
+      <th>valid_from_ms</th>
+      <th>valid_to_ms</th>
+      <th>extraction_model</th>
+      <th>extraction_prompt_version</th>
+      <th>schema_version</th>
+      <th>ingested_ts_ms</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>nba_world_championship_conference_v1</td>
+      <td>nba_championship_conference_progression</td>
+      <td>sports_progression</td>
+      <td>championship_implies_conference</td>
+      <td>{"broad_subtype": "team_wins_conference", "deterministic": true, "implication": "narrow_implies_bro…</td>
+      <td>["nba_world_championship_conference_v1_document"]</td>
+      <td>[{"quote": "NBA champion must win its conference playoff path before the NBA Finals.", "source": "m…</td>
+      <td>0.90</td>
+      <td>True</td>
+      <td>approved</td>
+      <td></td>
+      <td>None</td>
+      <td>None</td>
+      <td>manual</td>
+      <td>manual_rules_v1</td>
+      <td>1</td>
+      <td>1778842243840</td>
+    </tr>
+    <tr>
+      <td>nba_terms_same_scope_v1</td>
+      <td>nba_championship_conference_progression</td>
+      <td>sports_progression</td>
+      <td>market_terms_same_league_scope</td>
+      <td>{"deterministic": true, "required_terms": ["same_league", "same_season", "same_team"], "rule_family…</td>
+      <td>["nba_terms_same_scope_v1_document"]</td>
+      <td>[{"quote": "Use only matching Polymarket NBA markets with same league, season, and team scope.", "s…</td>
+      <td>0.75</td>
+      <td>True</td>
+      <td>approved</td>
+      <td></td>
+      <td>None</td>
+      <td>None</td>
+      <td>manual</td>
+      <td>manual_rules_v1</td>
+      <td>1</td>
+      <td>1778842243840</td>
+    </tr>
+    <tr>
+      <td>epl_world_exact_topn_v1</td>
+      <td>premier_league_finish_position</td>
+      <td>ranking_top_n</td>
+      <td>exact_finish_implies_top_n</td>
+      <td>{"deterministic": true, "implication": "exact_position_implies_top_n", "relationship_subtype": "exa…</td>
+      <td>["epl_world_exact_topn_v1_document"]</td>
+      <td>[{"quote": "A team finishing exactly third also finishes inside the top four.", "source": "manual_c…</td>
+      <td>0.90</td>
+      <td>True</td>
+      <td>approved</td>
+      <td></td>
+      <td>None</td>
+      <td>None</td>
+      <td>manual</td>
+      <td>manual_rules_v1</td>
+      <td>1</td>
+      <td>1778842243840</td>
+    </tr>
+    <tr>
+      <td>epl_world_exact_exclusive_v1</td>
+      <td>premier_league_finish_position</td>
+      <td>ranking_top_n</td>
+      <td>exact_finish_positions_mutually_exclusive</td>
+      <td>{"deterministic": true, "implication": "exact_positions_mutually_exclusive", "rule_family": "world_…</td>
+      <td>["epl_world_exact_exclusive_v1_document"]</td>
+      <td>[{"quote": "A team cannot finish in two different exact league positions in the same season.", "sou…</td>
+      <td>0.90</td>
+      <td>True</td>
+      <td>approved</td>
+      <td></td>
+      <td>None</td>
+      <td>None</td>
+      <td>manual</td>
+      <td>manual_rules_v1</td>
+      <td>1</td>
+      <td>1778842243840</td>
+    </tr>
+    <tr>
+      <td>epl_terms_same_scope_v1</td>
+      <td>premier_league_finish_position</td>
+      <td>ranking_top_n</td>
+      <td>market_terms_exact_finish_scope</td>
+      <td>{"deterministic": true, "required_terms": ["same_league", "same_season", "same_team", "exact_finish…</td>
+      <td>["epl_terms_same_scope_v1_document"]</td>
+      <td>[{"quote": "Use only matching Polymarket finish markets with same league, season, and team scope.",…</td>
+      <td>0.75</td>
+      <td>True</td>
+      <td>approved</td>
+      <td></td>
+      <td>None</td>
+      <td>None</td>
+      <td>manual</td>
+      <td>manual_rules_v1</td>
+      <td>1</td>
+      <td>1778842243840</td>
+    </tr>
+    <tr>
+      <td>same_reference_not_tradeable_v1</td>
+      <td>same_reference_clock_before_gta_vi</td>
+      <td>same_reference_temporal</td>
+      <td>shared_reference_not_tradeable</td>
+      <td>{"deterministic_trade_allowed": false, "relationship_subtype": "same_reference_clock_only", "rule_f…</td>
+      <td>["same_reference_not_tradeable_v1_document"]</td>
+      <td>[{"quote": "Sharing a reference event does not make two independent markets complements.", "source"…</td>
+      <td>0.90</td>
+      <td>True</td>
+      <td>approved</td>
+      <td></td>
+      <td>None</td>
+      <td>None</td>
+      <td>manual</td>
+      <td>manual_rules_v1</td>
+      <td>1</td>
+      <td>1778842243840</td>
+    </tr>
+    <tr>
+      <td>us_nomination_general_not_deterministic_v1</td>
+      <td>us_2028_presidential_nomination_general</td>
+      <td>election_dependency</td>
+      <td>nomination_general_not_deterministic</td>
+      <td>{"deterministic_trade_allowed": false, "relationship_subtype": "nomination_to_general_dependency", …</td>
+      <td>["us_nomination_general_not_deterministic_v1_document"]</td>
+      <td>[{"quote": "Winning a party nomination is not the same proposition as winning the general election.…</td>
+      <td>0.90</td>
+      <td>True</td>
+      <td>approved</td>
+      <td></td>
+      <td>None</td>
+      <td>None</td>
+      <td>manual</td>
+      <td>manual_rules_v1</td>
+      <td>1</td>
+      <td>1778842243840</td>
+    </tr>
+  </tbody>
+</table>
+
+<h2>Manual Review</h2>
+<p class="empty-state">No pending manual-review rules.</p>
+
+
+<footer>polymarket-arb — research only, no trading</footer>
+</body>
+</html>

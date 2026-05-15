@@ -1,0 +1,2016 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><title>Master Audit Report</title><style>
+    body { font-family: monospace; font-size: 13px; margin: 20px; background: #fafafa; color: #222; }
+    h1 { font-size: 1.4em; border-bottom: 2px solid #333; padding-bottom: 6px; }
+    h2 { font-size: 1.15em; margin-top: 2em; border-bottom: 1px solid #aaa; padding-bottom: 4px; }
+    table { border-collapse: collapse; width: 100%; margin: 0.5em 0; }
+    th { background: #333; color: #fff; padding: 5px 8px; text-align: left; }
+    td { padding: 4px 8px; border-bottom: 1px solid #ddd; vertical-align: top; }
+    tr:nth-child(even) { background: #f5f5f5; }
+    .warn { color: #c62828; font-weight: bold; }
+    </style></head>
+<body>
+<h1>Master Audit Report</h1>
+<p class="warn">RESEARCH ONLY. Diagnostic runs are diagnostic_only_not_credible and are not credible evidence. No live trading, no wallet, no signing, no order placement.</p>
+<h2>Executive summary</h2>
+<table>
+<tr><th>Metric</th><th>Value</th></tr>
+<tr><td>Final credibility label</td><td>data_insufficient</td></tr>
+<tr><td>Reviewed run</td><td>post_rule_approval_reviewed trades=0 pnl=0.00</td></tr>
+<tr><td>Strict run</td><td>post_rule_approval_strict trades=0 pnl=0.00</td></tr>
+<tr><td>Diagnostic run</td><td>post_rule_approval_diagnostic_all_statuses positions=118 pnl=15821.85</td></tr>
+</table>
+<h2>Context rule status</h2><table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th>context_rule_id</th>
+      <th>context_space_id</th>
+      <th>rule_type</th>
+      <th>rule_family</th>
+      <th>role</th>
+      <th>human_review_status</th>
+      <th>needs_manual_review</th>
+      <th>relationships_affected</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>nba_world_championship_conference_v1</td>
+      <td>nba_championship_conference_progression</td>
+      <td>championship_implies_conference</td>
+      <td>world_context</td>
+      <td>enabling</td>
+      <td>approved</td>
+      <td>True</td>
+      <td>7</td>
+    </tr>
+    <tr>
+      <td>nba_terms_same_scope_v1</td>
+      <td>nba_championship_conference_progression</td>
+      <td>market_terms_same_league_scope</td>
+      <td>market_terms</td>
+      <td>enabling</td>
+      <td>approved</td>
+      <td>True</td>
+      <td>7</td>
+    </tr>
+    <tr>
+      <td>epl_world_exact_topn_v1</td>
+      <td>premier_league_finish_position</td>
+      <td>exact_finish_implies_top_n</td>
+      <td>world_context</td>
+      <td>enabling</td>
+      <td>approved</td>
+      <td>True</td>
+      <td>3</td>
+    </tr>
+    <tr>
+      <td>epl_world_exact_exclusive_v1</td>
+      <td>premier_league_finish_position</td>
+      <td>exact_finish_positions_mutually_exclusive</td>
+      <td>world_context</td>
+      <td>enabling</td>
+      <td>approved</td>
+      <td>True</td>
+      <td>3</td>
+    </tr>
+    <tr>
+      <td>epl_terms_same_scope_v1</td>
+      <td>premier_league_finish_position</td>
+      <td>market_terms_exact_finish_scope</td>
+      <td>market_terms</td>
+      <td>enabling</td>
+      <td>approved</td>
+      <td>True</td>
+      <td>3</td>
+    </tr>
+    <tr>
+      <td>same_reference_not_tradeable_v1</td>
+      <td>same_reference_clock_before_gta_vi</td>
+      <td>shared_reference_not_tradeable</td>
+      <td>invalidating</td>
+      <td>invalidating</td>
+      <td>approved</td>
+      <td>True</td>
+      <td>13</td>
+    </tr>
+    <tr>
+      <td>us_nomination_general_not_deterministic_v1</td>
+      <td>us_2028_presidential_nomination_general</td>
+      <td>nomination_general_not_deterministic</td>
+      <td>invalidating</td>
+      <td>invalidating</td>
+      <td>approved</td>
+      <td>True</td>
+      <td>33</td>
+    </tr>
+  </tbody>
+</table>
+<h2>Relationship funnel</h2><table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th>section</th>
+      <th>metric</th>
+      <th>value</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>relationship_funnel</td>
+      <td>total_relationships</td>
+      <td>5214</td>
+    </tr>
+    <tr>
+      <td>relationship_funnel</td>
+      <td>context_decision_counts_by_lane</td>
+      <td>{"research_only": 5158, "reviewed_context_valid": 10, "analysis_only": 46}</td>
+    </tr>
+    <tr>
+      <td>relationship_funnel</td>
+      <td>both_price_history</td>
+      <td>5214</td>
+    </tr>
+    <tr>
+      <td>relationship_funnel</td>
+      <td>coverage_score_distribution</td>
+      <td>{"0.00-0.45": 0, "0.45-0.65": 0, "0.65-0.80": 4983, "0.80-1.00": 231}</td>
+    </tr>
+    <tr>
+      <td>relationship_funnel</td>
+      <td>aligned_ticks_relationships</td>
+      <td>5214</td>
+    </tr>
+    <tr>
+      <td>relationship_funnel</td>
+      <td>gross_violating_relationships</td>
+      <td>22</td>
+    </tr>
+    <tr>
+      <td>relationship_funnel</td>
+      <td>relationships_with_non_diagnostic_trades</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <td>relationship_funnel</td>
+      <td>final_blocker_counts</td>
+      <td>{"not_strategy_eligible (ineligible)": 5204, "none": 10}</td>
+    </tr>
+  </tbody>
+</table>
+<h2>Top violating relationships</h2><table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th>relationship_id</th>
+      <th>market_id_a</th>
+      <th>market_id_b</th>
+      <th>question_a</th>
+      <th>question_b</th>
+      <th>relationship_type</th>
+      <th>relationship_subtype</th>
+      <th>relationship_family</th>
+      <th>context_space_id</th>
+      <th>context_rules_applied</th>
+      <th>lane</th>
+      <th>confidence</th>
+      <th>coverage_score_a</th>
+      <th>coverage_score_b</th>
+      <th>coverage_score_pair</th>
+      <th>aligned_ticks</th>
+      <th>gross_violations</th>
+      <th>positions_opened</th>
+      <th>realized_pnl</th>
+      <th>mtm_pnl</th>
+      <th>final_blocker</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>4aa9b9577769abc6b2617e899bc95949</td>
+      <td>562829</td>
+      <td>562830</td>
+      <td>2026 Balance of Power: D Senate, R House</td>
+      <td>2026 Balance of Power: R Senate, D House</td>
+      <td>inverse</td>
+      <td>same_topic_no_trade</td>
+      <td>contradiction</td>
+      <td></td>
+      <td>[]</td>
+      <td>research_only</td>
+      <td>0.479273</td>
+      <td>0.7000</td>
+      <td>0.7000</td>
+      <td>0.7000</td>
+      <td>3254</td>
+      <td>3254</td>
+      <td>1</td>
+      <td>-283.050301</td>
+      <td>-283.050301</td>
+      <td>not_strategy_eligible (ineligible)</td>
+    </tr>
+    <tr>
+      <td>5910a43939d7ba6fe59cf6b80718e5c3</td>
+      <td>553866</td>
+      <td>564218</td>
+      <td>Will the San Antonio Spurs win the 2026 NBA Finals?</td>
+      <td>Will the San Antonio Spurs win the NBA Western Conference Finals?</td>
+      <td>inverse</td>
+      <td>same_topic_no_trade</td>
+      <td>contradiction</td>
+      <td>nba_championship_conference_progression</td>
+      <td>["nba_world_championship_conference_v1", "nba_terms_same_scope_v1"]</td>
+      <td>reviewed_context_valid</td>
+      <td>0.433333</td>
+      <td>0.7500</td>
+      <td>0.7500</td>
+      <td>0.7500</td>
+      <td>3217</td>
+      <td>3217</td>
+      <td>1</td>
+      <td>5181.592040</td>
+      <td>5181.592040</td>
+      <td>none</td>
+    </tr>
+    <tr>
+      <td>51207470d2d1eaeb030793374c6e41bf</td>
+      <td>553858</td>
+      <td>564195</td>
+      <td>Will the New York Knicks win the 2026 NBA Finals?</td>
+      <td>Will the New York Knicks win the NBA Eastern Conference Finals?</td>
+      <td>inverse</td>
+      <td>same_topic_no_trade</td>
+      <td>contradiction</td>
+      <td>nba_championship_conference_progression</td>
+      <td>["nba_world_championship_conference_v1", "nba_terms_same_scope_v1"]</td>
+      <td>reviewed_context_valid</td>
+      <td>0.423077</td>
+      <td>0.7643</td>
+      <td>0.7500</td>
+      <td>0.7500</td>
+      <td>3189</td>
+      <td>3189</td>
+      <td>1</td>
+      <td>658.629927</td>
+      <td>658.629927</td>
+      <td>none</td>
+    </tr>
+    <tr>
+      <td>5cbaac0833c565c415abb666711492a7</td>
+      <td>553863</td>
+      <td>564213</td>
+      <td>Will the Los Angeles Lakers win the 2026 NBA Finals?</td>
+      <td>Will the Los Angeles Lakers win the NBA Western Conference Finals?</td>
+      <td>inverse</td>
+      <td>same_topic_no_trade</td>
+      <td>contradiction</td>
+      <td>nba_championship_conference_progression</td>
+      <td>["nba_world_championship_conference_v1", "nba_terms_same_scope_v1"]</td>
+      <td>reviewed_context_valid</td>
+      <td>0.433333</td>
+      <td>0.7857</td>
+      <td>0.7500</td>
+      <td>0.7500</td>
+      <td>3187</td>
+      <td>3187</td>
+      <td>1</td>
+      <td>-484.851384</td>
+      <td>-484.851384</td>
+      <td>none</td>
+    </tr>
+    <tr>
+      <td>a6edab19118abe85173fa9a8b0f4cbe4</td>
+      <td>553856</td>
+      <td>564210</td>
+      <td>Will the Oklahoma City Thunder win the 2026 NBA Finals?</td>
+      <td>Will the Oklahoma City Thunder win the NBA Western Conference Finals?</td>
+      <td>inverse</td>
+      <td>same_topic_no_trade</td>
+      <td>contradiction</td>
+      <td>nba_championship_conference_progression</td>
+      <td>["nba_world_championship_conference_v1", "nba_terms_same_scope_v1"]</td>
+      <td>reviewed_context_valid</td>
+      <td>0.557143</td>
+      <td>0.7643</td>
+      <td>0.7500</td>
+      <td>0.7500</td>
+      <td>3238</td>
+      <td>3172</td>
+      <td>5</td>
+      <td>494.029485</td>
+      <td>155.062518</td>
+      <td>none</td>
+    </tr>
+    <tr>
+      <td>c59ce4101206b392aeae82caa975a822</td>
+      <td>553859</td>
+      <td>564214</td>
+      <td>Will the Minnesota Timberwolves win the 2026 NBA Finals?</td>
+      <td>Will the Minnesota Timberwolves win the NBA Western Conference Finals?</td>
+      <td>inverse</td>
+      <td>same_topic_no_trade</td>
+      <td>contradiction</td>
+      <td>nba_championship_conference_progression</td>
+      <td>["nba_world_championship_conference_v1", "nba_terms_same_scope_v1"]</td>
+      <td>reviewed_context_valid</td>
+      <td>0.427273</td>
+      <td>0.7643</td>
+      <td>0.7500</td>
+      <td>0.7500</td>
+      <td>3160</td>
+      <td>3160</td>
+      <td>1</td>
+      <td>-418.775255</td>
+      <td>-418.775255</td>
+      <td>none</td>
+    </tr>
+    <tr>
+      <td>c6bf427f13b8dd37a99d4208c1976867</td>
+      <td>562828</td>
+      <td>562829</td>
+      <td>2026 Balance of Power: D Senate, D House</td>
+      <td>2026 Balance of Power: D Senate, R House</td>
+      <td>inverse</td>
+      <td>same_topic_no_trade</td>
+      <td>contradiction</td>
+      <td></td>
+      <td>[]</td>
+      <td>research_only</td>
+      <td>0.424000</td>
+      <td>0.7143</td>
+      <td>0.7000</td>
+      <td>0.7000</td>
+      <td>3142</td>
+      <td>3142</td>
+      <td>1</td>
+      <td>143.132812</td>
+      <td>143.132812</td>
+      <td>not_strategy_eligible (ineligible)</td>
+    </tr>
+    <tr>
+      <td>8407c57015a96ee8629b28c86de3e9b9</td>
+      <td>553857</td>
+      <td>564194</td>
+      <td>Will the Cleveland Cavaliers win the 2026 NBA Finals?</td>
+      <td>Will the Cleveland Cavaliers win the NBA Eastern Conference Finals?</td>
+      <td>inverse</td>
+      <td>same_topic_no_trade</td>
+      <td>contradiction</td>
+      <td>nba_championship_conference_progression</td>
+      <td>["nba_world_championship_conference_v1", "nba_terms_same_scope_v1"]</td>
+      <td>reviewed_context_valid</td>
+      <td>0.427273</td>
+      <td>0.7500</td>
+      <td>0.7500</td>
+      <td>0.7500</td>
+      <td>3063</td>
+      <td>3063</td>
+      <td>1</td>
+      <td>-225.989102</td>
+      <td>-225.989102</td>
+      <td>none</td>
+    </tr>
+    <tr>
+      <td>3496b04d1407bfa617b8d7e95b3dfc9a</td>
+      <td>566188</td>
+      <td>572734</td>
+      <td>Will Manchester City win the 2025–26 English Premier League?</td>
+      <td>Will Manchester City finish in 2nd place in the 2025-26 English Premier League?</td>
+      <td>inverse</td>
+      <td>same_topic_no_trade</td>
+      <td>contradiction</td>
+      <td></td>
+      <td>[]</td>
+      <td>research_only</td>
+      <td>0.438571</td>
+      <td>0.7643</td>
+      <td>0.7929</td>
+      <td>0.7643</td>
+      <td>2934</td>
+      <td>2668</td>
+      <td>4</td>
+      <td>308.189696</td>
+      <td>0.000000</td>
+      <td>not_strategy_eligible (ineligible)</td>
+    </tr>
+    <tr>
+      <td>32fca2d972de651ddcf98b020db4d8f2</td>
+      <td>593973</td>
+      <td>593977</td>
+      <td>Will Bernie endorse Kshama Sawant for WA-09 by Nov 2 2026 ET?</td>
+      <td>Will Bernie endorse Alan Grayson for FL-Sen Nov 2 2026 ET?</td>
+      <td>inverse</td>
+      <td>same_topic_no_trade</td>
+      <td>contradiction</td>
+      <td></td>
+      <td>[]</td>
+      <td>research_only</td>
+      <td>0.432000</td>
+      <td>0.7429</td>
+      <td>0.7643</td>
+      <td>0.7429</td>
+      <td>2400</td>
+      <td>1789</td>
+      <td>9</td>
+      <td>560.540682</td>
+      <td>265.932244</td>
+      <td>not_strategy_eligible (ineligible)</td>
+    </tr>
+    <tr>
+      <td>d9094c6a3056abd7ccd20f1302f2266d</td>
+      <td>566136</td>
+      <td>566731</td>
+      <td>Will PSG win the 2025–26 Champions League?</td>
+      <td>Will PSG win the 2025–26 French Ligue 1?</td>
+      <td>inverse</td>
+      <td>same_topic_no_trade</td>
+      <td>contradiction</td>
+      <td></td>
+      <td>[]</td>
+      <td>research_only</td>
+      <td>0.406667</td>
+      <td>0.7714</td>
+      <td>0.7643</td>
+      <td>0.7643</td>
+      <td>2988</td>
+      <td>1582</td>
+      <td>33</td>
+      <td>5920.017230</td>
+      <td>345.908579</td>
+      <td>not_strategy_eligible (ineligible)</td>
+    </tr>
+    <tr>
+      <td>13129551f78a304d4f7815a9f0b6b9a7</td>
+      <td>593983</td>
+      <td>593988</td>
+      <td>Will Trump endorse John Cornyn for TX-Sen by Nov 2 2026 ET?</td>
+      <td>Will Trump endorse Susan Collins for ME-Sen by Nov 2 2026 ET?</td>
+      <td>contradiction</td>
+      <td>same_topic_no_trade</td>
+      <td>contradiction</td>
+      <td></td>
+      <td>[]</td>
+      <td>research_only</td>
+      <td>0.467789</td>
+      <td>0.7000</td>
+      <td>0.7143</td>
+      <td>0.7000</td>
+      <td>2475</td>
+      <td>958</td>
+      <td>17</td>
+      <td>-46.261883</td>
+      <td>0.000000</td>
+      <td>not_strategy_eligible (ineligible)</td>
+    </tr>
+    <tr>
+      <td>59ee0871ba2cbc59237b9ef1654b92a2</td>
+      <td>593983</td>
+      <td>593984</td>
+      <td>Will Trump endorse John Cornyn for TX-Sen by Nov 2 2026 ET?</td>
+      <td>Will Trump endorse Ken Paxton for TX-Sen by Nov 2 2026 ET?</td>
+      <td>contradiction</td>
+      <td>same_topic_no_trade</td>
+      <td>contradiction</td>
+      <td></td>
+      <td>[]</td>
+      <td>research_only</td>
+      <td>0.525556</td>
+      <td>0.7000</td>
+      <td>0.7000</td>
+      <td>0.7000</td>
+      <td>2453</td>
+      <td>735</td>
+      <td>18</td>
+      <td>2726.432640</td>
+      <td>0.000000</td>
+      <td>not_strategy_eligible (ineligible)</td>
+    </tr>
+    <tr>
+      <td>f6fe1d2f110b43d7b1f12bf926a6ed4c</td>
+      <td>593984</td>
+      <td>593988</td>
+      <td>Will Trump endorse Ken Paxton for TX-Sen by Nov 2 2026 ET?</td>
+      <td>Will Trump endorse Susan Collins for ME-Sen by Nov 2 2026 ET?</td>
+      <td>contradiction</td>
+      <td>same_topic_no_trade</td>
+      <td>contradiction</td>
+      <td></td>
+      <td>[]</td>
+      <td>research_only</td>
+      <td>0.467789</td>
+      <td>0.7000</td>
+      <td>0.7143</td>
+      <td>0.7000</td>
+      <td>2410</td>
+      <td>466</td>
+      <td>15</td>
+      <td>1134.520134</td>
+      <td>-61.457273</td>
+      <td>not_strategy_eligible (ineligible)</td>
+    </tr>
+    <tr>
+      <td>70bf08c03f7d8e51cf06690a14175fea</td>
+      <td>599303</td>
+      <td>599305</td>
+      <td>Will Mallory McMorrow win the 2026 Michigan Democratic Primary?</td>
+      <td>Will Abdul El-Sayed win the 2026 Michigan Democratic Primary?</td>
+      <td>mutually_exclusive_category</td>
+      <td>same_topic_no_trade</td>
+      <td>rejected</td>
+      <td></td>
+      <td>[]</td>
+      <td>research_only</td>
+      <td>0.700000</td>
+      <td>0.7922</td>
+      <td>0.7429</td>
+      <td>0.7429</td>
+      <td>2316</td>
+      <td>35</td>
+      <td>2</td>
+      <td>6.051669</td>
+      <td>0.000000</td>
+      <td>not_strategy_eligible (ineligible)</td>
+    </tr>
+    <tr>
+      <td>b63564c4676697cd8b4529bfb38adaf5</td>
+      <td>599303</td>
+      <td>599304</td>
+      <td>Will Mallory McMorrow win the 2026 Michigan Democratic Primary?</td>
+      <td>Will Haley Stevens win the 2026 Michigan Democratic Primary?</td>
+      <td>mutually_exclusive_category</td>
+      <td>same_topic_no_trade</td>
+      <td>rejected</td>
+      <td></td>
+      <td>[]</td>
+      <td>research_only</td>
+      <td>0.700000</td>
+      <td>0.7922</td>
+      <td>0.7214</td>
+      <td>0.7214</td>
+      <td>2490</td>
+      <td>23</td>
+      <td>2</td>
+      <td>39.685354</td>
+      <td>0.000000</td>
+      <td>not_strategy_eligible (ineligible)</td>
+    </tr>
+    <tr>
+      <td>6cd2ec28195e6eb6140ed2f2640eb1c2</td>
+      <td>599304</td>
+      <td>599306</td>
+      <td>Will Haley Stevens win the 2026 Michigan Democratic Primary?</td>
+      <td>Will Dana Nessel win the 2026 Michigan Democratic Primary?</td>
+      <td>mutually_exclusive_category</td>
+      <td>same_topic_no_trade</td>
+      <td>rejected</td>
+      <td></td>
+      <td>[]</td>
+      <td>research_only</td>
+      <td>0.700000</td>
+      <td>0.7214</td>
+      <td>0.7000</td>
+      <td>0.7000</td>
+      <td>2549</td>
+      <td>18</td>
+      <td>1</td>
+      <td>-33.516351</td>
+      <td>0.000000</td>
+      <td>not_strategy_eligible (ineligible)</td>
+    </tr>
+    <tr>
+      <td>795fdadddff035e1369f5bcb901896cc</td>
+      <td>599304</td>
+      <td>599308</td>
+      <td>Will Haley Stevens win the 2026 Michigan Democratic Primary?</td>
+      <td>Will Sarah Anthony win the 2026 Michigan Democratic Primary?</td>
+      <td>mutually_exclusive_category</td>
+      <td>same_topic_no_trade</td>
+      <td>rejected</td>
+      <td></td>
+      <td>[]</td>
+      <td>research_only</td>
+      <td>0.700000</td>
+      <td>0.7214</td>
+      <td>0.7214</td>
+      <td>0.7214</td>
+      <td>2571</td>
+      <td>18</td>
+      <td>1</td>
+      <td>-33.516351</td>
+      <td>0.000000</td>
+      <td>not_strategy_eligible (ineligible)</td>
+    </tr>
+    <tr>
+      <td>1da024481b7bf08570081b1a4c3ce2ce</td>
+      <td>599304</td>
+      <td>599307</td>
+      <td>Will Haley Stevens win the 2026 Michigan Democratic Primary?</td>
+      <td>Will Rashida Tlaib win the 2026 Michigan Democratic Primary?</td>
+      <td>mutually_exclusive_category</td>
+      <td>same_topic_no_trade</td>
+      <td>rejected</td>
+      <td></td>
+      <td>[]</td>
+      <td>research_only</td>
+      <td>0.700000</td>
+      <td>0.7214</td>
+      <td>0.7000</td>
+      <td>0.7000</td>
+      <td>2582</td>
+      <td>18</td>
+      <td>1</td>
+      <td>-38.541729</td>
+      <td>0.000000</td>
+      <td>not_strategy_eligible (ineligible)</td>
+    </tr>
+    <tr>
+      <td>8b3a4e3056a18f0839340670a6910cbc</td>
+      <td>599305</td>
+      <td>599307</td>
+      <td>Will Abdul El-Sayed win the 2026 Michigan Democratic Primary?</td>
+      <td>Will Rashida Tlaib win the 2026 Michigan Democratic Primary?</td>
+      <td>mutually_exclusive_category</td>
+      <td>same_topic_no_trade</td>
+      <td>rejected</td>
+      <td></td>
+      <td>[]</td>
+      <td>research_only</td>
+      <td>0.700000</td>
+      <td>0.7429</td>
+      <td>0.7000</td>
+      <td>0.7000</td>
+      <td>2435</td>
+      <td>18</td>
+      <td>1</td>
+      <td>-20.698395</td>
+      <td>0.000000</td>
+      <td>not_strategy_eligible (ineligible)</td>
+    </tr>
+    <tr>
+      <td>1f8505d4254d1cdc5bd0b53416eb6b54</td>
+      <td>599304</td>
+      <td>599309</td>
+      <td>Will Haley Stevens win the 2026 Michigan Democratic Primary?</td>
+      <td>Will Kristen McDonald Rivet win the 2026 Michigan Democratic Primary?</td>
+      <td>mutually_exclusive_category</td>
+      <td>same_topic_no_trade</td>
+      <td>rejected</td>
+      <td></td>
+      <td>[]</td>
+      <td>research_only</td>
+      <td>0.700000</td>
+      <td>0.7214</td>
+      <td>0.7786</td>
+      <td>0.7214</td>
+      <td>2546</td>
+      <td>16</td>
+      <td>1</td>
+      <td>-33.516351</td>
+      <td>0.000000</td>
+      <td>not_strategy_eligible (ineligible)</td>
+    </tr>
+    <tr>
+      <td>89457fa3a87ec777f61927d07717179e</td>
+      <td>599305</td>
+      <td>599306</td>
+      <td>Will Abdul El-Sayed win the 2026 Michigan Democratic Primary?</td>
+      <td>Will Dana Nessel win the 2026 Michigan Democratic Primary?</td>
+      <td>mutually_exclusive_category</td>
+      <td>same_topic_no_trade</td>
+      <td>rejected</td>
+      <td></td>
+      <td>[]</td>
+      <td>research_only</td>
+      <td>0.700000</td>
+      <td>0.7429</td>
+      <td>0.7000</td>
+      <td>0.7000</td>
+      <td>2335</td>
+      <td>5</td>
+      <td>1</td>
+      <td>267.742085</td>
+      <td>0.000000</td>
+      <td>not_strategy_eligible (ineligible)</td>
+    </tr>
+    <tr>
+      <td>31c94851d6ded7e5ccc80c113e34a19b</td>
+      <td>559670</td>
+      <td>561976</td>
+      <td>Will Gina Raimondo win the 2028 Democratic presidential nomination?</td>
+      <td>Will Tulsi Gabbard win the 2028 Republican presidential nomination?</td>
+      <td>rejected</td>
+      <td>same_topic_no_trade</td>
+      <td></td>
+      <td></td>
+      <td>[]</td>
+      <td>research_only</td>
+      <td>0.322000</td>
+      <td>0.7857</td>
+      <td>0.7786</td>
+      <td>0.7786</td>
+      <td>3218</td>
+      <td>0</td>
+      <td>0</td>
+      <td>0.000000</td>
+      <td>0.000000</td>
+      <td>not_strategy_eligible (ineligible)</td>
+    </tr>
+    <tr>
+      <td>f3bcb267117ba89242f528cdeb72d786</td>
+      <td>559652</td>
+      <td>561984</td>
+      <td>Will Gavin Newsom win the 2028 Democratic presidential nomination?</td>
+      <td>Will Robert F. Kennedy Jr. win the 2028 Republican presidential nomination?</td>
+      <td>rejected</td>
+      <td>same_topic_no_trade</td>
+      <td></td>
+      <td></td>
+      <td>[]</td>
+      <td>research_only</td>
+      <td>0.322000</td>
+      <td>0.7000</td>
+      <td>0.7143</td>
+      <td>0.7000</td>
+      <td>3114</td>
+      <td>0</td>
+      <td>0</td>
+      <td>0.000000</td>
+      <td>0.000000</td>
+      <td>not_strategy_eligible (ineligible)</td>
+    </tr>
+    <tr>
+      <td>ac3f7028dfb79dce39de224d97fba2d8</td>
+      <td>559674</td>
+      <td>561976</td>
+      <td>Will Jared Polis win the 2028 Democratic presidential nomination?</td>
+      <td>Will Tulsi Gabbard win the 2028 Republican presidential nomination?</td>
+      <td>rejected</td>
+      <td>same_topic_no_trade</td>
+      <td></td>
+      <td></td>
+      <td>[]</td>
+      <td>research_only</td>
+      <td>0.322000</td>
+      <td>0.7000</td>
+      <td>0.7786</td>
+      <td>0.7000</td>
+      <td>3272</td>
+      <td>0</td>
+      <td>0</td>
+      <td>0.000000</td>
+      <td>0.000000</td>
+      <td>not_strategy_eligible (ineligible)</td>
+    </tr>
+  </tbody>
+</table>
+<h2>NBA Finals / Conference audit</h2><table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th>relationship_id</th>
+      <th>market_id_a</th>
+      <th>market_id_b</th>
+      <th>question_a</th>
+      <th>question_b</th>
+      <th>relationship_type</th>
+      <th>relationship_subtype</th>
+      <th>relationship_family</th>
+      <th>context_space_id</th>
+      <th>context_rules_applied</th>
+      <th>lane</th>
+      <th>confidence</th>
+      <th>coverage_score_a</th>
+      <th>coverage_score_b</th>
+      <th>coverage_score_pair</th>
+      <th>aligned_ticks</th>
+      <th>gross_violations</th>
+      <th>positions_opened</th>
+      <th>realized_pnl</th>
+      <th>mtm_pnl</th>
+      <th>final_blocker</th>
+      <th>taxonomy_mapping_worked</th>
+      <th>reached_reviewed_lane</th>
+      <th>traded_non_diagnostic</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>a6edab19118abe85173fa9a8b0f4cbe4</td>
+      <td>553856</td>
+      <td>564210</td>
+      <td>Will the Oklahoma City Thunder win the 2026 NBA Finals?</td>
+      <td>Will the Oklahoma City Thunder win the NBA Western Conference Finals?</td>
+      <td>inverse</td>
+      <td>same_topic_no_trade</td>
+      <td>contradiction</td>
+      <td>nba_championship_conference_progression</td>
+      <td>True</td>
+      <td>reviewed_context_valid</td>
+      <td>0.557143</td>
+      <td>0.7643</td>
+      <td>0.75</td>
+      <td>0.75</td>
+      <td>3238</td>
+      <td>3172</td>
+      <td>5</td>
+      <td>494.029485</td>
+      <td>155.062518</td>
+      <td>none</td>
+      <td>True</td>
+      <td>True</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>5cbaac0833c565c415abb666711492a7</td>
+      <td>553863</td>
+      <td>564213</td>
+      <td>Will the Los Angeles Lakers win the 2026 NBA Finals?</td>
+      <td>Will the Los Angeles Lakers win the NBA Western Conference Finals?</td>
+      <td>inverse</td>
+      <td>same_topic_no_trade</td>
+      <td>contradiction</td>
+      <td>nba_championship_conference_progression</td>
+      <td>True</td>
+      <td>reviewed_context_valid</td>
+      <td>0.433333</td>
+      <td>0.7857</td>
+      <td>0.75</td>
+      <td>0.75</td>
+      <td>3187</td>
+      <td>3187</td>
+      <td>1</td>
+      <td>-484.851384</td>
+      <td>-484.851384</td>
+      <td>none</td>
+      <td>True</td>
+      <td>True</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>5910a43939d7ba6fe59cf6b80718e5c3</td>
+      <td>553866</td>
+      <td>564218</td>
+      <td>Will the San Antonio Spurs win the 2026 NBA Finals?</td>
+      <td>Will the San Antonio Spurs win the NBA Western Conference Finals?</td>
+      <td>inverse</td>
+      <td>same_topic_no_trade</td>
+      <td>contradiction</td>
+      <td>nba_championship_conference_progression</td>
+      <td>True</td>
+      <td>reviewed_context_valid</td>
+      <td>0.433333</td>
+      <td>0.7500</td>
+      <td>0.75</td>
+      <td>0.75</td>
+      <td>3217</td>
+      <td>3217</td>
+      <td>1</td>
+      <td>5181.592040</td>
+      <td>5181.592040</td>
+      <td>none</td>
+      <td>True</td>
+      <td>True</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>8407c57015a96ee8629b28c86de3e9b9</td>
+      <td>553857</td>
+      <td>564194</td>
+      <td>Will the Cleveland Cavaliers win the 2026 NBA Finals?</td>
+      <td>Will the Cleveland Cavaliers win the NBA Eastern Conference Finals?</td>
+      <td>inverse</td>
+      <td>same_topic_no_trade</td>
+      <td>contradiction</td>
+      <td>nba_championship_conference_progression</td>
+      <td>True</td>
+      <td>reviewed_context_valid</td>
+      <td>0.427273</td>
+      <td>0.7500</td>
+      <td>0.75</td>
+      <td>0.75</td>
+      <td>3063</td>
+      <td>3063</td>
+      <td>1</td>
+      <td>-225.989102</td>
+      <td>-225.989102</td>
+      <td>none</td>
+      <td>True</td>
+      <td>True</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>c59ce4101206b392aeae82caa975a822</td>
+      <td>553859</td>
+      <td>564214</td>
+      <td>Will the Minnesota Timberwolves win the 2026 NBA Finals?</td>
+      <td>Will the Minnesota Timberwolves win the NBA Western Conference Finals?</td>
+      <td>inverse</td>
+      <td>same_topic_no_trade</td>
+      <td>contradiction</td>
+      <td>nba_championship_conference_progression</td>
+      <td>True</td>
+      <td>reviewed_context_valid</td>
+      <td>0.427273</td>
+      <td>0.7643</td>
+      <td>0.75</td>
+      <td>0.75</td>
+      <td>3160</td>
+      <td>3160</td>
+      <td>1</td>
+      <td>-418.775255</td>
+      <td>-418.775255</td>
+      <td>none</td>
+      <td>True</td>
+      <td>True</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>51207470d2d1eaeb030793374c6e41bf</td>
+      <td>553858</td>
+      <td>564195</td>
+      <td>Will the New York Knicks win the 2026 NBA Finals?</td>
+      <td>Will the New York Knicks win the NBA Eastern Conference Finals?</td>
+      <td>inverse</td>
+      <td>same_topic_no_trade</td>
+      <td>contradiction</td>
+      <td>nba_championship_conference_progression</td>
+      <td>True</td>
+      <td>reviewed_context_valid</td>
+      <td>0.423077</td>
+      <td>0.7643</td>
+      <td>0.75</td>
+      <td>0.75</td>
+      <td>3189</td>
+      <td>3189</td>
+      <td>1</td>
+      <td>658.629927</td>
+      <td>658.629927</td>
+      <td>none</td>
+      <td>True</td>
+      <td>True</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>d008adcd0b51b08ed1dda73178f8ee32</td>
+      <td>553871</td>
+      <td>564198</td>
+      <td>Will the Detroit Pistons win the 2026 NBA Finals?</td>
+      <td>Will the Detroit Pistons win the NBA Eastern Conference Finals?</td>
+      <td>rejected</td>
+      <td>same_topic_no_trade</td>
+      <td></td>
+      <td>nba_championship_conference_progression</td>
+      <td>True</td>
+      <td>reviewed_context_valid</td>
+      <td>0.352273</td>
+      <td>0.8143</td>
+      <td>0.75</td>
+      <td>0.75</td>
+      <td>3132</td>
+      <td>0</td>
+      <td>0</td>
+      <td>0.000000</td>
+      <td>0.000000</td>
+      <td>none</td>
+      <td>True</td>
+      <td>True</td>
+      <td>False</td>
+    </tr>
+  </tbody>
+</table>
+<h2>Invalidating rule audit</h2><table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th>relationship_id</th>
+      <th>question_a</th>
+      <th>question_b</th>
+      <th>audit_group</th>
+      <th>context_space_id</th>
+      <th>lane</th>
+      <th>blocked_as_analysis_only</th>
+      <th>final_blocker</th>
+      <th>note</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>d83ea6ad30dbdbf28a07297bbba46ff2</td>
+      <td>Will James Talarico win the 2028 Democratic presidential nomination?</td>
+      <td>Will James Talarico win the 2028 US Presidential Election?</td>
+      <td>nomination/general</td>
+      <td>us_2028_presidential_nomination_general</td>
+      <td>analysis_only</td>
+      <td>True</td>
+      <td>not_strategy_eligible (ineligible)</td>
+      <td>intentionally analysis-only, not a missed opportunity</td>
+    </tr>
+    <tr>
+      <td>9003ce2e15bbe67795cee885e20fcca1</td>
+      <td>Will Jon Ossoff win the 2028 Democratic presidential nomination?</td>
+      <td>Will Jon Ossoff win the 2028 US Presidential Election?</td>
+      <td>nomination/general</td>
+      <td>us_2028_presidential_nomination_general</td>
+      <td>analysis_only</td>
+      <td>True</td>
+      <td>not_strategy_eligible (ineligible)</td>
+      <td>intentionally analysis-only, not a missed opportunity</td>
+    </tr>
+    <tr>
+      <td>656c1df5bb31997622521bc9e9f0adc6</td>
+      <td>Will Jesus Christ return before GTA VI?</td>
+      <td>Will China invades Taiwan before GTA VI?</td>
+      <td>same-reference GTA VI</td>
+      <td>same_reference_clock_before_gta_vi</td>
+      <td>analysis_only</td>
+      <td>True</td>
+      <td>not_strategy_eligible (ineligible)</td>
+      <td>intentionally analysis-only, not a missed opportunity</td>
+    </tr>
+    <tr>
+      <td>9f8979f5595d8799aa56516df800886a</td>
+      <td>New Rihanna Album before GTA VI?</td>
+      <td>Will China invades Taiwan before GTA VI?</td>
+      <td>same-reference GTA VI</td>
+      <td>same_reference_clock_before_gta_vi</td>
+      <td>analysis_only</td>
+      <td>True</td>
+      <td>not_strategy_eligible (ineligible)</td>
+      <td>intentionally analysis-only, not a missed opportunity</td>
+    </tr>
+    <tr>
+      <td>eb2787e350b8e0294d593c91947117e4</td>
+      <td>Will China invades Taiwan before GTA VI?</td>
+      <td>Will GPT-6 be released before GTA VI?</td>
+      <td>same-reference GTA VI</td>
+      <td>same_reference_clock_before_gta_vi</td>
+      <td>analysis_only</td>
+      <td>True</td>
+      <td>not_strategy_eligible (ineligible)</td>
+      <td>intentionally analysis-only, not a missed opportunity</td>
+    </tr>
+    <tr>
+      <td>a38a46b0aa9e43da32288b6491f29802</td>
+      <td>Will China invades Taiwan before GTA VI?</td>
+      <td>Will bitcoin hit $1m before GTA VI?</td>
+      <td>same-reference GTA VI</td>
+      <td>same_reference_clock_before_gta_vi</td>
+      <td>analysis_only</td>
+      <td>True</td>
+      <td>not_strategy_eligible (ineligible)</td>
+      <td>intentionally analysis-only, not a missed opportunity</td>
+    </tr>
+    <tr>
+      <td>2fc7c0bfadee801d685006086656d299</td>
+      <td>Trump out as President before GTA VI?</td>
+      <td>Will China invades Taiwan before GTA VI?</td>
+      <td>same-reference GTA VI</td>
+      <td>same_reference_clock_before_gta_vi</td>
+      <td>analysis_only</td>
+      <td>True</td>
+      <td>not_strategy_eligible (ineligible)</td>
+      <td>intentionally analysis-only, not a missed opportunity</td>
+    </tr>
+    <tr>
+      <td>3510fa79844874170bc5aa27001fd3f9</td>
+      <td>New Playboi Carti Album before GTA VI?</td>
+      <td>Will China invades Taiwan before GTA VI?</td>
+      <td>same-reference GTA VI</td>
+      <td>same_reference_clock_before_gta_vi</td>
+      <td>analysis_only</td>
+      <td>True</td>
+      <td>not_strategy_eligible (ineligible)</td>
+      <td>intentionally analysis-only, not a missed opportunity</td>
+    </tr>
+    <tr>
+      <td>ce1403a76b3c8a70b5e36e97d0a18741</td>
+      <td>Will Marco Rubio win the 2028 US Presidential Election?</td>
+      <td>Will Marco Rubio win the 2028 Republican presidential nomination?</td>
+      <td>nomination/general</td>
+      <td>us_2028_presidential_nomination_general</td>
+      <td>analysis_only</td>
+      <td>True</td>
+      <td>not_strategy_eligible (ineligible)</td>
+      <td>intentionally analysis-only, not a missed opportunity</td>
+    </tr>
+    <tr>
+      <td>eafa282f1fe3c2034c6e7000af2a36f1</td>
+      <td>Will Donald Trump Jr. win the 2028 US Presidential Election?</td>
+      <td>Will Donald Trump Jr. win the 2028 Republican presidential nomination?</td>
+      <td>nomination/general</td>
+      <td>us_2028_presidential_nomination_general</td>
+      <td>analysis_only</td>
+      <td>True</td>
+      <td>not_strategy_eligible (ineligible)</td>
+      <td>intentionally analysis-only, not a missed opportunity</td>
+    </tr>
+    <tr>
+      <td>3c4c4d4734389fadaed96d4f40e0c654</td>
+      <td>Will Elon Musk win the 2028 US Presidential Election?</td>
+      <td>Will Elon Musk win the 2028 Republican presidential nomination?</td>
+      <td>nomination/general</td>
+      <td>us_2028_presidential_nomination_general</td>
+      <td>analysis_only</td>
+      <td>True</td>
+      <td>not_strategy_eligible (ineligible)</td>
+      <td>intentionally analysis-only, not a missed opportunity</td>
+    </tr>
+    <tr>
+      <td>eb3a5dbeda50cda3d8ebb7efb0ec27ac</td>
+      <td>Will LeBron James win the 2028 Democratic presidential nomination?</td>
+      <td>Will LeBron James win the 2028 US Presidential Election?</td>
+      <td>nomination/general</td>
+      <td>us_2028_presidential_nomination_general</td>
+      <td>analysis_only</td>
+      <td>True</td>
+      <td>not_strategy_eligible (ineligible)</td>
+      <td>intentionally analysis-only, not a missed opportunity</td>
+    </tr>
+    <tr>
+      <td>d6f3e0670c0e7765406d5af2709303ed</td>
+      <td>Will Nikki Haley win the 2028 US Presidential Election?</td>
+      <td>Will Nikki Haley win the 2028 Republican presidential nomination?</td>
+      <td>nomination/general</td>
+      <td>us_2028_presidential_nomination_general</td>
+      <td>analysis_only</td>
+      <td>True</td>
+      <td>not_strategy_eligible (ineligible)</td>
+      <td>intentionally analysis-only, not a missed opportunity</td>
+    </tr>
+    <tr>
+      <td>8b937b1b819dbf225c72414c3b5653d9</td>
+      <td>Will Dwayne 'The Rock' Johnson win the 2028 Democratic presidential nomination?</td>
+      <td>Will Dwayne 'The Rock' Johnson win the 2028 US Presidential Election?</td>
+      <td>nomination/general</td>
+      <td>us_2028_presidential_nomination_general</td>
+      <td>analysis_only</td>
+      <td>True</td>
+      <td>not_strategy_eligible (ineligible)</td>
+      <td>intentionally analysis-only, not a missed opportunity</td>
+    </tr>
+    <tr>
+      <td>4ceb6c57b9a9908fcbbbe636c2b57b9d</td>
+      <td>Will Kamala Harris win the 2028 Democratic presidential nomination?</td>
+      <td>Will Kamala Harris win the 2028 US Presidential Election?</td>
+      <td>nomination/general</td>
+      <td>us_2028_presidential_nomination_general</td>
+      <td>analysis_only</td>
+      <td>True</td>
+      <td>not_strategy_eligible (ineligible)</td>
+      <td>intentionally analysis-only, not a missed opportunity</td>
+    </tr>
+    <tr>
+      <td>e5267754e49a11237e3cd6f4d4a5eda2</td>
+      <td>Will Zohran Mamdani win the 2028 Democratic presidential nomination?</td>
+      <td>Will Zohran Mamdani win the 2028 US Presidential Election?</td>
+      <td>nomination/general</td>
+      <td>us_2028_presidential_nomination_general</td>
+      <td>analysis_only</td>
+      <td>True</td>
+      <td>not_strategy_eligible (ineligible)</td>
+      <td>intentionally analysis-only, not a missed opportunity</td>
+    </tr>
+    <tr>
+      <td>8cd78a1977f5200ff342e072bdd6bf15</td>
+      <td>Will Michelle Obama win the 2028 Democratic presidential nomination?</td>
+      <td>Will Michelle Obama win the 2028 US Presidential Election?</td>
+      <td>nomination/general</td>
+      <td>us_2028_presidential_nomination_general</td>
+      <td>analysis_only</td>
+      <td>True</td>
+      <td>not_strategy_eligible (ineligible)</td>
+      <td>intentionally analysis-only, not a missed opportunity</td>
+    </tr>
+    <tr>
+      <td>67702d888fa0ce85614d831561f2d55b</td>
+      <td>Will Alexandria Ocasio-Cortez win the 2028 Democratic presidential nomination?</td>
+      <td>Will Alexandria Ocasio-Cortez win the 2028 US Presidential Election?</td>
+      <td>nomination/general</td>
+      <td>us_2028_presidential_nomination_general</td>
+      <td>analysis_only</td>
+      <td>True</td>
+      <td>not_strategy_eligible (ineligible)</td>
+      <td>intentionally analysis-only, not a missed opportunity</td>
+    </tr>
+    <tr>
+      <td>671c63a001cfdfe037255346d48f4dd6</td>
+      <td>Will Andy Beshear win the 2028 Democratic presidential nomination?</td>
+      <td>Will Andy Beshear win the 2028 US Presidential Election?</td>
+      <td>nomination/general</td>
+      <td>us_2028_presidential_nomination_general</td>
+      <td>analysis_only</td>
+      <td>True</td>
+      <td>not_strategy_eligible (ineligible)</td>
+      <td>intentionally analysis-only, not a missed opportunity</td>
+    </tr>
+    <tr>
+      <td>9814f0b1f2c1e137cdd0f01081c9d79d</td>
+      <td>Will Vivek Ramaswamy win the 2028 US Presidential Election?</td>
+      <td>Will Vivek Ramaswamy win the 2028 Republican presidential nomination?</td>
+      <td>nomination/general</td>
+      <td>us_2028_presidential_nomination_general</td>
+      <td>analysis_only</td>
+      <td>True</td>
+      <td>not_strategy_eligible (ineligible)</td>
+      <td>intentionally analysis-only, not a missed opportunity</td>
+    </tr>
+    <tr>
+      <td>7b13eefd6d90d2688ac31722ff8efe17</td>
+      <td>Will Thomas Massie win the 2028 US Presidential Election?</td>
+      <td>Will Thomas Massie win the 2028 Republican presidential nomination?</td>
+      <td>nomination/general</td>
+      <td>us_2028_presidential_nomination_general</td>
+      <td>analysis_only</td>
+      <td>True</td>
+      <td>not_strategy_eligible (ineligible)</td>
+      <td>intentionally analysis-only, not a missed opportunity</td>
+    </tr>
+    <tr>
+      <td>5b9170e0c89e0e7ad7bb127a5796d918</td>
+      <td>Will Tim Walz win the 2028 Democratic presidential nomination?</td>
+      <td>Will Tim Walz win the 2028 US Presidential Election?</td>
+      <td>nomination/general</td>
+      <td>us_2028_presidential_nomination_general</td>
+      <td>analysis_only</td>
+      <td>True</td>
+      <td>not_strategy_eligible (ineligible)</td>
+      <td>intentionally analysis-only, not a missed opportunity</td>
+    </tr>
+    <tr>
+      <td>1c302d09aad4deb9ff7250e3c822df1d</td>
+      <td>Will Glenn Youngkin win the 2028 US Presidential Election?</td>
+      <td>Will Glenn Youngkin win the 2028 Republican presidential nomination?</td>
+      <td>nomination/general</td>
+      <td>us_2028_presidential_nomination_general</td>
+      <td>analysis_only</td>
+      <td>True</td>
+      <td>not_strategy_eligible (ineligible)</td>
+      <td>intentionally analysis-only, not a missed opportunity</td>
+    </tr>
+    <tr>
+      <td>2d911c0905127bffd7fd430f4b610760</td>
+      <td>Will Pete Buttigieg win the 2028 Democratic presidential nomination?</td>
+      <td>Will Pete Buttigieg win the 2028 US Presidential Election?</td>
+      <td>nomination/general</td>
+      <td>us_2028_presidential_nomination_general</td>
+      <td>analysis_only</td>
+      <td>True</td>
+      <td>not_strategy_eligible (ineligible)</td>
+      <td>intentionally analysis-only, not a missed opportunity</td>
+    </tr>
+    <tr>
+      <td>d1665f8688af505f6969f6abefb096d6</td>
+      <td>Will Ro Khanna win the 2028 Democratic presidential nomination?</td>
+      <td>Will Ro Khanna win the 2028 US Presidential Election?</td>
+      <td>nomination/general</td>
+      <td>us_2028_presidential_nomination_general</td>
+      <td>analysis_only</td>
+      <td>True</td>
+      <td>not_strategy_eligible (ineligible)</td>
+      <td>intentionally analysis-only, not a missed opportunity</td>
+    </tr>
+    <tr>
+      <td>a32d8d6605c4ff9fc8381752bb637f2e</td>
+      <td>Will Josh Shapiro win the 2028 Democratic presidential nomination?</td>
+      <td>Will Josh Shapiro win the 2028 US Presidential Election?</td>
+      <td>nomination/general</td>
+      <td>us_2028_presidential_nomination_general</td>
+      <td>analysis_only</td>
+      <td>True</td>
+      <td>not_strategy_eligible (ineligible)</td>
+      <td>intentionally analysis-only, not a missed opportunity</td>
+    </tr>
+    <tr>
+      <td>0757dba0a05e54599e481c229b5c61cf</td>
+      <td>Will Tulsi Gabbard win the 2028 US Presidential Election?</td>
+      <td>Will Tulsi Gabbard win the 2028 Republican presidential nomination?</td>
+      <td>nomination/general</td>
+      <td>us_2028_presidential_nomination_general</td>
+      <td>analysis_only</td>
+      <td>True</td>
+      <td>not_strategy_eligible (ineligible)</td>
+      <td>intentionally analysis-only, not a missed opportunity</td>
+    </tr>
+    <tr>
+      <td>2de26bc261398987df16efb1545e1843</td>
+      <td>Will Pete Hegseth win the 2028 US Presidential Election?</td>
+      <td>Will Pete Hegseth win the 2028 Republican presidential nomination?</td>
+      <td>nomination/general</td>
+      <td>us_2028_presidential_nomination_general</td>
+      <td>analysis_only</td>
+      <td>True</td>
+      <td>not_strategy_eligible (ineligible)</td>
+      <td>intentionally analysis-only, not a missed opportunity</td>
+    </tr>
+    <tr>
+      <td>81bc17f1290a94cdc67b3f9e0af9ecea</td>
+      <td>Will Ivanka Trump win the 2028 US Presidential Election?</td>
+      <td>Will Ivanka Trump win the 2028 Republican presidential nomination?</td>
+      <td>nomination/general</td>
+      <td>us_2028_presidential_nomination_general</td>
+      <td>analysis_only</td>
+      <td>True</td>
+      <td>not_strategy_eligible (ineligible)</td>
+      <td>intentionally analysis-only, not a missed opportunity</td>
+    </tr>
+    <tr>
+      <td>418590bdf1fce3b701b0dbf876edeb79</td>
+      <td>Will Gavin Newsom win the 2028 Democratic presidential nomination?</td>
+      <td>Will Gavin Newsom win the 2028 US Presidential Election?</td>
+      <td>nomination/general</td>
+      <td>us_2028_presidential_nomination_general</td>
+      <td>analysis_only</td>
+      <td>True</td>
+      <td>not_strategy_eligible (ineligible)</td>
+      <td>intentionally analysis-only, not a missed opportunity</td>
+    </tr>
+    <tr>
+      <td>cec0db338843fe1406f15edb794b2acd</td>
+      <td>Will Ron DeSantis win the 2028 US Presidential Election?</td>
+      <td>Will Ron DeSantis win the 2028 Republican presidential nomination?</td>
+      <td>nomination/general</td>
+      <td>us_2028_presidential_nomination_general</td>
+      <td>analysis_only</td>
+      <td>True</td>
+      <td>not_strategy_eligible (ineligible)</td>
+      <td>intentionally analysis-only, not a missed opportunity</td>
+    </tr>
+    <tr>
+      <td>55c2d8572e14422eb9d47ccfd590a2e7</td>
+      <td>Will Gretchen Whitmer win the 2028 Democratic presidential nomination?</td>
+      <td>Will Gretchen Whitmer win the 2028 US Presidential Election?</td>
+      <td>nomination/general</td>
+      <td>us_2028_presidential_nomination_general</td>
+      <td>analysis_only</td>
+      <td>True</td>
+      <td>not_strategy_eligible (ineligible)</td>
+      <td>intentionally analysis-only, not a missed opportunity</td>
+    </tr>
+    <tr>
+      <td>e602b8cb88b133424c34496b91dcd2b7</td>
+      <td>Will Greg Abbott win the 2028 US Presidential Election?</td>
+      <td>Will Greg Abbott win the 2028 Republican presidential nomination?</td>
+      <td>nomination/general</td>
+      <td>us_2028_presidential_nomination_general</td>
+      <td>analysis_only</td>
+      <td>True</td>
+      <td>not_strategy_eligible (ineligible)</td>
+      <td>intentionally analysis-only, not a missed opportunity</td>
+    </tr>
+    <tr>
+      <td>c16c87976c39bf32c46a238058a19da0</td>
+      <td>Will Donald Trump win the 2028 US Presidential Election?</td>
+      <td>Will Donald Trump win the 2028 Republican presidential nomination?</td>
+      <td>nomination/general</td>
+      <td>us_2028_presidential_nomination_general</td>
+      <td>analysis_only</td>
+      <td>True</td>
+      <td>not_strategy_eligible (ineligible)</td>
+      <td>intentionally analysis-only, not a missed opportunity</td>
+    </tr>
+    <tr>
+      <td>afbb888cff6a11db64add1dcbd907460</td>
+      <td>Will Eric Trump win the 2028 US Presidential Election?</td>
+      <td>Will Eric Trump win the 2028 Republican presidential nomination?</td>
+      <td>nomination/general</td>
+      <td>us_2028_presidential_nomination_general</td>
+      <td>analysis_only</td>
+      <td>True</td>
+      <td>not_strategy_eligible (ineligible)</td>
+      <td>intentionally analysis-only, not a missed opportunity</td>
+    </tr>
+    <tr>
+      <td>f91baba31c7cbd931f2ad3a8ce640780</td>
+      <td>Will Kim Kardashian win the 2028 Democratic presidential nomination?</td>
+      <td>Will Kim Kardashian win the 2028 US Presidential Election?</td>
+      <td>nomination/general</td>
+      <td>us_2028_presidential_nomination_general</td>
+      <td>analysis_only</td>
+      <td>True</td>
+      <td>not_strategy_eligible (ineligible)</td>
+      <td>intentionally analysis-only, not a missed opportunity</td>
+    </tr>
+    <tr>
+      <td>3d634456c3026c071a0457c05dc4f462</td>
+      <td>Will Tucker Carlson win the 2028 US Presidential Election?</td>
+      <td>Will Tucker Carlson win the 2028 Republican presidential nomination?</td>
+      <td>nomination/general</td>
+      <td>us_2028_presidential_nomination_general</td>
+      <td>analysis_only</td>
+      <td>True</td>
+      <td>not_strategy_eligible (ineligible)</td>
+      <td>intentionally analysis-only, not a missed opportunity</td>
+    </tr>
+    <tr>
+      <td>c30a8da72e76b3fbb882e493f3e647a9</td>
+      <td>Will Wes Moore win the 2028 Democratic presidential nomination?</td>
+      <td>Will Wes Moore win the 2028 US Presidential Election?</td>
+      <td>nomination/general</td>
+      <td>us_2028_presidential_nomination_general</td>
+      <td>analysis_only</td>
+      <td>True</td>
+      <td>not_strategy_eligible (ineligible)</td>
+      <td>intentionally analysis-only, not a missed opportunity</td>
+    </tr>
+    <tr>
+      <td>3aae3cb1b2ec3730bfac0f54ce120dc9</td>
+      <td>Will Kim Kardashian win the 2028 US Presidential Election?</td>
+      <td>Will Kim Kardashian win the 2028 Republican presidential nomination?</td>
+      <td>nomination/general</td>
+      <td>us_2028_presidential_nomination_general</td>
+      <td>analysis_only</td>
+      <td>True</td>
+      <td>not_strategy_eligible (ineligible)</td>
+      <td>intentionally analysis-only, not a missed opportunity</td>
+    </tr>
+    <tr>
+      <td>7e196c9cbf9fd7930dfcbf324ce82ebd</td>
+      <td>New Rihanna Album before GTA VI?</td>
+      <td>New Playboi Carti Album before GTA VI?</td>
+      <td>same-reference GTA VI</td>
+      <td>same_reference_clock_before_gta_vi</td>
+      <td>analysis_only</td>
+      <td>True</td>
+      <td>not_strategy_eligible (ineligible)</td>
+      <td>intentionally analysis-only, not a missed opportunity</td>
+    </tr>
+    <tr>
+      <td>72dfea6c8c946bedf26721c01c36b1ec</td>
+      <td>New Rihanna Album before GTA VI?</td>
+      <td>New Playboi Carti Album before GTA VI?</td>
+      <td>same-reference GTA VI</td>
+      <td></td>
+      <td>research_only</td>
+      <td>False</td>
+      <td>not_strategy_eligible (ineligible)</td>
+      <td>intentionally analysis-only, not a missed opportunity</td>
+    </tr>
+    <tr>
+      <td>2a3afd9cbd61c5f7a6d4d096dc79ccdf</td>
+      <td>Will bitcoin hit $1m before GTA VI?</td>
+      <td>Will Bitcoin hit $150k by June 30, 2026?</td>
+      <td>same-reference GTA VI</td>
+      <td></td>
+      <td>research_only</td>
+      <td>False</td>
+      <td>not_strategy_eligible (ineligible)</td>
+      <td>intentionally analysis-only, not a missed opportunity</td>
+    </tr>
+    <tr>
+      <td>0462c7c0d38ac054df91da25b1e186e1</td>
+      <td>New Rihanna Album before GTA VI?</td>
+      <td>Trump out as President before GTA VI?</td>
+      <td>same-reference GTA VI</td>
+      <td></td>
+      <td>research_only</td>
+      <td>False</td>
+      <td>not_strategy_eligible (ineligible)</td>
+      <td>intentionally analysis-only, not a missed opportunity</td>
+    </tr>
+    <tr>
+      <td>06eb8de3f348578d5212ece1f4fce7df</td>
+      <td>New Playboi Carti Album before GTA VI?</td>
+      <td>Will GPT-6 be released before GTA VI?</td>
+      <td>same-reference GTA VI</td>
+      <td></td>
+      <td>research_only</td>
+      <td>False</td>
+      <td>not_strategy_eligible (ineligible)</td>
+      <td>intentionally analysis-only, not a missed opportunity</td>
+    </tr>
+    <tr>
+      <td>fb5efc7f0a76767bc42249cea73627b0</td>
+      <td>New Playboi Carti Album before GTA VI?</td>
+      <td>Will Jesus Christ return before GTA VI?</td>
+      <td>same-reference GTA VI</td>
+      <td></td>
+      <td>research_only</td>
+      <td>False</td>
+      <td>not_strategy_eligible (ineligible)</td>
+      <td>intentionally analysis-only, not a missed opportunity</td>
+    </tr>
+    <tr>
+      <td>b9b55135fac0d7b9a1d4af4a8a3b10e2</td>
+      <td>New Rihanna Album before GTA VI?</td>
+      <td>Will Jesus Christ return before GTA VI?</td>
+      <td>same-reference GTA VI</td>
+      <td></td>
+      <td>research_only</td>
+      <td>False</td>
+      <td>not_strategy_eligible (ineligible)</td>
+      <td>intentionally analysis-only, not a missed opportunity</td>
+    </tr>
+    <tr>
+      <td>0bb7c9996551a786c9ba072553da52b3</td>
+      <td>Will China invades Taiwan before GTA VI?</td>
+      <td>Will China invade Taiwan by end of 2026?</td>
+      <td>same-reference GTA VI</td>
+      <td></td>
+      <td>research_only</td>
+      <td>False</td>
+      <td>not_strategy_eligible (ineligible)</td>
+      <td>intentionally analysis-only, not a missed opportunity</td>
+    </tr>
+    <tr>
+      <td>41672ffa89c945d4ae361a8759c888a6</td>
+      <td>New Rihanna Album before GTA VI?</td>
+      <td>Will Jesus Christ return before GTA VI?</td>
+      <td>same-reference GTA VI</td>
+      <td></td>
+      <td>research_only</td>
+      <td>False</td>
+      <td>not_strategy_eligible (ineligible)</td>
+      <td>intentionally analysis-only, not a missed opportunity</td>
+    </tr>
+    <tr>
+      <td>7e744c2e05cddc43704cf818f2aa327d</td>
+      <td>Will Jesus Christ return before GTA VI?</td>
+      <td>Will bitcoin hit $1m before GTA VI?</td>
+      <td>same-reference GTA VI</td>
+      <td></td>
+      <td>research_only</td>
+      <td>False</td>
+      <td>not_strategy_eligible (ineligible)</td>
+      <td>intentionally analysis-only, not a missed opportunity</td>
+    </tr>
+    <tr>
+      <td>4dd90e60c93d750ed0d197319599ef1c</td>
+      <td>New Playboi Carti Album before GTA VI?</td>
+      <td>Will Jesus Christ return before GTA VI?</td>
+      <td>same-reference GTA VI</td>
+      <td></td>
+      <td>research_only</td>
+      <td>False</td>
+      <td>not_strategy_eligible (ineligible)</td>
+      <td>intentionally analysis-only, not a missed opportunity</td>
+    </tr>
+    <tr>
+      <td>6951e7a33fd87bc9132fbd9d04f424ab</td>
+      <td>New Rihanna Album before GTA VI?</td>
+      <td>Will GPT-6 be released before GTA VI?</td>
+      <td>same-reference GTA VI</td>
+      <td></td>
+      <td>research_only</td>
+      <td>False</td>
+      <td>not_strategy_eligible (ineligible)</td>
+      <td>intentionally analysis-only, not a missed opportunity</td>
+    </tr>
+    <tr>
+      <td>e02bbc12cf27e2f1c7892aeaf4730cdf</td>
+      <td>Will Jesus Christ return before GTA VI?</td>
+      <td>Trump out as President before GTA VI?</td>
+      <td>same-reference GTA VI</td>
+      <td>same_reference_clock_before_gta_vi</td>
+      <td>analysis_only</td>
+      <td>True</td>
+      <td>not_strategy_eligible (ineligible)</td>
+      <td>intentionally analysis-only, not a missed opportunity</td>
+    </tr>
+    <tr>
+      <td>323a222f5b4e83bb756ed5a6e3c939a1</td>
+      <td>Will Jesus Christ return before GTA VI?</td>
+      <td>Will GPT-6 be released before GTA VI?</td>
+      <td>same-reference GTA VI</td>
+      <td>same_reference_clock_before_gta_vi</td>
+      <td>analysis_only</td>
+      <td>True</td>
+      <td>not_strategy_eligible (ineligible)</td>
+      <td>intentionally analysis-only, not a missed opportunity</td>
+    </tr>
+    <tr>
+      <td>3cd0206d7a630a2ed1d7e52faa324562</td>
+      <td>New Playboi Carti Album before GTA VI?</td>
+      <td>Will bitcoin hit $1m before GTA VI?</td>
+      <td>same-reference GTA VI</td>
+      <td></td>
+      <td>research_only</td>
+      <td>False</td>
+      <td>not_strategy_eligible (ineligible)</td>
+      <td>intentionally analysis-only, not a missed opportunity</td>
+    </tr>
+    <tr>
+      <td>44b90050a17ee86d2db590ea611662e1</td>
+      <td>Trump out as President before GTA VI?</td>
+      <td>Will bitcoin hit $1m before GTA VI?</td>
+      <td>same-reference GTA VI</td>
+      <td>same_reference_clock_before_gta_vi</td>
+      <td>analysis_only</td>
+      <td>True</td>
+      <td>not_strategy_eligible (ineligible)</td>
+      <td>intentionally analysis-only, not a missed opportunity</td>
+    </tr>
+    <tr>
+      <td>d6b7e9ccd5f194edc1dbaf107b3b87c2</td>
+      <td>Will Jesus Christ return before GTA VI?</td>
+      <td>Will bitcoin hit $1m before GTA VI?</td>
+      <td>same-reference GTA VI</td>
+      <td>same_reference_clock_before_gta_vi</td>
+      <td>analysis_only</td>
+      <td>True</td>
+      <td>not_strategy_eligible (ineligible)</td>
+      <td>intentionally analysis-only, not a missed opportunity</td>
+    </tr>
+    <tr>
+      <td>3408dfe3c22c0d8ccb013839c62ae2aa</td>
+      <td>Will bitcoin hit $1m before GTA VI?</td>
+      <td>Will GPT-6 be released before GTA VI?</td>
+      <td>same-reference GTA VI</td>
+      <td>same_reference_clock_before_gta_vi</td>
+      <td>analysis_only</td>
+      <td>True</td>
+      <td>not_strategy_eligible (ineligible)</td>
+      <td>intentionally analysis-only, not a missed opportunity</td>
+    </tr>
+    <tr>
+      <td>759843b8ca4b1c0c5f6cd9d21c0f7f06</td>
+      <td>Trump out as President before GTA VI?</td>
+      <td>Will GPT-6 be released before GTA VI?</td>
+      <td>same-reference GTA VI</td>
+      <td>same_reference_clock_before_gta_vi</td>
+      <td>analysis_only</td>
+      <td>True</td>
+      <td>not_strategy_eligible (ineligible)</td>
+      <td>intentionally analysis-only, not a missed opportunity</td>
+    </tr>
+    <tr>
+      <td>ab030b85211f18c92d425a08d8339255</td>
+      <td>New Rihanna Album before GTA VI?</td>
+      <td>Will bitcoin hit $1m before GTA VI?</td>
+      <td>same-reference GTA VI</td>
+      <td></td>
+      <td>research_only</td>
+      <td>False</td>
+      <td>not_strategy_eligible (ineligible)</td>
+      <td>intentionally analysis-only, not a missed opportunity</td>
+    </tr>
+    <tr>
+      <td>e86b9578f68d6611da3c30f7951a978e</td>
+      <td>New Playboi Carti Album before GTA VI?</td>
+      <td>Will bitcoin hit $1m before GTA VI?</td>
+      <td>same-reference GTA VI</td>
+      <td></td>
+      <td>research_only</td>
+      <td>False</td>
+      <td>not_strategy_eligible (ineligible)</td>
+      <td>intentionally analysis-only, not a missed opportunity</td>
+    </tr>
+    <tr>
+      <td>f106913f6d05d19511b287de2c2ac1c4</td>
+      <td>Will bitcoin hit $1m before GTA VI?</td>
+      <td>Will Bitcoin hit $150k by December 31, 2026?</td>
+      <td>same-reference GTA VI</td>
+      <td></td>
+      <td>research_only</td>
+      <td>False</td>
+      <td>not_strategy_eligible (ineligible)</td>
+      <td>intentionally analysis-only, not a missed opportunity</td>
+    </tr>
+    <tr>
+      <td>7c1acaa02d0f1f71a4e51f843c1f3135</td>
+      <td>New Playboi Carti Album before GTA VI?</td>
+      <td>Trump out as President before GTA VI?</td>
+      <td>same-reference GTA VI</td>
+      <td></td>
+      <td>research_only</td>
+      <td>False</td>
+      <td>not_strategy_eligible (ineligible)</td>
+      <td>intentionally analysis-only, not a missed opportunity</td>
+    </tr>
+    <tr>
+      <td>a0ef9131c9f93574165e69c236992ee0</td>
+      <td>New Rihanna Album before GTA VI?</td>
+      <td>Will bitcoin hit $1m before GTA VI?</td>
+      <td>same-reference GTA VI</td>
+      <td></td>
+      <td>research_only</td>
+      <td>False</td>
+      <td>not_strategy_eligible (ineligible)</td>
+      <td>intentionally analysis-only, not a missed opportunity</td>
+    </tr>
+    <tr>
+      <td>388e523392a91d7082c2a2988cf15f16</td>
+      <td>New Rihanna Album before GTA VI?</td>
+      <td>GTA VI released before June 2026?</td>
+      <td>same-reference GTA VI</td>
+      <td></td>
+      <td>research_only</td>
+      <td>False</td>
+      <td>not_strategy_eligible (ineligible)</td>
+      <td>intentionally analysis-only, not a missed opportunity</td>
+    </tr>
+    <tr>
+      <td>ba978eaf8bffd077f7d8bb88b0a583bb</td>
+      <td>Trump out as President before GTA VI?</td>
+      <td>GTA VI released before June 2026?</td>
+      <td>same-reference GTA VI</td>
+      <td></td>
+      <td>research_only</td>
+      <td>False</td>
+      <td>not_strategy_eligible (ineligible)</td>
+      <td>intentionally analysis-only, not a missed opportunity</td>
+    </tr>
+    <tr>
+      <td>5cd795d9710c7e66b2c910ffceff9bfb</td>
+      <td>New Rihanna Album before GTA VI?</td>
+      <td>GTA VI released before June 2026?</td>
+      <td>same-reference GTA VI</td>
+      <td></td>
+      <td>research_only</td>
+      <td>False</td>
+      <td>not_strategy_eligible (ineligible)</td>
+      <td>intentionally analysis-only, not a missed opportunity</td>
+    </tr>
+    <tr>
+      <td>15b85e9f335af44d1ed752bb380210e3</td>
+      <td>GTA VI released before June 2026?</td>
+      <td>Will GPT-6 be released before GTA VI?</td>
+      <td>same-reference GTA VI</td>
+      <td></td>
+      <td>research_only</td>
+      <td>False</td>
+      <td>not_strategy_eligible (ineligible)</td>
+      <td>intentionally analysis-only, not a missed opportunity</td>
+    </tr>
+    <tr>
+      <td>4896d82fe2e5f62452175f41e65b5a69</td>
+      <td>Will Jesus Christ return before GTA VI?</td>
+      <td>GTA VI released before June 2026?</td>
+      <td>same-reference GTA VI</td>
+      <td></td>
+      <td>research_only</td>
+      <td>False</td>
+      <td>not_strategy_eligible (ineligible)</td>
+      <td>intentionally analysis-only, not a missed opportunity</td>
+    </tr>
+    <tr>
+      <td>4e48362725756304216e7c9ddbbe1b8d</td>
+      <td>New Playboi Carti Album before GTA VI?</td>
+      <td>GTA VI released before June 2026?</td>
+      <td>same-reference GTA VI</td>
+      <td></td>
+      <td>research_only</td>
+      <td>False</td>
+      <td>not_strategy_eligible (ineligible)</td>
+      <td>intentionally analysis-only, not a missed opportunity</td>
+    </tr>
+    <tr>
+      <td>6f638068bffeb3ba21f869fa687df58e</td>
+      <td>Will Jesus Christ return before GTA VI?</td>
+      <td>GTA VI released before June 2026?</td>
+      <td>same-reference GTA VI</td>
+      <td></td>
+      <td>research_only</td>
+      <td>False</td>
+      <td>not_strategy_eligible (ineligible)</td>
+      <td>intentionally analysis-only, not a missed opportunity</td>
+    </tr>
+    <tr>
+      <td>9446e1cc43b82f8b8868f5f3b9136fe6</td>
+      <td>New Playboi Carti Album before GTA VI?</td>
+      <td>GTA VI released before June 2026?</td>
+      <td>same-reference GTA VI</td>
+      <td></td>
+      <td>research_only</td>
+      <td>False</td>
+      <td>not_strategy_eligible (ineligible)</td>
+      <td>intentionally analysis-only, not a missed opportunity</td>
+    </tr>
+    <tr>
+      <td>907a0b689888f9ce8df9e4ac0efdc69e</td>
+      <td>Will bitcoin hit $1m before GTA VI?</td>
+      <td>GTA VI released before June 2026?</td>
+      <td>same-reference GTA VI</td>
+      <td></td>
+      <td>research_only</td>
+      <td>False</td>
+      <td>not_strategy_eligible (ineligible)</td>
+      <td>intentionally analysis-only, not a missed opportunity</td>
+    </tr>
+    <tr>
+      <td>2452c1428ede53f2477f945baf111d3f</td>
+      <td>Will bitcoin hit $1m before GTA VI?</td>
+      <td>GTA VI released before June 2026?</td>
+      <td>same-reference GTA VI</td>
+      <td></td>
+      <td>research_only</td>
+      <td>False</td>
+      <td>not_strategy_eligible (ineligible)</td>
+      <td>intentionally analysis-only, not a missed opportunity</td>
+    </tr>
+    <tr>
+      <td>f45ae058b09d027fff0bc6de8ea43954</td>
+      <td>Trump out as President before GTA VI?</td>
+      <td>Macron out by June 30, 2026?</td>
+      <td>same-reference GTA VI</td>
+      <td></td>
+      <td>research_only</td>
+      <td>False</td>
+      <td>not_strategy_eligible (ineligible)</td>
+      <td>intentionally analysis-only, not a missed opportunity</td>
+    </tr>
+    <tr>
+      <td>b884d3af9ad68421c0febba9b78dcbec</td>
+      <td>Trump out as President before GTA VI?</td>
+      <td>Will Donald Trump win the 2028 US Presidential Election?</td>
+      <td>same-reference GTA VI</td>
+      <td></td>
+      <td>research_only</td>
+      <td>False</td>
+      <td>not_strategy_eligible (ineligible)</td>
+      <td>intentionally analysis-only, not a missed opportunity</td>
+    </tr>
+    <tr>
+      <td>32105d86982c449ff05e7b5b07f263ea</td>
+      <td>Trump out as President before GTA VI?</td>
+      <td>Will Donald Trump win the 2028 Republican presidential nomination?</td>
+      <td>same-reference GTA VI</td>
+      <td></td>
+      <td>research_only</td>
+      <td>False</td>
+      <td>not_strategy_eligible (ineligible)</td>
+      <td>intentionally analysis-only, not a missed opportunity</td>
+    </tr>
+    <tr>
+      <td>9c7c7a0cf69a2b395b0aaab79fe91265</td>
+      <td>Trump out as President before GTA VI?</td>
+      <td>Will Trump endorse Susan Collins for ME-Sen by Nov 2 2026 ET?</td>
+      <td>same-reference GTA VI</td>
+      <td></td>
+      <td>research_only</td>
+      <td>False</td>
+      <td>not_strategy_eligible (ineligible)</td>
+      <td>intentionally analysis-only, not a missed opportunity</td>
+    </tr>
+    <tr>
+      <td>b5e2607a966fa6c47307d84b1ff69e46</td>
+      <td>Trump out as President before GTA VI?</td>
+      <td>Will Trump endorse John Cornyn for TX-Sen by Nov 2 2026 ET?</td>
+      <td>same-reference GTA VI</td>
+      <td></td>
+      <td>research_only</td>
+      <td>False</td>
+      <td>not_strategy_eligible (ineligible)</td>
+      <td>intentionally analysis-only, not a missed opportunity</td>
+    </tr>
+    <tr>
+      <td>b8a2acdfe753d00a0b7402f0488ec25d</td>
+      <td>Trump out as President before GTA VI?</td>
+      <td>Will Trump endorse Ken Paxton for TX-Sen by Nov 2 2026 ET?</td>
+      <td>same-reference GTA VI</td>
+      <td></td>
+      <td>research_only</td>
+      <td>False</td>
+      <td>not_strategy_eligible (ineligible)</td>
+      <td>intentionally analysis-only, not a missed opportunity</td>
+    </tr>
+    <tr>
+      <td>67e7a5c47d60dcf8e7c2413ed5495d98</td>
+      <td>Trump out as President before GTA VI?</td>
+      <td>Will Trump resign by December 31, 2026?</td>
+      <td>same-reference GTA VI</td>
+      <td></td>
+      <td>research_only</td>
+      <td>False</td>
+      <td>not_strategy_eligible (ineligible)</td>
+      <td>intentionally analysis-only, not a missed opportunity</td>
+    </tr>
+    <tr>
+      <td>ab8b69a049e316f4ec436519995a8fec</td>
+      <td>Trump out as President before GTA VI?</td>
+      <td>Will Trump be impeached by end of 2026?</td>
+      <td>same-reference GTA VI</td>
+      <td></td>
+      <td>research_only</td>
+      <td>False</td>
+      <td>not_strategy_eligible (ineligible)</td>
+      <td>intentionally analysis-only, not a missed opportunity</td>
+    </tr>
+    <tr>
+      <td>d89892dd344d72a29953088fae74467c</td>
+      <td>Trump out as President before GTA VI?</td>
+      <td>Will Trump pardon Ghislaine Maxwell by end of 2026?</td>
+      <td>same-reference GTA VI</td>
+      <td></td>
+      <td>research_only</td>
+      <td>False</td>
+      <td>not_strategy_eligible (ineligible)</td>
+      <td>intentionally analysis-only, not a missed opportunity</td>
+    </tr>
+  </tbody>
+</table>
+<h2>Coverage audit</h2><table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th>section</th>
+      <th>metric</th>
+      <th>value</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>coverage_audit</td>
+      <td>tokens_expected</td>
+      <td>439</td>
+    </tr>
+    <tr>
+      <td>coverage_audit</td>
+      <td>tokens_with_price_history</td>
+      <td>439</td>
+    </tr>
+    <tr>
+      <td>coverage_audit</td>
+      <td>stale_coverage_rows_remaining</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <td>coverage_audit</td>
+      <td>coverage_not_recommended_count</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <td>coverage_audit</td>
+      <td>coverage_045_065_cluster_count</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <td>coverage_audit</td>
+      <td>coverage_045_065_missing_nlp_count</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <td>coverage_audit</td>
+      <td>missing_nlp_main_reason</td>
+      <td>False</td>
+    </tr>
+  </tbody>
+</table>
+<h2>Backtest credibility</h2><table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th>section</th>
+      <th>metric</th>
+      <th>value</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>backtest_credibility</td>
+      <td>reviewed</td>
+      <td>{"run_id": "post_rule_approval_reviewed", "lane": "reviewed_context_valid", "context_time_mode": "ex_post_research", "starting_cash_usdc": "10000.0", "ending_cash_usdc": "10000.0", "ending_equity_usdc": "10000.0", "net_pnl_usdc": "0.0", "total_fees_usdc": "0", "total_slippage_usdc": "0", "trades_executed": 0, "signals_generated": 0, "credibility_label": "data_insufficient", "credibility_rationale": "fewer than 30 trade pairs executed", "execution_model": "price_history_only"}</td>
+    </tr>
+    <tr>
+      <td>backtest_credibility</td>
+      <td>strict</td>
+      <td>{"run_id": "post_rule_approval_strict", "lane": "strict_context_valid", "context_time_mode": "ex_post_research", "starting_cash_usdc": "10000.0", "ending_cash_usdc": "10000.0", "ending_equity_usdc": "10000.0", "net_pnl_usdc": "0.0", "total_fees_usdc": "0", "total_slippage_usdc": "0", "trades_executed": 0, "signals_generated": 0, "credibility_label": "data_insufficient", "credibility_rationale": "fewer than 30 trade pairs executed", "execution_model": "price_history_only"}</td>
+    </tr>
+    <tr>
+      <td>backtest_credibility</td>
+      <td>diagnostic</td>
+      <td>{"run_id": "post_rule_approval_diagnostic_all_statuses", "label": "diagnostic_only_not_credible", "note": "RESEARCH-ONLY / DIAGNOSTIC-ONLY. Not trading advice.", "bypass_review_lane_checks": true, "bypass_min_confidence": true, "bypass_coverage_threshold": true, "include_all_validation_statuses": true, "starting_cash_usdc": "10000.0", "ending_cash_usdc": "25821.84665541063858602795132", "ending_equity_usdc": "25821.84665541063858602795132", "net_pnl_usdc": "15821.84665541063858602795132", "total_fees_usdc": "0", "total_slippage_usdc": "295.00", "relationships_considered": 5214, "positions_opened": 118, "positions_closed_reversal": 107, "positions_closed_eow": 11, "slippage_bps": "50", "credibility_label": "diagnostic_only_not_credible"}</td>
+    </tr>
+    <tr>
+      <td>backtest_credibility</td>
+      <td>null_baseline</td>
+      <td>{"run_id": "post_rule_approval_reviewed", "strategy": "context_null_baseline", "trades_executed": 0, "net_pnl_usdc": "0", "credibility_label": "data_insufficient", "message": "matched random baseline is not tradeable without context-approved pairs"}</td>
+    </tr>
+    <tr>
+      <td>backtest_credibility</td>
+      <td>sensitivity_cells</td>
+      <td>16</td>
+    </tr>
+    <tr>
+      <td>backtest_credibility</td>
+      <td>sensitivity_positive_cells</td>
+      <td>0</td>
+    </tr>
+    <tr>
+      <td>backtest_credibility</td>
+      <td>final_credibility_label</td>
+      <td>data_insufficient</td>
+    </tr>
+  </tbody>
+</table>
+<h2>Action items</h2><table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th>issue</th>
+      <th>severity</th>
+      <th>file_or_command</th>
+      <th>recommended_fix</th>
+      <th>blocking_credible_backtest</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>No reviewed-lane non-diagnostic trades</td>
+      <td>blocking</td>
+      <td>polymarket-arb strategy context-aware backtest --lane reviewed_context_valid</td>
+      <td>Inspect reviewed lane blockers and market-term coverage before claiming signal.</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>Diagnostic comparison is positive but not credible evidence</td>
+      <td>info</td>
+      <td>post_rule_approval_diagnostic</td>
+      <td>Use it only to prioritize data/context fixes; do not headline it.</td>
+      <td>False</td>
+    </tr>
+  </tbody>
+</table>
+</body></html>

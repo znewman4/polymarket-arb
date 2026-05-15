@@ -1,0 +1,36 @@
+section,metric,value
+executive,final_credibility_label,data_insufficient
+executive,reviewed_run_id,reviewed_context_low_conf
+executive,strict_run_id,post_rule_approval_strict
+executive,diagnostic_run_id,post_rule_approval_diagnostic_all_statuses
+executive,reviewed_trades,2
+executive,reviewed_positions_opened,0
+executive,reviewed_net_pnl_usdc,1375.2645799729125
+executive,reviewed_drawdown_usdc,0.0
+executive,strict_trades,0
+executive,strict_net_pnl_usdc,0.0
+executive,diagnostic_positions_opened,118
+executive,diagnostic_net_pnl_usdc,15821.846655410638
+executive,non_diagnostic_trades_occurred,True
+relationship_funnel,total_relationships,5214
+relationship_funnel,context_decision_counts_by_lane,"{""research_only"": 5158, ""reviewed_context_valid"": 10, ""analysis_only"": 46}"
+relationship_funnel,both_price_history,5214
+relationship_funnel,coverage_score_distribution,"{""0.00-0.45"": 0, ""0.45-0.65"": 0, ""0.65-0.80"": 4983, ""0.80-1.00"": 231}"
+relationship_funnel,aligned_ticks_relationships,5214
+relationship_funnel,gross_violating_relationships,22
+relationship_funnel,relationships_with_non_diagnostic_trades,1
+relationship_funnel,final_blocker_counts,"{""not_strategy_eligible (ineligible)"": 5204, ""none"": 10}"
+coverage_audit,tokens_expected,439
+coverage_audit,tokens_with_price_history,439
+coverage_audit,stale_coverage_rows_remaining,0
+coverage_audit,coverage_not_recommended_count,0
+coverage_audit,coverage_045_065_cluster_count,0
+coverage_audit,coverage_045_065_missing_nlp_count,0
+coverage_audit,missing_nlp_main_reason,False
+backtest_credibility,reviewed,"{""run_id"": ""reviewed_context_low_conf"", ""lane"": ""reviewed_context_valid"", ""context_time_mode"": ""ex_post_research"", ""relationship_universe"": ""all_with_context_decisions"", ""starting_cash_usdc"": ""10000.0"", ""ending_cash_usdc"": ""9000.000000000000000000000000"", ""ending_equity_usdc"": ""11375.26457997291245550632610"", ""net_pnl_usdc"": ""1375.26457997291245550632610"", ""total_fees_usdc"": ""0"", ""total_slippage_usdc"": ""5.00"", ""trades_executed"": 2, ""signals_generated"": 11, ""credibility_label"": ""data_insufficient"", ""credibility_rationale"": ""fewer than 30 trade pairs executed"", ""execution_model"": ""price_history_only""}"
+backtest_credibility,strict,"{""run_id"": ""post_rule_approval_strict"", ""lane"": ""strict_context_valid"", ""context_time_mode"": ""ex_post_research"", ""starting_cash_usdc"": ""10000.0"", ""ending_cash_usdc"": ""10000.0"", ""ending_equity_usdc"": ""10000.0"", ""net_pnl_usdc"": ""0.0"", ""total_fees_usdc"": ""0"", ""total_slippage_usdc"": ""0"", ""trades_executed"": 0, ""signals_generated"": 0, ""credibility_label"": ""data_insufficient"", ""credibility_rationale"": ""fewer than 30 trade pairs executed"", ""execution_model"": ""price_history_only""}"
+backtest_credibility,diagnostic,"{""run_id"": ""post_rule_approval_diagnostic_all_statuses"", ""label"": ""diagnostic_only_not_credible"", ""note"": ""RESEARCH-ONLY / DIAGNOSTIC-ONLY. Not trading advice."", ""bypass_review_lane_checks"": true, ""bypass_min_confidence"": true, ""bypass_coverage_threshold"": true, ""include_all_validation_statuses"": true, ""starting_cash_usdc"": ""10000.0"", ""ending_cash_usdc"": ""25821.84665541063858602795132"", ""ending_equity_usdc"": ""25821.84665541063858602795132"", ""net_pnl_usdc"": ""15821.84665541063858602795132"", ""total_fees_usdc"": ""0"", ""total_slippage_usdc"": ""295.00"", ""relationships_considered"": 5214, ""positions_opened"": 118, ""positions_closed_reversal"": 107, ""positions_closed_eow"": 11, ""slippage_bps"": ""50"", ""credibility_label"": ""diagnostic_only_not_credible""}"
+backtest_credibility,null_baseline,"{""run_id"": ""reviewed_context_low_conf"", ""strategy"": ""context_null_baseline"", ""trades_executed"": 0, ""net_pnl_usdc"": ""0"", ""credibility_label"": ""data_insufficient"", ""message"": ""matched random baseline is not tradeable without context-approved pairs""}"
+backtest_credibility,sensitivity_cells,16
+backtest_credibility,sensitivity_positive_cells,0
+backtest_credibility,final_credibility_label,data_insufficient

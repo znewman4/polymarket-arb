@@ -1,0 +1,16 @@
+rulebook_id: "evidence_fusion"
+rulebook_version: 1
+description: "Research-only fusion scoring v1."
+weights:
+  semantic_confidence: 0.20
+  ambiguity_score: -0.20
+  implication_quality_score: 0.15
+  liquidity_score: 0.15
+  freshness_score: 0.15
+  spread_score: 0.10
+  evidence_quality_score: 0.05
+recommendation_thresholds:
+  ignore: 0.0
+  watch: 0.35
+  research: 0.55
+  paper_signal_only: 0.75

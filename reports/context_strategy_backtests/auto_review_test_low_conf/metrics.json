@@ -1,0 +1,15 @@
+{
+  "strict_reviewed_net_pnl_usdc": 0,
+  "strict_reviewed_trades_executed": 0,
+  "null_baseline": {
+    "run_id": "auto_review_test_low_conf",
+    "strategy": "context_null_baseline",
+    "trades_executed": 0,
+    "net_pnl_usdc": "0",
+    "credibility_label": "data_insufficient",
+    "message": "matched random baseline is not tradeable without context-approved pairs"
+  },
+  "sensitivity_positive_cells": 0,
+  "credibility_label": "data_insufficient",
+  "credibility_rationale": "strict/reviewed lanes did not produce enough trades"
+}

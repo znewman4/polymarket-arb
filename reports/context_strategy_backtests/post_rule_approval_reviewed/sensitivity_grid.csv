@@ -1,0 +1,17 @@
+credibility_label,fee_bps,lane,min_net_edge,min_relationship_confidence,net_pnl_usdc,slippage_bps,trades_executed
+data_insufficient,0,reviewed_context_valid,0.01,0.65,0,50,0
+data_insufficient,0,reviewed_context_valid,0.01,0.8,0,50,0
+data_insufficient,0,reviewed_context_valid,0.02,0.65,0,50,0
+data_insufficient,0,reviewed_context_valid,0.02,0.8,0,50,0
+data_insufficient,50,reviewed_context_valid,0.01,0.65,0,50,0
+data_insufficient,50,reviewed_context_valid,0.01,0.8,0,50,0
+data_insufficient,50,reviewed_context_valid,0.02,0.65,0,50,0
+data_insufficient,50,reviewed_context_valid,0.02,0.8,0,50,0
+data_insufficient,0,reviewed_context_valid,0.01,0.65,0,100,0
+data_insufficient,0,reviewed_context_valid,0.01,0.8,0,100,0
+data_insufficient,0,reviewed_context_valid,0.02,0.65,0,100,0
+data_insufficient,0,reviewed_context_valid,0.02,0.8,0,100,0
+data_insufficient,50,reviewed_context_valid,0.01,0.65,0,100,0
+data_insufficient,50,reviewed_context_valid,0.01,0.8,0,100,0
+data_insufficient,50,reviewed_context_valid,0.02,0.65,0,100,0
+data_insufficient,50,reviewed_context_valid,0.02,0.8,0,100,0

@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+
+{% block title %}Relationship Candidates Report{% endblock %}
+{% block title_heading %}Relationship Candidates Report{% endblock %}
+
+{% block content %}
+<div class="summary-grid">
+  <div class="summary-card">
+    <div class="value">{{ total_considered }}</div>
+    <div class="label">Total Candidates</div>
+  </div>
+  <div class="summary-card">
+    <div class="value" style="color:#2e7d32">{{ total_accepted }}</div>
+    <div class="label">Accepted</div>
+  </div>
+  <div class="summary-card">
+    <div class="value" style="color:#c62828">{{ total_rejected }}</div>
+    <div class="label">Rejected</div>
+  </div>
+  <div class="summary-card">
+    <div class="value" style="color:#e65100">{{ total_manual_review }}</div>
+    <div class="label">Manual Review</div>
+  </div>
+  <div class="summary-card">
+    <div class="value">{{ top_type }}</div>
+    <div class="label">Top Type</div>
+  </div>
+</div>
+
+<h2>Counts by Relationship Type</h2>
+{% if type_counts %}
+<table class="report-table">
+<thead><tr><th>Type</th><th>Count</th></tr></thead>
+<tbody>
+{% for t, c in type_counts.items() %}
+<tr><td>{{ t }}</td><td>{{ c }}</td></tr>
+{% endfor %}
+</tbody>
+</table>
+{% if type_chart %}
+<img class="chart-img" src="{{ type_chart | basename }}" alt="Relationship Type Counts">
+{% endif %}
+{% else %}
+<p class="empty-state">No candidates generated yet. Run <code>polymarket-arb relationships generate</code> first.</p>
+{% endif %}
+
+<h2>Rejection Reason Counts</h2>
+{% if rejection_counts %}
+<table class="report-table">
+<thead><tr><th>Reason</th><th>Count</th></tr></thead>
+<tbody>
+{% for reason, count in rejection_counts.items() %}
+<tr><td>{{ reason }}</td><td>{{ count }}</td></tr>
+{% endfor %}
+</tbody>
+</table>
+{% if rejection_chart %}
+<img class="chart-img" src="{{ rejection_chart | basename }}" alt="Rejection Reasons">
+{% endif %}
+{% else %}
+<p class="empty-state">No rejections.</p>
+{% endif %}
+
+<h2>Confidence Distribution</h2>
+{% if conf_chart %}
+<img class="chart-img" src="{{ conf_chart | basename }}" alt="Confidence Distribution">
+{% else %}
+<p class="empty-state">No confidence data available.</p>
+{% endif %}
+
+<h2>Top Accepted Nesting Candidates</h2>
+{% if accepted_table %}
+{{ accepted_table | safe }}
+{% else %}
+<p class="empty-state">No accepted nesting candidates.</p>
+{% endif %}
+
+<h2>Top Accepted Contradiction / Inverse Candidates</h2>
+{% if contradiction_table %}
+{{ contradiction_table | safe }}
+{% else %}
+<p class="empty-state">No accepted contradiction or inverse candidates.</p>
+{% endif %}
+
+<h2>Examples: Rejected same_topic_no_trade Pairs</h2>
+{% if rejected_table %}
+{{ rejected_table | safe }}
+{% else %}
+<p class="empty-state">No same_topic_no_trade rejections in sample.</p>
+{% endif %}
+
+<h2>Examples: Manual Review Pairs</h2>
+{% if manual_table %}
+{{ manual_table | safe }}
+{% else %}
+<p class="empty-state">No manual-review pairs.</p>
+{% endif %}
+
+<h2>Validation</h2>
+<p>No-thinking check: <span class="status-{{ no_thinking_check | lower }}">{{ no_thinking_check }}</span></p>
+
+<h2>Downloads</h2>
+<ul>
+  <li><a href="relationships.csv">All relationships (CSV)</a></li>
+  <li><a href="accepted_relationships.csv">Accepted relationships (CSV)</a></li>
+  <li><a href="rejected_relationships.csv">Rejected relationships (CSV)</a></li>
+  <li><a href="manual_review_relationships.csv">Manual review (CSV)</a></li>
+</ul>
+{% endblock %}

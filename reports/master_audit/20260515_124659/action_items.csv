@@ -1,0 +1,3 @@
+issue,severity,file_or_command,recommended_fix,blocking_credible_backtest
+Reviewed non-diagnostic sample is below credibility threshold,blocking,polymarket-arb strategy context-aware backtest --lane reviewed_context_valid,Add more strictly reviewed deterministic context spaces; keep non-deterministic pairs research-only.,True
+Diagnostic comparison is positive but not credible evidence,info,post_rule_approval_diagnostic,Use it only to prioritize data/context fixes; do not headline it.,False

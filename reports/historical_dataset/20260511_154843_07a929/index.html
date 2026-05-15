@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Historical Dataset Report</title>
+<style>
+  body { font-family: monospace; font-size: 13px; margin: 20px; background: #fafafa; color: #222; }
+  h1 { font-size: 1.4em; border-bottom: 2px solid #333; padding-bottom: 6px; }
+  h2 { font-size: 1.15em; margin-top: 2em; border-bottom: 1px solid #aaa; padding-bottom: 4px; }
+  h3 { font-size: 1em; margin-top: 1.5em; }
+  .summary-grid { display: flex; flex-wrap: wrap; gap: 12px; margin: 1em 0; }
+  .summary-card { background: #fff; border: 1px solid #ccc; border-radius: 4px;
+                  padding: 12px 18px; min-width: 140px; text-align: center; }
+  .summary-card .value { font-size: 1.8em; font-weight: bold; color: #1a73e8; }
+  .summary-card .label { font-size: 0.85em; color: #555; }
+  table.report-table { border-collapse: collapse; width: 100%; margin: 0.5em 0; }
+  table.report-table th { background: #333; color: #fff; padding: 5px 8px; text-align: left;
+                           position: sticky; top: 0; }
+  table.report-table td { padding: 4px 8px; border-bottom: 1px solid #ddd; }
+  table.report-table tr:nth-child(even) { background: #f5f5f5; }
+  .status-pass { color: #2e7d32; font-weight: bold; }
+  .status-warn { color: #e65100; font-weight: bold; }
+  .status-fail { color: #c62828; font-weight: bold; }
+  .chart-img { max-width: 100%; height: auto; margin: 0.5em 0; }
+  .empty-state { color: #888; font-style: italic; padding: 1em; }
+  footer { margin-top: 3em; font-size: 0.8em; color: #888; border-top: 1px solid #ddd; padding-top: 8px; }
+</style>
+</head>
+<body>
+
+<h1>Historical Dataset Report</h1>
+<p style="color:#666">Generated: 2026-05-11T15:48:45Z</p>
+
+
+
+
+<h2>Summary</h2>
+<div class="summary-grid">
+  <div class="summary-card"><div class="value">14</div><div class="label">Total Markets</div></div>
+  <div class="summary-card"><div class="value">0</div><div class="label">With Price History</div></div>
+  <div class="summary-card"><div class="value">0</div><div class="label">Recommended for Backtest</div></div>
+  <div class="summary-card"><div class="value">0</div><div class="label">Total Price Points</div></div>
+  <div class="summary-card"><div class="value">0.457</div><div class="label">Avg Coverage Score</div></div>
+</div>
+
+<h2>Dataset Verification</h2>
+
+<table class="report-table">
+<thead><tr><th>Check</th><th>Status</th><th>Details</th></tr></thead>
+<tbody>
+
+<tr>
+  <td>markets_table</td>
+  <td class="status-pass">PASS</td>
+  <td>{&#39;total&#39;: 14, &#39;missing_token_ids&#39;: 0}</td>
+</tr>
+
+<tr>
+  <td>price_history</td>
+  <td class="status-warn">WARN</td>
+  <td>{&#39;message&#39;: &#39;no price history — run backfill prices first&#39;}</td>
+</tr>
+
+<tr>
+  <td>trade_history</td>
+  <td class="status-warn">WARN</td>
+  <td>{&#39;message&#39;: &#39;no trade history (endpoint may be unavailable)&#39;}</td>
+</tr>
+
+<tr>
+  <td>semantics_coverage</td>
+  <td class="status-warn">WARN</td>
+  <td>{&#39;total_markets&#39;: 14, &#39;missing_semantics&#39;: 0, &#39;missing_scores&#39;: 6, &#39;missing_implications&#39;: 0, &#39;semantics_pct&#39;: 1.0}</td>
+</tr>
+
+<tr>
+  <td>no_thinking_content</td>
+  <td class="status-pass">PASS</td>
+  <td>{&#39;violations&#39;: [], &#39;checked_fields&#39;: [&#39;explanation_summary&#39;, &#39;flag_rationales_json&#39;, &#39;uncertainty_notes_json&#39;, &#39;rule_curation_notes_json&#39;, &#39;canonical_question&#39;]}</td>
+</tr>
+
+<tr>
+  <td>backfill_coverage</td>
+  <td class="status-pass">PASS</td>
+  <td>{&#39;total&#39;: 14, &#39;recommended_for_backtest&#39;: 0, &#39;low_coverage_markets&#39;: 0}</td>
+</tr>
+
+</tbody>
+</table>
+
+
+<h2>Coverage Distribution</h2>
+
+<img class="chart-img" src="chart_coverage_hist.png" alt="Coverage score distribution">
+
+
+<h2>Top Markets by Coverage Score</h2>
+
+<table class="dataframe report-table">
+  <thead>
+    <tr style="text-align: right;">
+      <th>market_id</th>
+      <th>token_id</th>
+      <th>question</th>
+      <th>coverage_score</th>
+      <th>price_points</th>
+      <th>trade_points</th>
+      <th>recommended</th>
+      <th>largest_gap_ms</th>
+      <th>first_price_ts</th>
+      <th>last_price_ts</th>
+      <th>has_semantics</th>
+      <th>has_score</th>
+      <th>has_implications</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>540844</td>
+      <td>0xbb57ccf5853a85487bc3d83d04d669310d28c6c810758953b9d9b91d1aee89d2</td>
+      <td>Will bitcoin hit $1m before GTA VI?</td>
+      <td>0.5</td>
+      <td>0</td>
+      <td>0</td>
+      <td>False</td>
+      <td>0</td>
+      <td></td>
+      <td></td>
+      <td>True</td>
+      <td>True</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>540817</td>
+      <td>0x1fad72fae204143ff1c3035e99e7c0f65ea8d5cd9bd1070987bd1a3316f772be</td>
+      <td>New Rihanna Album before GTA VI?</td>
+      <td>0.5</td>
+      <td>0</td>
+      <td>0</td>
+      <td>False</td>
+      <td>0</td>
+      <td></td>
+      <td></td>
+      <td>True</td>
+      <td>True</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>540843</td>
+      <td>0x7b49b9bacb5f435bc10f3b100ff59e2fdd346f7f92a9001881bc9825a0af0f11</td>
+      <td>Will China invades Taiwan before GTA VI?</td>
+      <td>0.5</td>
+      <td>0</td>
+      <td>0</td>
+      <td>False</td>
+      <td>0</td>
+      <td></td>
+      <td></td>
+      <td>True</td>
+      <td>True</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>553843</td>
+      <td>0xd66cbb60c333c2eed61717370755c18bc7e494fed90cb507cd9b49c77100951d</td>
+      <td>Will the Philadelphia Flyers win the 2026 NHL Stanley Cup?</td>
+      <td>0.5</td>
+      <td>0</td>
+      <td>0</td>
+      <td>False</td>
+      <td>0</td>
+      <td></td>
+      <td></td>
+      <td>True</td>
+      <td>True</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>540819</td>
+      <td>0x32b09f6390252b37d674501527e709016d55581b2c1e544bd4b8167f5f732f4c</td>
+      <td>Will Jesus Christ return before GTA VI?</td>
+      <td>0.5</td>
+      <td>0</td>
+      <td>0</td>
+      <td>False</td>
+      <td>0</td>
+      <td></td>
+      <td></td>
+      <td>True</td>
+      <td>True</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>553849</td>
+      <td>0x52847ca1413b76a5570b97c0c432e38dbe61b0140f9d45e912604591b08f6fca</td>
+      <td>Will the Montreal Canadiens win the 2026 NHL Stanley Cup?</td>
+      <td>0.5</td>
+      <td>0</td>
+      <td>0</td>
+      <td>False</td>
+      <td>0</td>
+      <td></td>
+      <td></td>
+      <td>True</td>
+      <td>True</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>553824</td>
+      <td>0xf7b5491e70b477d451afe7d9c1fde4bf1a927e69ff289d294b96df164f6c10f0</td>
+      <td>Will the Carolina Hurricanes win the 2026 NHL Stanley Cup?</td>
+      <td>0.5</td>
+      <td>0</td>
+      <td>0</td>
+      <td>False</td>
+      <td>0</td>
+      <td></td>
+      <td></td>
+      <td>True</td>
+      <td>True</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>540881</td>
+      <td>0xcccb7e7613a087c132b69cbf3a02bece3fdcb824c1da54ae79acc8d4a562d902</td>
+      <td>GTA VI released before June 2026?</td>
+      <td>0.5</td>
+      <td>0</td>
+      <td>0</td>
+      <td>False</td>
+      <td>0</td>
+      <td></td>
+      <td></td>
+      <td>True</td>
+      <td>True</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>540818</td>
+      <td>0x50ddb9cd80d5c271664a2ebb7fcaed1d0a148d82c8e8d314d830f75a944c3dcc</td>
+      <td>New Playboi Carti Album before GTA VI?</td>
+      <td>0.4</td>
+      <td>0</td>
+      <td>0</td>
+      <td>False</td>
+      <td>0</td>
+      <td></td>
+      <td></td>
+      <td>True</td>
+      <td>False</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>553829</td>
+      <td>0x89389a6b1439856a8d366234c795d72865c927a1aa3cf9d4cc04a3a400defde1</td>
+      <td>Will the Vegas Golden Knights win the 2026 NHL Stanley Cup?</td>
+      <td>0.4</td>
+      <td>0</td>
+      <td>0</td>
+      <td>False</td>
+      <td>0</td>
+      <td></td>
+      <td></td>
+      <td>True</td>
+      <td>False</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>553828</td>
+      <td>0xf8f63bb47b2a7c2e0c1be3cedf4075079b11c07476d76a9469065b0c4791961a</td>
+      <td>Will the Colorado Avalanche win the 2026 NHL Stanley Cup?</td>
+      <td>0.4</td>
+      <td>0</td>
+      <td>0</td>
+      <td>False</td>
+      <td>0</td>
+      <td></td>
+      <td></td>
+      <td>True</td>
+      <td>False</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>540820</td>
+      <td>0x84f8b70331323c2fba97d7ceaa9a35fb645a0770d0dbff169d07f24f376766e9</td>
+      <td>Trump out as President before GTA VI?</td>
+      <td>0.4</td>
+      <td>0</td>
+      <td>0</td>
+      <td>False</td>
+      <td>0</td>
+      <td></td>
+      <td></td>
+      <td>True</td>
+      <td>False</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>553848</td>
+      <td>0xceb5e0c99a9195da148d79693f3c6819d44d4d3d7e5be77931e174a3eebe4a85</td>
+      <td>Will the Anaheim Ducks win the 2026 NHL Stanley Cup?</td>
+      <td>0.4</td>
+      <td>0</td>
+      <td>0</td>
+      <td>False</td>
+      <td>0</td>
+      <td></td>
+      <td></td>
+      <td>True</td>
+      <td>False</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>553838</td>
+      <td>0x0d082a85f48a5226b1205acdb6e95ead2fe373acabcf6c471f5895f86f42a276</td>
+      <td>Will the Minnesota Wild win the 2026 NHL Stanley Cup?</td>
+      <td>0.4</td>
+      <td>0</td>
+      <td>0</td>
+      <td>False</td>
+      <td>0</td>
+      <td></td>
+      <td></td>
+      <td>True</td>
+      <td>False</td>
+      <td>True</td>
+    </tr>
+  </tbody>
+</table>
+
+
+<h2>Markets with Lowest Coverage</h2>
+
+<table class="dataframe report-table">
+  <thead>
+    <tr style="text-align: right;">
+      <th>market_id</th>
+      <th>token_id</th>
+      <th>question</th>
+      <th>coverage_score</th>
+      <th>price_points</th>
+      <th>trade_points</th>
+      <th>recommended</th>
+      <th>largest_gap_ms</th>
+      <th>first_price_ts</th>
+      <th>last_price_ts</th>
+      <th>has_semantics</th>
+      <th>has_score</th>
+      <th>has_implications</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>540818</td>
+      <td>0x50ddb9cd80d5c271664a2ebb7fcaed1d0a148d82c8e8d314d830f75a944c3dcc</td>
+      <td>New Playboi Carti Album before GTA VI?</td>
+      <td>0.4</td>
+      <td>0</td>
+      <td>0</td>
+      <td>False</td>
+      <td>0</td>
+      <td></td>
+      <td></td>
+      <td>True</td>
+      <td>False</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>553829</td>
+      <td>0x89389a6b1439856a8d366234c795d72865c927a1aa3cf9d4cc04a3a400defde1</td>
+      <td>Will the Vegas Golden Knights win the 2026 NHL Stanley Cup?</td>
+      <td>0.4</td>
+      <td>0</td>
+      <td>0</td>
+      <td>False</td>
+      <td>0</td>
+      <td></td>
+      <td></td>
+      <td>True</td>
+      <td>False</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>553828</td>
+      <td>0xf8f63bb47b2a7c2e0c1be3cedf4075079b11c07476d76a9469065b0c4791961a</td>
+      <td>Will the Colorado Avalanche win the 2026 NHL Stanley Cup?</td>
+      <td>0.4</td>
+      <td>0</td>
+      <td>0</td>
+      <td>False</td>
+      <td>0</td>
+      <td></td>
+      <td></td>
+      <td>True</td>
+      <td>False</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>540820</td>
+      <td>0x84f8b70331323c2fba97d7ceaa9a35fb645a0770d0dbff169d07f24f376766e9</td>
+      <td>Trump out as President before GTA VI?</td>
+      <td>0.4</td>
+      <td>0</td>
+      <td>0</td>
+      <td>False</td>
+      <td>0</td>
+      <td></td>
+      <td></td>
+      <td>True</td>
+      <td>False</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>553848</td>
+      <td>0xceb5e0c99a9195da148d79693f3c6819d44d4d3d7e5be77931e174a3eebe4a85</td>
+      <td>Will the Anaheim Ducks win the 2026 NHL Stanley Cup?</td>
+      <td>0.4</td>
+      <td>0</td>
+      <td>0</td>
+      <td>False</td>
+      <td>0</td>
+      <td></td>
+      <td></td>
+      <td>True</td>
+      <td>False</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>553838</td>
+      <td>0x0d082a85f48a5226b1205acdb6e95ead2fe373acabcf6c471f5895f86f42a276</td>
+      <td>Will the Minnesota Wild win the 2026 NHL Stanley Cup?</td>
+      <td>0.4</td>
+      <td>0</td>
+      <td>0</td>
+      <td>False</td>
+      <td>0</td>
+      <td></td>
+      <td></td>
+      <td>True</td>
+      <td>False</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>540844</td>
+      <td>0xbb57ccf5853a85487bc3d83d04d669310d28c6c810758953b9d9b91d1aee89d2</td>
+      <td>Will bitcoin hit $1m before GTA VI?</td>
+      <td>0.5</td>
+      <td>0</td>
+      <td>0</td>
+      <td>False</td>
+      <td>0</td>
+      <td></td>
+      <td></td>
+      <td>True</td>
+      <td>True</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>540817</td>
+      <td>0x1fad72fae204143ff1c3035e99e7c0f65ea8d5cd9bd1070987bd1a3316f772be</td>
+      <td>New Rihanna Album before GTA VI?</td>
+      <td>0.5</td>
+      <td>0</td>
+      <td>0</td>
+      <td>False</td>
+      <td>0</td>
+      <td></td>
+      <td></td>
+      <td>True</td>
+      <td>True</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>540843</td>
+      <td>0x7b49b9bacb5f435bc10f3b100ff59e2fdd346f7f92a9001881bc9825a0af0f11</td>
+      <td>Will China invades Taiwan before GTA VI?</td>
+      <td>0.5</td>
+      <td>0</td>
+      <td>0</td>
+      <td>False</td>
+      <td>0</td>
+      <td></td>
+      <td></td>
+      <td>True</td>
+      <td>True</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>553843</td>
+      <td>0xd66cbb60c333c2eed61717370755c18bc7e494fed90cb507cd9b49c77100951d</td>
+      <td>Will the Philadelphia Flyers win the 2026 NHL Stanley Cup?</td>
+      <td>0.5</td>
+      <td>0</td>
+      <td>0</td>
+      <td>False</td>
+      <td>0</td>
+      <td></td>
+      <td></td>
+      <td>True</td>
+      <td>True</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>540819</td>
+      <td>0x32b09f6390252b37d674501527e709016d55581b2c1e544bd4b8167f5f732f4c</td>
+      <td>Will Jesus Christ return before GTA VI?</td>
+      <td>0.5</td>
+      <td>0</td>
+      <td>0</td>
+      <td>False</td>
+      <td>0</td>
+      <td></td>
+      <td></td>
+      <td>True</td>
+      <td>True</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>553849</td>
+      <td>0x52847ca1413b76a5570b97c0c432e38dbe61b0140f9d45e912604591b08f6fca</td>
+      <td>Will the Montreal Canadiens win the 2026 NHL Stanley Cup?</td>
+      <td>0.5</td>
+      <td>0</td>
+      <td>0</td>
+      <td>False</td>
+      <td>0</td>
+      <td></td>
+      <td></td>
+      <td>True</td>
+      <td>True</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>553824</td>
+      <td>0xf7b5491e70b477d451afe7d9c1fde4bf1a927e69ff289d294b96df164f6c10f0</td>
+      <td>Will the Carolina Hurricanes win the 2026 NHL Stanley Cup?</td>
+      <td>0.5</td>
+      <td>0</td>
+      <td>0</td>
+      <td>False</td>
+      <td>0</td>
+      <td></td>
+      <td></td>
+      <td>True</td>
+      <td>True</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>540881</td>
+      <td>0xcccb7e7613a087c132b69cbf3a02bece3fdcb824c1da54ae79acc8d4a562d902</td>
+      <td>GTA VI released before June 2026?</td>
+      <td>0.5</td>
+      <td>0</td>
+      <td>0</td>
+      <td>False</td>
+      <td>0</td>
+      <td></td>
+      <td></td>
+      <td>True</td>
+      <td>True</td>
+      <td>True</td>
+    </tr>
+  </tbody>
+</table>
+
+
+<h2>Price History Gap Distribution</h2>
+
+
+<h2>All Markets</h2>
+
+<table class="dataframe report-table">
+  <thead>
+    <tr style="text-align: right;">
+      <th>market_id</th>
+      <th>token_id</th>
+      <th>question</th>
+      <th>active</th>
+      <th>closed</th>
+      <th>end_date_ms</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>553848</td>
+      <td>1755198236548058730692725634969806667163093356894670716555961840777456036471</td>
+      <td>Will the Anaheim Ducks win the 2026 NHL Stanley Cup?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-06-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>540817</td>
+      <td>98022490269692409998126496127597032490334070080325855126491859374983463996227</td>
+      <td>New Rihanna Album before GTA VI?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-07-31T12:00:00Z</td>
+    </tr>
+    <tr>
+      <td>540819</td>
+      <td>90435811253665578014957380826505992530054077692143838383981805324273750424057</td>
+      <td>Will Jesus Christ return before GTA VI?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-07-31T12:00:00Z</td>
+    </tr>
+    <tr>
+      <td>540881</td>
+      <td>8441400852834915183759801017793514978104486628517653995211751018945988243154</td>
+      <td>GTA VI released before June 2026?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-05-31T12:00:00Z</td>
+    </tr>
+    <tr>
+      <td>553824</td>
+      <td>79397003434468715775480922117285203652110865791390656395657957066470661722480</td>
+      <td>Will the Carolina Hurricanes win the 2026 NHL Stanley Cup?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-06-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>540843</td>
+      <td>21695138873211375451055566770107682325494206727818897067665810321709249824909</td>
+      <td>Will China invades Taiwan before GTA VI?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-07-31T12:00:00Z</td>
+    </tr>
+    <tr>
+      <td>553843</td>
+      <td>89876650777103845660381011502618435196005005316371719080379226306122186643898</td>
+      <td>Will the Philadelphia Flyers win the 2026 NHL Stanley Cup?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-06-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>553829</td>
+      <td>68803485030073596962715540294172682212192134248970512695855620898253368033218</td>
+      <td>Will the Vegas Golden Knights win the 2026 NHL Stanley Cup?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-06-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>553838</td>
+      <td>52393600221905688380980180540161090876971894580569515967716227210336633318551</td>
+      <td>Will the Minnesota Wild win the 2026 NHL Stanley Cup?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-06-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>540844</td>
+      <td>105267568073659068217311993901927962476298440625043565106676088842803600775810</td>
+      <td>Will bitcoin hit $1m before GTA VI?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-07-31T12:00:00Z</td>
+    </tr>
+    <tr>
+      <td>553849</td>
+      <td>114248353339288476395516704859280406139740194553592209059241667781908210476009</td>
+      <td>Will the Montreal Canadiens win the 2026 NHL Stanley Cup?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-06-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>540818</td>
+      <td>88275040060084773376557187972215267513049848642895776801789297917961077894224</td>
+      <td>New Playboi Carti Album before GTA VI?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-07-31T12:00:00Z</td>
+    </tr>
+    <tr>
+      <td>553828</td>
+      <td>101738487887518832481587379955535423775326921556438741919099866785354159699479</td>
+      <td>Will the Colorado Avalanche win the 2026 NHL Stanley Cup?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-06-30T00:00:00Z</td>
+    </tr>
+    <tr>
+      <td>540820</td>
+      <td>108999723207897941876452935557011604067917389120996960199512481363958770540884</td>
+      <td>Trump out as President before GTA VI?</td>
+      <td>True</td>
+      <td>False</td>
+      <td>2026-07-31T12:00:00Z</td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+
+<footer>polymarket-arb — research only, no trading</footer>
+</body>
+</html>

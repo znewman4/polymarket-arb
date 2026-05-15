@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block title %}Historical Dataset Report{% endblock %}
+{% block title_heading %}Historical Dataset Report{% endblock %}
+
+{% block content %}
+
+<h2>Summary</h2>
+<div class="summary-grid">
+  <div class="summary-card"><div class="value">{{ stats.total_markets }}</div><div class="label">Total Markets</div></div>
+  <div class="summary-card"><div class="value">{{ stats.markets_with_price_history }}</div><div class="label">With Price History</div></div>
+  <div class="summary-card"><div class="value">{{ stats.recommended_for_backtest }}</div><div class="label">Recommended for Backtest</div></div>
+  <div class="summary-card"><div class="value">{{ stats.total_price_points }}</div><div class="label">Total Price Points</div></div>
+  <div class="summary-card"><div class="value">{{ "%.3f"|format(stats.avg_coverage_score) }}</div><div class="label">Avg Coverage Score</div></div>
+</div>
+
+<h2>Dataset Verification</h2>
+{% if validation_results %}
+<table class="report-table">
+<thead><tr><th>Check</th><th>Status</th><th>Details</th></tr></thead>
+<tbody>
+{% for r in validation_results %}
+<tr>
+  <td>{{ r.name }}</td>
+  <td class="status-{{ r.status | lower }}">{{ r.status }}</td>
+  <td>{{ r.details }}</td>
+</tr>
+{% endfor %}
+</tbody>
+</table>
+{% else %}
+<p class="empty-state">No validation results — run <code>backfill verify</code> first.</p>
+{% endif %}
+
+<h2>Coverage Distribution</h2>
+{% if chart_coverage_hist %}
+<img class="chart-img" src="{{ chart_coverage_hist }}" alt="Coverage score distribution">
+{% else %}
+<p class="empty-state">No coverage data.</p>
+{% endif %}
+
+<h2>Top Markets by Coverage Score</h2>
+{% if top_markets_html %}
+{{ top_markets_html | safe }}
+{% else %}
+<p class="empty-state">No coverage data yet — run <code>backfill coverage</code> first.</p>
+{% endif %}
+
+<h2>Markets with Lowest Coverage</h2>
+{% if worst_markets_html %}
+{{ worst_markets_html | safe }}
+{% else %}
+<p class="empty-state">No coverage data.</p>
+{% endif %}
+
+<h2>Price History Gap Distribution</h2>
+{% if chart_gap_dist %}
+<img class="chart-img" src="{{ chart_gap_dist }}" alt="Price history gap distribution">
+{% endif %}
+
+<h2>All Markets</h2>
+{% if all_markets_html %}
+{{ all_markets_html | safe }}
+{% else %}
+<p class="empty-state">No market data — run <code>gamma fetch-markets</code> first.</p>
+{% endif %}
+
+{% endblock %}

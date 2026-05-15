@@ -1,0 +1,8 @@
+rulebook_id: "contradiction"
+rulebook_version: 1
+description: "Placeholder pairwise contradiction scoring v1."
+pair_type_weights:
+  mutually_exclusive: 0.9
+  negation_pair: 0.8
+  temporal_conflict: 0.6
+review_threshold: 0.5

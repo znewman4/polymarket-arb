@@ -1,0 +1,12 @@
+# A strategy is only allowed to trade if (a) its id appears here, and (b) the
+# sha256 of its module on disk matches the recorded hash. Empty in Phase 0–3.
+# The risk/checks/strategy_approved.py check enforces this.
+
+approved: []
+# Example future entry:
+# - id: hard_constraint_arb_v1
+#   module: polymarket_arb.strategies.hard_constraint_arb
+#   sha256: "<hash of module file at approval time>"
+#   approver: "human-reviewer-name"
+#   approved_at: "2026-mm-dd"
+#   max_stake_usdc: 1.0

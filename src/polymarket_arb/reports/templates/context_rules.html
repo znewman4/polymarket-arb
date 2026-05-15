@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Context Rules Report{% endblock %}
+{% block content %}
+<h1>Context Rules Report</h1>
+<p class="subtitle">Generated {{ generated_at }} · run {{ run_id }}</p>
+
+<div class="summary-grid">
+  <div class="summary-card"><div class="value">{{ summary.total_rules }}</div><div class="label">Rules</div></div>
+  <div class="summary-card"><div class="value">{{ summary.needs_review }}</div><div class="label">Needs Review</div></div>
+</div>
+
+<h2>Sources</h2>
+{% if sources_table %}{{ sources_table | safe }}{% else %}<p class="empty-state">No context sources.</p>{% endif %}
+
+<h2>Documents</h2>
+{% if documents_table %}{{ documents_table | safe }}{% else %}<p class="empty-state">No context documents.</p>{% endif %}
+
+<h2>Rules</h2>
+{% if rules_table %}{{ rules_table | safe }}{% else %}<p class="empty-state">No context rules.</p>{% endif %}
+
+<h2>Manual Review</h2>
+{% if needs_review_table %}{{ needs_review_table | safe }}{% else %}<p class="empty-state">No pending manual-review rules.</p>{% endif %}
+{% endblock %}

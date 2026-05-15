@@ -1,0 +1,334 @@
+schema_version: 1
+description: >
+  Deterministic relationship templates — reviewed and approved at the template
+  level. Every relationship candidate matching a template's conditions
+  inherits the template's approval and is routed to the appropriate context
+  space without requiring individual pair review.
+  Templates are the unit of human review; pairs are the unit of application.
+
+templates:
+
+  # ── Sports Progression ─────────────────────────────────────────────────────
+
+  - template_id: sports_championship_implies_conference_v1
+    version: 1
+    domain: sports_progression
+    description: >
+      Winning a championship requires winning the preceding conference/league
+      bracket. Applies to any knockout sport where the champion must win
+      their conference playoff path (NBA, NHL, NFL, NFL-equivalent, etc.).
+      Narrower outcome (championship win) implies broader outcome (conference win).
+    review_status: approved
+    confidence: 0.95
+    min_relationship_confidence: 0.35
+    evidence_summary: >
+      Tournament structure: to win the championship a team must win their
+      conference/divisional bracket. Logical necessity with no exceptions
+      in single-elimination formats.
+    match:
+      # Both markets must be about the same team winning different playoff stages
+      outcome_subtype_pair_any:
+        - [team_wins_championship, team_wins_conference]
+      relationship_types:
+        - nested_a_implies_b
+        - nested_b_implies_a
+        - inverse
+      same_team_required: true
+    context_space_id: sports_championship_conference_progression
+    strategy_condition: narrow_implies_broad
+    required_rule_types:
+      - championship_implies_conference
+
+  - template_id: sports_winner_implies_top_n_v1
+    version: 1
+    domain: sports_progression
+    description: >
+      Winning a championship implies finishing in top-N (e.g., winner implies
+      top-4, winner implies top-2). Applies when one market asks about
+      championship/title win and another asks about finishing in a top bracket.
+    review_status: approved
+    confidence: 0.90
+    min_relationship_confidence: 0.35
+    evidence_summary: >
+      A championship winner is always within the top-N finishers for any N >= 1.
+      Logical necessity of tournament outcome structure.
+    match:
+      outcome_subtype_pair_any:
+        - [team_wins_championship, team_top_n_finish]
+      relationship_types:
+        - nested_a_implies_b
+        - nested_b_implies_a
+      same_team_required: true
+    context_space_id: sports_championship_conference_progression
+    strategy_condition: narrow_implies_broad
+    required_rule_types:
+      - championship_implies_conference
+
+  # ── League/Ranking ─────────────────────────────────────────────────────────
+
+  - template_id: ranking_exact_finish_implies_top_n_v1
+    version: 1
+    domain: sports_ranking
+    description: >
+      A team finishing exactly N-th also finishes inside the top M for any M >= N.
+      Applies to any league with a final standings table (football leagues,
+      basketball conferences, etc.).
+    review_status: approved
+    confidence: 0.95
+    min_relationship_confidence: 0.35
+    evidence_summary: >
+      Mathematical necessity: exact position N is contained in top-M for all M >= N.
+      No exceptions given a well-defined final table.
+    match:
+      outcome_subtype_pair_any:
+        - [team_exact_finish_position, team_top_n_finish]
+      relationship_types:
+        - nested_a_implies_b
+        - nested_b_implies_a
+      same_team_required: true
+    context_space_id: sports_ranking_finish_position
+    strategy_condition: narrow_implies_broad
+    required_rule_types:
+      - exact_finish_implies_top_n
+
+  - template_id: ranking_exact_positions_mutually_exclusive_v1
+    version: 1
+    domain: sports_ranking
+    description: >
+      A team cannot finish in two different exact league positions in the same
+      season. Pairwise mutual exclusion of distinct exact finish positions
+      for the same team.
+    review_status: approved
+    confidence: 0.95
+    min_relationship_confidence: 0.35
+    evidence_summary: >
+      A league table assigns exactly one final position per team per season.
+      Two different exact positions are mutually exclusive by definition.
+    match:
+      outcome_subtype_both:
+        - team_exact_finish_position
+      relationship_types:
+        - mutually_exclusive
+        - same_entity_exclusive
+        - mutually_exclusive_category
+      same_team_required: true
+    context_space_id: sports_ranking_finish_position
+    strategy_condition: mutually_exclusive
+    required_rule_types:
+      - exact_finish_positions_mutually_exclusive
+
+  - template_id: sports_winner_exclusive_with_exact_finish_v1
+    version: 1
+    domain: sports_ranking
+    description: >
+      Winning a league/championship is mutually exclusive with finishing in any
+      specific position other than 1st. E.g., "wins EPL" and "finishes 2nd"
+      cannot both be true for the same team in the same season.
+    review_status: approved
+    confidence: 0.92
+    min_relationship_confidence: 0.35
+    evidence_summary: >
+      A league has exactly one winner (1st place). A team that wins cannot
+      also finish in any position other than 1st. Pairwise mutual exclusion.
+    match:
+      outcome_subtype_pair_any:
+        - [team_wins_championship, team_exact_finish_position]
+      relationship_types:
+        - mutually_exclusive
+        - mutually_exclusive_category
+        - same_entity_exclusive
+        - inverse
+        - contradiction
+      same_team_required: true
+    context_space_id: sports_ranking_finish_position
+    strategy_condition: mutually_exclusive
+    required_rule_types:
+      - exact_finish_positions_mutually_exclusive
+
+  # ── Sports Title Mutual Exclusion ──────────────────────────────────────────
+  # Two DIFFERENT teams can't both win the same single-winner competition.
+
+  - template_id: sports_title_winners_mutually_exclusive_v1
+    version: 1
+    domain: sports_mutual_exclusion
+    description: >
+      In any single-winner competition (World Cup, Stanley Cup, NBA Finals, etc.),
+      different teams winning are mutually exclusive. At most one team can win
+      a given tournament. Applies when both markets resolve on the same competition
+      outcome and name different winners.
+    review_status: approved
+    confidence: 0.92
+    min_relationship_confidence: 0.35
+    evidence_summary: >
+      Single-winner tournament structure: exactly one team or entrant wins.
+      Two different teams winning the same competition is logically impossible.
+      Valid for any competition with a clearly defined single champion.
+    match:
+      outcome_subtype_both:
+        - team_wins_championship
+      relationship_types:
+        - mutually_exclusive
+        - mutually_exclusive_category
+        - same_entity_exclusive
+        - inverse
+        - contradiction
+        - rejected
+      same_team_required: false
+      different_teams_required: true
+      same_outcome_space_required: true
+    context_space_id: sports_title_competition_mutual_exclusion
+    strategy_condition: mutually_exclusive
+    required_rule_types:
+      - single_winner_competition_mutual_exclusion
+
+  # ── Electoral General Election Mutual Exclusion ────────────────────────────
+
+  - template_id: electoral_general_election_candidates_mutually_exclusive_v1
+    version: 1
+    domain: electoral_mutual_exclusion
+    description: >
+      In a single-winner general election, different named candidates winning
+      are mutually exclusive. At most one candidate can win a given election.
+      Applies when both markets resolve on the same election and name different
+      candidates.
+    review_status: approved
+    confidence: 0.90
+    min_relationship_confidence: 0.35
+    evidence_summary: >
+      Single-winner election structure: exactly one candidate wins a general
+      election. Two different candidates winning the same election is logically
+      impossible. Standard democratic electoral mechanism.
+    match:
+      outcome_subtype_both:
+        - candidate_winner_same_election
+      relationship_types:
+        - mutually_exclusive
+        - mutually_exclusive_category
+        - same_entity_exclusive
+        - contradiction
+        - rejected
+      same_outcome_space_required: true
+      different_candidates_required: true
+    context_space_id: electoral_mutual_exclusion
+    strategy_condition: mutually_exclusive
+    required_rule_types:
+      - primary_candidates_mutually_exclusive
+
+  - template_id: electoral_first_round_candidates_mutually_exclusive_v1
+    version: 1
+    domain: electoral_mutual_exclusion
+    description: >
+      In a single-winner first-round election, different candidates winning
+      are mutually exclusive. At most one candidate wins the first round.
+      Applies when both markets resolve on the same first-round event.
+    review_status: approved
+    confidence: 0.88
+    min_relationship_confidence: 0.35
+    evidence_summary: >
+      Single-winner first-round election structure: exactly one candidate
+      wins the first round. Different candidates winning the same first round
+      are mutually exclusive. Applies where the first-round is a plurality vote.
+    match:
+      outcome_subtype_both:
+        - first_round_winner
+      relationship_types:
+        - mutually_exclusive
+        - mutually_exclusive_category
+        - same_entity_exclusive
+        - contradiction
+        - rejected
+      same_outcome_space_required: true
+      different_candidates_required: true
+    context_space_id: electoral_mutual_exclusion
+    strategy_condition: mutually_exclusive
+    required_rule_types:
+      - primary_candidates_mutually_exclusive
+
+  # ── Threshold Nesting ──────────────────────────────────────────────────────
+
+  - template_id: threshold_higher_implies_lower_v1
+    version: 1
+    domain: threshold_nesting
+    description: >
+      Hitting a higher price/value threshold before a reference event implies
+      hitting all lower thresholds. E.g., "Bitcoin hits $70k before July" implies
+      "Bitcoin hits $60k before July". Applies to any monotone threshold market.
+    review_status: approved
+    confidence: 0.95
+    min_relationship_confidence: 0.35
+    evidence_summary: >
+      Price path monotonicity: if an asset reaches level H it has necessarily
+      passed all lower levels L < H. Logical necessity assuming continuous
+      or discretely monitored paths (per Polymarket resolution rules).
+    match:
+      outcome_subtype_both:
+        - price_hits_level_before_reference
+        - price_hits_level_before_date
+      relationship_types:
+        - nested_a_implies_b
+        - nested_b_implies_a
+    context_space_id: threshold_nesting
+    strategy_condition: narrow_implies_broad
+    required_rule_types:
+      - threshold_monotone_nesting
+
+  # ── Date/Time Nesting ──────────────────────────────────────────────────────
+
+  - template_id: date_earlier_implies_later_v1
+    version: 1
+    domain: date_time_nesting
+    description: >
+      An event occurring before an earlier date implies it occurs before any
+      later date. E.g., "released before May 1" implies "released before June 1".
+      Applies to any temporal threshold market with a monotone date structure.
+    review_status: approved
+    confidence: 0.95
+    min_relationship_confidence: 0.35
+    evidence_summary: >
+      Temporal monotonicity: if event E occurs before date D1, it also occurs
+      before all D2 > D1. Logical necessity given the definition of "before."
+    match:
+      outcome_subtype_both:
+        - event_a_before_event_b
+        - album_release_before_reference
+        - movie_release_before_reference
+      relationship_types:
+        - nested_a_implies_b
+        - nested_b_implies_a
+    context_space_id: date_time_nesting
+    strategy_condition: narrow_implies_broad
+    required_rule_types:
+      - date_monotone_nesting
+
+  # ── Electoral Mutual Exclusion ─────────────────────────────────────────────
+
+  - template_id: electoral_same_primary_mutual_exclusion_v1
+    version: 1
+    domain: electoral_mutual_exclusion
+    description: >
+      In a single-winner primary or election, different candidates winning
+      are mutually exclusive. Applies to all same-party, same-election
+      candidate markets where the resolution event is the same race.
+    review_status: approved
+    confidence: 0.90
+    min_relationship_confidence: 0.35
+    evidence_summary: >
+      Single-winner electoral structure: at most one candidate wins a given
+      party primary or general election. Pairwise mutual exclusion of distinct
+      candidates in the same race is a logical necessity.
+    match:
+      outcome_subtype_both:
+        - candidate_wins_nomination
+        - candidate_winner_same_election
+        - first_round_winner
+      relationship_types:
+        - mutually_exclusive
+        - mutually_exclusive_category
+        - same_entity_exclusive
+        - contradiction
+      same_event_required: true
+      different_candidates_required: true
+    context_space_id: electoral_mutual_exclusion
+    strategy_condition: mutually_exclusive
+    required_rule_types:
+      - primary_candidates_mutually_exclusive

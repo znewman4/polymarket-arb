@@ -1,0 +1,932 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Relationship Candidates Report</title>
+<style>
+  body { font-family: monospace; font-size: 13px; margin: 20px; background: #fafafa; color: #222; }
+  h1 { font-size: 1.4em; border-bottom: 2px solid #333; padding-bottom: 6px; }
+  h2 { font-size: 1.15em; margin-top: 2em; border-bottom: 1px solid #aaa; padding-bottom: 4px; }
+  h3 { font-size: 1em; margin-top: 1.5em; }
+  .summary-grid { display: flex; flex-wrap: wrap; gap: 12px; margin: 1em 0; }
+  .summary-card { background: #fff; border: 1px solid #ccc; border-radius: 4px;
+                  padding: 12px 18px; min-width: 140px; text-align: center; }
+  .summary-card .value { font-size: 1.8em; font-weight: bold; color: #1a73e8; }
+  .summary-card .label { font-size: 0.85em; color: #555; }
+  table.report-table { border-collapse: collapse; width: 100%; margin: 0.5em 0; }
+  table.report-table th { background: #333; color: #fff; padding: 5px 8px; text-align: left;
+                           position: sticky; top: 0; }
+  table.report-table td { padding: 4px 8px; border-bottom: 1px solid #ddd; }
+  table.report-table tr:nth-child(even) { background: #f5f5f5; }
+  .status-pass { color: #2e7d32; font-weight: bold; }
+  .status-warn { color: #e65100; font-weight: bold; }
+  .status-fail { color: #c62828; font-weight: bold; }
+  .chart-img { max-width: 100%; height: auto; margin: 0.5em 0; }
+  .empty-state { color: #888; font-style: italic; padding: 1em; }
+  footer { margin-top: 3em; font-size: 0.8em; color: #888; border-top: 1px solid #ddd; padding-top: 8px; }
+</style>
+</head>
+<body>
+
+<h1>Relationship Candidates Report</h1>
+<p style="color:#666">Generated: 2026-05-11T16:18:29Z</p>
+
+
+
+<div class="summary-grid">
+  <div class="summary-card">
+    <div class="value">2420</div>
+    <div class="label">Total Candidates</div>
+  </div>
+  <div class="summary-card">
+    <div class="value" style="color:#2e7d32">96</div>
+    <div class="label">Accepted</div>
+  </div>
+  <div class="summary-card">
+    <div class="value" style="color:#c62828">2314</div>
+    <div class="label">Rejected</div>
+  </div>
+  <div class="summary-card">
+    <div class="value" style="color:#e65100">10</div>
+    <div class="label">Manual Review</div>
+  </div>
+  <div class="summary-card">
+    <div class="value">rejected</div>
+    <div class="label">Top Type</div>
+  </div>
+</div>
+
+<h2>Counts by Relationship Type</h2>
+
+<table class="report-table">
+<thead><tr><th>Type</th><th>Count</th></tr></thead>
+<tbody>
+
+<tr><td>rejected</td><td>2286</td></tr>
+
+<tr><td>mutually_exclusive_category</td><td>96</td></tr>
+
+<tr><td>same_topic_no_trade</td><td>28</td></tr>
+
+<tr><td>same_reference_clock</td><td>5</td></tr>
+
+<tr><td>contradiction</td><td>4</td></tr>
+
+<tr><td>inverse</td><td>1</td></tr>
+
+</tbody>
+</table>
+
+<img class="chart-img" src="chart_types.png" alt="Relationship Type Counts">
+
+
+
+<h2>Rejection Reason Counts</h2>
+
+<table class="report-table">
+<thead><tr><th>Reason</th><th>Count</th></tr></thead>
+<tbody>
+
+<tr><td>entity_mismatch</td><td>2285</td></tr>
+
+<tr><td>manual_review_band</td><td>28</td></tr>
+
+<tr><td>time_scope_mismatch</td><td>12</td></tr>
+
+</tbody>
+</table>
+
+<img class="chart-img" src="chart_rejections.png" alt="Rejection Reasons">
+
+
+
+<h2>Confidence Distribution</h2>
+
+<img class="chart-img" src="chart_confidence.png" alt="Confidence Distribution">
+
+
+<h2>Top Accepted Nesting Candidates</h2>
+
+<table class="dataframe report-table">
+  <thead>
+    <tr style="text-align: right;">
+      <th>relationship_id</th>
+      <th>market_id_a</th>
+      <th>market_id_b</th>
+      <th>type</th>
+      <th>family</th>
+      <th>status</th>
+      <th>strategy_eligibility</th>
+      <th>question_a</th>
+      <th>question_b</th>
+      <th>final_confidence</th>
+      <th>entity_score</th>
+      <th>time_score</th>
+      <th>threshold</th>
+      <th>candidate_a</th>
+      <th>candidate_b</th>
+      <th>shared_event</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>b758abf398df08350fe85b26c67b75f7</td>
+      <td>559653</td>
+      <td>559664</td>
+      <td>mutually_exclusive_category</td>
+      <td>category</td>
+      <td>accepted</td>
+      <td>eligible</td>
+      <td>Will Alexandria Ocasio-Cortez win the 2028 Democratic presidential nomination?</td>
+      <td>Will Raphael Warnock win the 2028 Democratic presidential nomination?</td>
+      <td>0.7</td>
+      <td>0.0</td>
+      <td>1.0</td>
+      <td></td>
+      <td>Alexandria Ocasio-Cortez</td>
+      <td>Raphael Warnock</td>
+      <td>2028_democratic_presidential_nomination</td>
+    </tr>
+    <tr>
+      <td>f651defc6023435939f60d7cb4debc79</td>
+      <td>561251</td>
+      <td>561261</td>
+      <td>mutually_exclusive_category</td>
+      <td>category</td>
+      <td>accepted</td>
+      <td>eligible</td>
+      <td>Will LeBron James win the 2028 US Presidential Election?</td>
+      <td>Will Jon Ossoff win the 2028 US Presidential Election?</td>
+      <td>0.7</td>
+      <td>0.0</td>
+      <td>1.0</td>
+      <td></td>
+      <td>LeBron James</td>
+      <td>Jon Ossoff</td>
+      <td>2028_us_presidential_election</td>
+    </tr>
+    <tr>
+      <td>b09a627b3b7963d0764295d235d33bcc</td>
+      <td>559655</td>
+      <td>559664</td>
+      <td>mutually_exclusive_category</td>
+      <td>category</td>
+      <td>accepted</td>
+      <td>eligible</td>
+      <td>Will Josh Shapiro win the 2028 Democratic presidential nomination?</td>
+      <td>Will Raphael Warnock win the 2028 Democratic presidential nomination?</td>
+      <td>0.7</td>
+      <td>0.0</td>
+      <td>1.0</td>
+      <td></td>
+      <td>Josh Shapiro</td>
+      <td>Raphael Warnock</td>
+      <td>2028_democratic_presidential_nomination</td>
+    </tr>
+    <tr>
+      <td>ea97dcce0d14cb89403968d08a8cdcd1</td>
+      <td>559655</td>
+      <td>559692</td>
+      <td>mutually_exclusive_category</td>
+      <td>category</td>
+      <td>accepted</td>
+      <td>eligible</td>
+      <td>Will Josh Shapiro win the 2028 Democratic presidential nomination?</td>
+      <td>Will Jasmine Crockett win the 2028 Democratic presidential nomination?</td>
+      <td>0.7</td>
+      <td>0.0</td>
+      <td>1.0</td>
+      <td></td>
+      <td>Josh Shapiro</td>
+      <td>Jasmine Crockett</td>
+      <td>2028_democratic_presidential_nomination</td>
+    </tr>
+    <tr>
+      <td>5d4c6b730250a0b05c394ab1aac000cd</td>
+      <td>559657</td>
+      <td>559664</td>
+      <td>mutually_exclusive_category</td>
+      <td>category</td>
+      <td>accepted</td>
+      <td>eligible</td>
+      <td>Will Stephen A. Smith win the 2028 Democratic presidential nomination?</td>
+      <td>Will Raphael Warnock win the 2028 Democratic presidential nomination?</td>
+      <td>0.7</td>
+      <td>0.0</td>
+      <td>1.0</td>
+      <td></td>
+      <td>Stephen A. Smith</td>
+      <td>Raphael Warnock</td>
+      <td>2028_democratic_presidential_nomination</td>
+    </tr>
+    <tr>
+      <td>04d57c6b7c505b644708ea72e0c3213d</td>
+      <td>559657</td>
+      <td>559692</td>
+      <td>mutually_exclusive_category</td>
+      <td>category</td>
+      <td>accepted</td>
+      <td>eligible</td>
+      <td>Will Stephen A. Smith win the 2028 Democratic presidential nomination?</td>
+      <td>Will Jasmine Crockett win the 2028 Democratic presidential nomination?</td>
+      <td>0.7</td>
+      <td>0.0</td>
+      <td>1.0</td>
+      <td></td>
+      <td>Stephen A. Smith</td>
+      <td>Jasmine Crockett</td>
+      <td>2028_democratic_presidential_nomination</td>
+    </tr>
+    <tr>
+      <td>ec6b851d0c0897603a6fca028c280a57</td>
+      <td>559660</td>
+      <td>559664</td>
+      <td>mutually_exclusive_category</td>
+      <td>category</td>
+      <td>accepted</td>
+      <td>eligible</td>
+      <td>Will Andy Beshear win the 2028 Democratic presidential nomination?</td>
+      <td>Will Raphael Warnock win the 2028 Democratic presidential nomination?</td>
+      <td>0.7</td>
+      <td>0.0</td>
+      <td>1.0</td>
+      <td></td>
+      <td>Andy Beshear</td>
+      <td>Raphael Warnock</td>
+      <td>2028_democratic_presidential_nomination</td>
+    </tr>
+    <tr>
+      <td>101932e46d22fc918fb5a4a9ea7642df</td>
+      <td>559660</td>
+      <td>559692</td>
+      <td>mutually_exclusive_category</td>
+      <td>category</td>
+      <td>accepted</td>
+      <td>eligible</td>
+      <td>Will Andy Beshear win the 2028 Democratic presidential nomination?</td>
+      <td>Will Jasmine Crockett win the 2028 Democratic presidential nomination?</td>
+      <td>0.7</td>
+      <td>0.0</td>
+      <td>1.0</td>
+      <td></td>
+      <td>Andy Beshear</td>
+      <td>Jasmine Crockett</td>
+      <td>2028_democratic_presidential_nomination</td>
+    </tr>
+    <tr>
+      <td>3830b270af9d01e1a69266b282cbc635</td>
+      <td>559663</td>
+      <td>559664</td>
+      <td>mutually_exclusive_category</td>
+      <td>category</td>
+      <td>accepted</td>
+      <td>eligible</td>
+      <td>Will J.B. Pritzker win the 2028 Democratic presidential nomination?</td>
+      <td>Will Raphael Warnock win the 2028 Democratic presidential nomination?</td>
+      <td>0.7</td>
+      <td>0.0</td>
+      <td>1.0</td>
+      <td></td>
+      <td>J.B. Pritzker</td>
+      <td>Raphael Warnock</td>
+      <td>2028_democratic_presidential_nomination</td>
+    </tr>
+    <tr>
+      <td>6be6a79d32a399c42d171b11026193d3</td>
+      <td>559663</td>
+      <td>559692</td>
+      <td>mutually_exclusive_category</td>
+      <td>category</td>
+      <td>accepted</td>
+      <td>eligible</td>
+      <td>Will J.B. Pritzker win the 2028 Democratic presidential nomination?</td>
+      <td>Will Jasmine Crockett win the 2028 Democratic presidential nomination?</td>
+      <td>0.7</td>
+      <td>0.0</td>
+      <td>1.0</td>
+      <td></td>
+      <td>J.B. Pritzker</td>
+      <td>Jasmine Crockett</td>
+      <td>2028_democratic_presidential_nomination</td>
+    </tr>
+    <tr>
+      <td>f9a3a55ae0fe3db13c6c6ef3f620c21b</td>
+      <td>559664</td>
+      <td>559666</td>
+      <td>mutually_exclusive_category</td>
+      <td>category</td>
+      <td>accepted</td>
+      <td>eligible</td>
+      <td>Will Raphael Warnock win the 2028 Democratic presidential nomination?</td>
+      <td>Will Tim Walz win the 2028 Democratic presidential nomination?</td>
+      <td>0.7</td>
+      <td>0.0</td>
+      <td>1.0</td>
+      <td></td>
+      <td>Raphael Warnock</td>
+      <td>Tim Walz</td>
+      <td>2028_democratic_presidential_nomination</td>
+    </tr>
+    <tr>
+      <td>bc0df109a56f2652543141cd171b1401</td>
+      <td>559664</td>
+      <td>559667</td>
+      <td>mutually_exclusive_category</td>
+      <td>category</td>
+      <td>accepted</td>
+      <td>eligible</td>
+      <td>Will Raphael Warnock win the 2028 Democratic presidential nomination?</td>
+      <td>Will Michelle Obama win the 2028 Democratic presidential nomination?</td>
+      <td>0.7</td>
+      <td>0.0</td>
+      <td>1.0</td>
+      <td></td>
+      <td>Raphael Warnock</td>
+      <td>Michelle Obama</td>
+      <td>2028_democratic_presidential_nomination</td>
+    </tr>
+    <tr>
+      <td>ace30584469cff3f09dd38f9eecd90a6</td>
+      <td>559664</td>
+      <td>559669</td>
+      <td>mutually_exclusive_category</td>
+      <td>category</td>
+      <td>accepted</td>
+      <td>eligible</td>
+      <td>Will Raphael Warnock win the 2028 Democratic presidential nomination?</td>
+      <td>Will Rahm Emanuel win the 2028 Democratic presidential nomination?</td>
+      <td>0.7</td>
+      <td>0.0</td>
+      <td>1.0</td>
+      <td></td>
+      <td>Raphael Warnock</td>
+      <td>Rahm Emanuel</td>
+      <td>2028_democratic_presidential_nomination</td>
+    </tr>
+    <tr>
+      <td>7cbb0c4c1527ba30e40c541a09acf7db</td>
+      <td>559664</td>
+      <td>559671</td>
+      <td>mutually_exclusive_category</td>
+      <td>category</td>
+      <td>accepted</td>
+      <td>eligible</td>
+      <td>Will Raphael Warnock win the 2028 Democratic presidential nomination?</td>
+      <td>Will Zohran Mamdani win the 2028 Democratic presidential nomination?</td>
+      <td>0.7</td>
+      <td>0.0</td>
+      <td>1.0</td>
+      <td></td>
+      <td>Raphael Warnock</td>
+      <td>Zohran Mamdani</td>
+      <td>2028_democratic_presidential_nomination</td>
+    </tr>
+    <tr>
+      <td>f947fe6ffd0ca153ba494bcb83f3d5fd</td>
+      <td>559664</td>
+      <td>559677</td>
+      <td>mutually_exclusive_category</td>
+      <td>category</td>
+      <td>accepted</td>
+      <td>eligible</td>
+      <td>Will Raphael Warnock win the 2028 Democratic presidential nomination?</td>
+      <td>Will Hillary Clinton win the 2028 Democratic presidential nomination?</td>
+      <td>0.7</td>
+      <td>0.0</td>
+      <td>1.0</td>
+      <td></td>
+      <td>Raphael Warnock</td>
+      <td>Hillary Clinton</td>
+      <td>2028_democratic_presidential_nomination</td>
+    </tr>
+    <tr>
+      <td>0bfed1102544c0b5c1004e56ae114d57</td>
+      <td>559664</td>
+      <td>559678</td>
+      <td>mutually_exclusive_category</td>
+      <td>category</td>
+      <td>accepted</td>
+      <td>eligible</td>
+      <td>Will Raphael Warnock win the 2028 Democratic presidential nomination?</td>
+      <td>Will Liz Cheney win the 2028 Democratic presidential nomination?</td>
+      <td>0.7</td>
+      <td>0.0</td>
+      <td>1.0</td>
+      <td></td>
+      <td>Raphael Warnock</td>
+      <td>Liz Cheney</td>
+      <td>2028_democratic_presidential_nomination</td>
+    </tr>
+    <tr>
+      <td>de90120a8d591983a1617bd1111c7e06</td>
+      <td>559664</td>
+      <td>559681</td>
+      <td>mutually_exclusive_category</td>
+      <td>category</td>
+      <td>accepted</td>
+      <td>eligible</td>
+      <td>Will Raphael Warnock win the 2028 Democratic presidential nomination?</td>
+      <td>Will LeBron James win the 2028 Democratic presidential nomination?</td>
+      <td>0.7</td>
+      <td>0.0</td>
+      <td>1.0</td>
+      <td></td>
+      <td>Raphael Warnock</td>
+      <td>LeBron James</td>
+      <td>2028_democratic_presidential_nomination</td>
+    </tr>
+    <tr>
+      <td>564f960768d45b186a84130de4871749</td>
+      <td>559664</td>
+      <td>559683</td>
+      <td>mutually_exclusive_category</td>
+      <td>category</td>
+      <td>accepted</td>
+      <td>eligible</td>
+      <td>Will Raphael Warnock win the 2028 Democratic presidential nomination?</td>
+      <td>Will George Clooney win the 2028 Democratic presidential nomination?</td>
+      <td>0.7</td>
+      <td>0.0</td>
+      <td>1.0</td>
+      <td></td>
+      <td>Raphael Warnock</td>
+      <td>George Clooney</td>
+      <td>2028_democratic_presidential_nomination</td>
+    </tr>
+    <tr>
+      <td>ca5e0568d88d8605a101fc658242c8ad</td>
+      <td>559664</td>
+      <td>559684</td>
+      <td>mutually_exclusive_category</td>
+      <td>category</td>
+      <td>accepted</td>
+      <td>eligible</td>
+      <td>Will Raphael Warnock win the 2028 Democratic presidential nomination?</td>
+      <td>Will Chelsea Clinton win the 2028 Democratic presidential nomination?</td>
+      <td>0.7</td>
+      <td>0.0</td>
+      <td>1.0</td>
+      <td></td>
+      <td>Raphael Warnock</td>
+      <td>Chelsea Clinton</td>
+      <td>2028_democratic_presidential_nomination</td>
+    </tr>
+    <tr>
+      <td>7438ea39d26c0db70da672b8ac9a40ee</td>
+      <td>559664</td>
+      <td>559686</td>
+      <td>mutually_exclusive_category</td>
+      <td>category</td>
+      <td>accepted</td>
+      <td>eligible</td>
+      <td>Will Raphael Warnock win the 2028 Democratic presidential nomination?</td>
+      <td>Will Dwayne 'The Rock' Johnson win the 2028 Democratic presidential nomination?</td>
+      <td>0.7</td>
+      <td>0.0</td>
+      <td>1.0</td>
+      <td></td>
+      <td>Raphael Warnock</td>
+      <td>Dwayne 'The Rock' Johnson</td>
+      <td>2028_democratic_presidential_nomination</td>
+    </tr>
+  </tbody>
+</table>
+
+
+<h2>Top Accepted Contradiction / Inverse Candidates</h2>
+
+<p class="empty-state">No accepted contradiction or inverse candidates.</p>
+
+
+<h2>Examples: Rejected same_topic_no_trade Pairs</h2>
+
+<table class="dataframe report-table">
+  <thead>
+    <tr style="text-align: right;">
+      <th>relationship_id</th>
+      <th>market_id_a</th>
+      <th>market_id_b</th>
+      <th>type</th>
+      <th>family</th>
+      <th>status</th>
+      <th>strategy_eligibility</th>
+      <th>question_a</th>
+      <th>question_b</th>
+      <th>final_confidence</th>
+      <th>entity_score</th>
+      <th>time_score</th>
+      <th>threshold</th>
+      <th>candidate_a</th>
+      <th>candidate_b</th>
+      <th>shared_event</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>8cd78a1977f5200ff342e072bdd6bf15</td>
+      <td>559667</td>
+      <td>561257</td>
+      <td>same_topic_no_trade</td>
+      <td>unknown</td>
+      <td>rejected</td>
+      <td>eligible</td>
+      <td>Will Michelle Obama win the 2028 Democratic presidential nomination?</td>
+      <td>Will Michelle Obama win the 2028 US Presidential Election?</td>
+      <td>0.4000</td>
+      <td>0.800</td>
+      <td>1.0</td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>e5267754e49a11237e3cd6f4d4a5eda2</td>
+      <td>559671</td>
+      <td>561256</td>
+      <td>same_topic_no_trade</td>
+      <td>unknown</td>
+      <td>rejected</td>
+      <td>eligible</td>
+      <td>Will Zohran Mamdani win the 2028 Democratic presidential nomination?</td>
+      <td>Will Zohran Mamdani win the 2028 US Presidential Election?</td>
+      <td>0.4000</td>
+      <td>0.800</td>
+      <td>1.0</td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>671c63a001cfdfe037255346d48f4dd6</td>
+      <td>559660</td>
+      <td>561237</td>
+      <td>same_topic_no_trade</td>
+      <td>unknown</td>
+      <td>rejected</td>
+      <td>eligible</td>
+      <td>Will Andy Beshear win the 2028 Democratic presidential nomination?</td>
+      <td>Will Andy Beshear win the 2028 US Presidential Election?</td>
+      <td>0.3989</td>
+      <td>0.800</td>
+      <td>1.0</td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>67702d888fa0ce85614d831561f2d55b</td>
+      <td>559653</td>
+      <td>561231</td>
+      <td>same_topic_no_trade</td>
+      <td>unknown</td>
+      <td>rejected</td>
+      <td>eligible</td>
+      <td>Will Alexandria Ocasio-Cortez win the 2028 Democratic presidential nomination?</td>
+      <td>Will Alexandria Ocasio-Cortez win the 2028 US Presidential Election?</td>
+      <td>0.3989</td>
+      <td>0.800</td>
+      <td>1.0</td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>9814f0b1f2c1e137cdd0f01081c9d79d</td>
+      <td>561248</td>
+      <td>561981</td>
+      <td>same_topic_no_trade</td>
+      <td>unknown</td>
+      <td>rejected</td>
+      <td>eligible</td>
+      <td>Will Vivek Ramaswamy win the 2028 US Presidential Election?</td>
+      <td>Will Vivek Ramaswamy win the 2028 Republican presidential nomination?</td>
+      <td>0.3959</td>
+      <td>0.800</td>
+      <td>1.0</td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>7b13eefd6d90d2688ac31722ff8efe17</td>
+      <td>561260</td>
+      <td>562005</td>
+      <td>same_topic_no_trade</td>
+      <td>unknown</td>
+      <td>rejected</td>
+      <td>eligible</td>
+      <td>Will Thomas Massie win the 2028 US Presidential Election?</td>
+      <td>Will Thomas Massie win the 2028 Republican presidential nomination?</td>
+      <td>0.3940</td>
+      <td>0.775</td>
+      <td>1.0</td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>5b9170e0c89e0e7ad7bb127a5796d918</td>
+      <td>559666</td>
+      <td>561247</td>
+      <td>same_topic_no_trade</td>
+      <td>unknown</td>
+      <td>rejected</td>
+      <td>eligible</td>
+      <td>Will Tim Walz win the 2028 Democratic presidential nomination?</td>
+      <td>Will Tim Walz win the 2028 US Presidential Election?</td>
+      <td>0.3933</td>
+      <td>0.800</td>
+      <td>1.0</td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>1c302d09aad4deb9ff7250e3c822df1d</td>
+      <td>561238</td>
+      <td>561977</td>
+      <td>same_topic_no_trade</td>
+      <td>unknown</td>
+      <td>rejected</td>
+      <td>eligible</td>
+      <td>Will Glenn Youngkin win the 2028 US Presidential Election?</td>
+      <td>Will Glenn Youngkin win the 2028 Republican presidential nomination?</td>
+      <td>0.3923</td>
+      <td>0.800</td>
+      <td>1.0</td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>d1665f8688af505f6969f6abefb096d6</td>
+      <td>559694</td>
+      <td>561259</td>
+      <td>same_topic_no_trade</td>
+      <td>unknown</td>
+      <td>rejected</td>
+      <td>eligible</td>
+      <td>Will Ro Khanna win the 2028 Democratic presidential nomination?</td>
+      <td>Will Ro Khanna win the 2028 US Presidential Election?</td>
+      <td>0.3914</td>
+      <td>0.775</td>
+      <td>1.0</td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>2d911c0905127bffd7fd430f4b610760</td>
+      <td>559654</td>
+      <td>561232</td>
+      <td>same_topic_no_trade</td>
+      <td>unknown</td>
+      <td>rejected</td>
+      <td>eligible</td>
+      <td>Will Pete Buttigieg win the 2028 Democratic presidential nomination?</td>
+      <td>Will Pete Buttigieg win the 2028 US Presidential Election?</td>
+      <td>0.3914</td>
+      <td>0.775</td>
+      <td>1.0</td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+    </tr>
+  </tbody>
+</table>
+
+
+<h2>Examples: Manual Review Pairs</h2>
+
+<table class="dataframe report-table">
+  <thead>
+    <tr style="text-align: right;">
+      <th>relationship_id</th>
+      <th>market_id_a</th>
+      <th>market_id_b</th>
+      <th>type</th>
+      <th>family</th>
+      <th>status</th>
+      <th>strategy_eligibility</th>
+      <th>question_a</th>
+      <th>question_b</th>
+      <th>final_confidence</th>
+      <th>entity_score</th>
+      <th>time_score</th>
+      <th>threshold</th>
+      <th>candidate_a</th>
+      <th>candidate_b</th>
+      <th>shared_event</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>cc376429463d78167ad174e43317b2d3</td>
+      <td>559690</td>
+      <td>562003</td>
+      <td>contradiction</td>
+      <td>contradiction</td>
+      <td>needs_manual_review</td>
+      <td>eligible</td>
+      <td>Will Kim Kardashian win the 2028 Democratic presidential nomination?</td>
+      <td>Will Kim Kardashian win the 2028 Republican presidential nomination?</td>
+      <td>0.5283</td>
+      <td>0.775</td>
+      <td>1.0</td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>8b937b1b819dbf225c72414c3b5653d9</td>
+      <td>559686</td>
+      <td>561252</td>
+      <td>contradiction</td>
+      <td>contradiction</td>
+      <td>needs_manual_review</td>
+      <td>eligible</td>
+      <td>Will Dwayne 'The Rock' Johnson win the 2028 Democratic presidential nomination?</td>
+      <td>Will Dwayne 'The Rock' Johnson win the 2028 US Presidential Election?</td>
+      <td>0.4517</td>
+      <td>0.800</td>
+      <td>1.0</td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>656c1df5bb31997622521bc9e9f0adc6</td>
+      <td>540819</td>
+      <td>540843</td>
+      <td>same_reference_clock</td>
+      <td>temporal</td>
+      <td>needs_manual_review</td>
+      <td>ineligible</td>
+      <td>Will Jesus Christ return before GTA VI?</td>
+      <td>Will China invades Taiwan before GTA VI?</td>
+      <td>0.4200</td>
+      <td>0.000</td>
+      <td>1.0</td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>3510fa79844874170bc5aa27001fd3f9</td>
+      <td>540818</td>
+      <td>540843</td>
+      <td>same_reference_clock</td>
+      <td>temporal</td>
+      <td>needs_manual_review</td>
+      <td>ineligible</td>
+      <td>New Playboi Carti Album before GTA VI?</td>
+      <td>Will China invades Taiwan before GTA VI?</td>
+      <td>0.4200</td>
+      <td>0.000</td>
+      <td>1.0</td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>9f8979f5595d8799aa56516df800886a</td>
+      <td>540817</td>
+      <td>540843</td>
+      <td>same_reference_clock</td>
+      <td>temporal</td>
+      <td>needs_manual_review</td>
+      <td>ineligible</td>
+      <td>New Rihanna Album before GTA VI?</td>
+      <td>Will China invades Taiwan before GTA VI?</td>
+      <td>0.4200</td>
+      <td>0.000</td>
+      <td>1.0</td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>a38a46b0aa9e43da32288b6491f29802</td>
+      <td>540843</td>
+      <td>540844</td>
+      <td>same_reference_clock</td>
+      <td>temporal</td>
+      <td>needs_manual_review</td>
+      <td>ineligible</td>
+      <td>Will China invades Taiwan before GTA VI?</td>
+      <td>Will bitcoin hit $1m before GTA VI?</td>
+      <td>0.4200</td>
+      <td>0.000</td>
+      <td>1.0</td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>2fc7c0bfadee801d685006086656d299</td>
+      <td>540820</td>
+      <td>540843</td>
+      <td>same_reference_clock</td>
+      <td>temporal</td>
+      <td>needs_manual_review</td>
+      <td>ineligible</td>
+      <td>Trump out as President before GTA VI?</td>
+      <td>Will China invades Taiwan before GTA VI?</td>
+      <td>0.4200</td>
+      <td>0.000</td>
+      <td>1.0</td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>ce1403a76b3c8a70b5e36e97d0a18741</td>
+      <td>561234</td>
+      <td>561975</td>
+      <td>inverse</td>
+      <td>contradiction</td>
+      <td>needs_manual_review</td>
+      <td>eligible</td>
+      <td>Will Marco Rubio win the 2028 US Presidential Election?</td>
+      <td>Will Marco Rubio win the 2028 Republican presidential nomination?</td>
+      <td>0.4138</td>
+      <td>0.800</td>
+      <td>1.0</td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>d6f3e0670c0e7765406d5af2709303ed</td>
+      <td>561245</td>
+      <td>561980</td>
+      <td>contradiction</td>
+      <td>contradiction</td>
+      <td>needs_manual_review</td>
+      <td>eligible</td>
+      <td>Will Nikki Haley win the 2028 US Presidential Election?</td>
+      <td>Will Nikki Haley win the 2028 Republican presidential nomination?</td>
+      <td>0.4052</td>
+      <td>0.800</td>
+      <td>1.0</td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+    </tr>
+    <tr>
+      <td>4ceb6c57b9a9908fcbbbe636c2b57b9d</td>
+      <td>559658</td>
+      <td>561239</td>
+      <td>contradiction</td>
+      <td>contradiction</td>
+      <td>needs_manual_review</td>
+      <td>eligible</td>
+      <td>Will Kamala Harris win the 2028 Democratic presidential nomination?</td>
+      <td>Will Kamala Harris win the 2028 US Presidential Election?</td>
+      <td>0.4017</td>
+      <td>0.775</td>
+      <td>1.0</td>
+      <td></td>
+      <td></td>
+      <td></td>
+      <td></td>
+    </tr>
+  </tbody>
+</table>
+
+
+<h2>Validation</h2>
+<p>No-thinking check: <span class="status-pass">PASS</span></p>
+
+<h2>Downloads</h2>
+<ul>
+  <li><a href="relationships.csv">All relationships (CSV)</a></li>
+  <li><a href="accepted_relationships.csv">Accepted relationships (CSV)</a></li>
+  <li><a href="rejected_relationships.csv">Rejected relationships (CSV)</a></li>
+  <li><a href="manual_review_relationships.csv">Manual review (CSV)</a></li>
+</ul>
+
+
+<footer>polymarket-arb — research only, no trading</footer>
+</body>
+</html>

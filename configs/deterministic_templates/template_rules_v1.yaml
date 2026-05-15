@@ -1,0 +1,300 @@
+schema_version: 1
+description: >
+  Companion context rules for deterministic templates. Each rule here
+  corresponds to a required_rule_type in templates_v1.yaml and provides
+  the world-context or market-terms backing that the context engine needs.
+  All rules here are approved at the same time as their parent template.
+
+manual_rules:
+
+  # ── Sports Progression (general) ───────────────────────────────────────────
+  # Reuses the same rule_type as the NBA-specific rule, but points to the
+  # generalized sports_championship_conference_progression space.
+
+  - context_rule_id: sports_championship_conference_general_v1
+    context_space_id: sports_championship_conference_progression
+    context_type: sports_progression
+    rule_type: championship_implies_conference
+    rule_family: world_context
+    confidence: 0.95
+    needs_manual_review: false
+    human_review_status: approved
+    rule_json:
+      implication: narrow_implies_broad
+      narrow_subtype: team_wins_championship
+      broad_subtype: team_wins_conference
+      deterministic: true
+      applies_to: all_knockout_sports
+    quoted_evidence:
+      - source: manual_curated
+        quote: >
+          In any single-elimination playoff or knockout championship format, the
+          champion must win their conference/league bracket path. This is a
+          structural necessity of the competition format, not a statistical claim.
+    source:
+      title: "Deterministic template: sports championship implies conference"
+      url: "manual://deterministic_templates/sports_championship_conference"
+      domain: "manual"
+      publisher: "local_curated"
+      source_type: manual_context
+      source_tier: 1
+
+  # ── Sports Ranking (general) ───────────────────────────────────────────────
+
+  - context_rule_id: sports_ranking_exact_implies_top_n_general_v1
+    context_space_id: sports_ranking_finish_position
+    context_type: ranking_top_n
+    rule_type: exact_finish_implies_top_n
+    rule_family: world_context
+    confidence: 0.95
+    needs_manual_review: false
+    human_review_status: approved
+    rule_json:
+      implication: exact_position_implies_top_n
+      deterministic: true
+      applies_to: all_league_formats
+    quoted_evidence:
+      - source: manual_curated
+        quote: >
+          In any league with a final standings table, a team finishing exactly
+          in position N is necessarily within the top M for all M >= N. This is
+          a mathematical fact of ordinal ranking.
+    source:
+      title: "Deterministic template: exact finish implies top-N"
+      url: "manual://deterministic_templates/sports_ranking_exact_implies_topn"
+      domain: "manual"
+      publisher: "local_curated"
+      source_type: manual_context
+      source_tier: 1
+
+  - context_rule_id: sports_ranking_exact_positions_exclusive_general_v1
+    context_space_id: sports_ranking_finish_position
+    context_type: ranking_top_n
+    rule_type: exact_finish_positions_mutually_exclusive
+    rule_family: world_context
+    confidence: 0.95
+    needs_manual_review: false
+    human_review_status: approved
+    rule_json:
+      implication: exact_positions_mutually_exclusive
+      deterministic: true
+      applies_to: all_league_formats
+    quoted_evidence:
+      - source: manual_curated
+        quote: >
+          A league table assigns exactly one final position per team per season.
+          Two different exact positions for the same team in the same season
+          are mutually exclusive by definition.
+    source:
+      title: "Deterministic template: exact positions mutually exclusive"
+      url: "manual://deterministic_templates/sports_ranking_exclusive"
+      domain: "manual"
+      publisher: "local_curated"
+      source_type: manual_context
+      source_tier: 1
+
+  # ── Sports Title Mutual Exclusion ──────────────────────────────────────────
+
+  - context_rule_id: single_winner_competition_mutual_exclusion_v1
+    context_space_id: sports_title_competition_mutual_exclusion
+    context_type: sports_mutual_exclusion
+    rule_type: single_winner_competition_mutual_exclusion
+    rule_family: world_context
+    confidence: 0.95
+    needs_manual_review: false
+    human_review_status: approved
+    rule_json:
+      implication: single_winner_exclusion
+      deterministic: true
+      condition: >
+        In any single-winner competition (World Cup, Champions League, Stanley Cup,
+        etc.), at most one team or entrant can be crowned champion. Two different
+        teams winning the same competition is logically impossible.
+    quoted_evidence:
+      - source: manual_curated
+        quote: >
+          Tournament and competition formats that produce a single champion
+          guarantee that no two different teams can both be the winner of the
+          same edition of the competition.
+    source:
+      title: "Deterministic template: single-winner competition mutual exclusion"
+      url: "manual://deterministic_templates/sports_title_mutual_exclusion"
+      domain: "manual"
+      publisher: "local_curated"
+      source_type: manual_context
+      source_tier: 1
+
+  # ── Threshold Nesting ──────────────────────────────────────────────────────
+
+  - context_rule_id: threshold_monotone_nesting_v1
+    context_space_id: threshold_nesting
+    context_type: threshold_nesting
+    rule_type: threshold_monotone_nesting
+    rule_family: world_context
+    confidence: 0.95
+    needs_manual_review: false
+    human_review_status: approved
+    rule_json:
+      implication: higher_threshold_implies_lower
+      deterministic: true
+      condition: >
+        If asset price path reaches level H, it has passed all levels L < H
+        along the way (assuming Polymarket resolves based on spot price
+        crossing the threshold at any point in the window).
+    quoted_evidence:
+      - source: manual_curated
+        quote: >
+          If an asset trades at price H during the resolution window, then by
+          continuity of the price path it must have traded at all prices below H
+          at some point. This makes "hits $H before date D" a necessary
+          condition for "hits $L before date D" whenever H > L.
+    source:
+      title: "Deterministic template: threshold monotone nesting"
+      url: "manual://deterministic_templates/threshold_nesting"
+      domain: "manual"
+      publisher: "local_curated"
+      source_type: manual_context
+      source_tier: 1
+
+  - context_rule_id: threshold_market_terms_v1
+    context_space_id: threshold_nesting
+    context_type: threshold_nesting
+    rule_type: market_terms_threshold_scope
+    rule_family: market_terms
+    confidence: 0.85
+    needs_manual_review: false
+    human_review_status: approved
+    rule_json:
+      required_terms:
+        - same_asset
+        - same_resolution_window
+        - monotone_threshold
+      deterministic: true
+    quoted_evidence:
+      - source: manual_curated
+        quote: >
+          Both markets must refer to the same underlying asset hitting different
+          threshold levels within the same resolution window for the nesting to hold.
+    source:
+      title: "Deterministic template: threshold market terms"
+      url: "manual://deterministic_templates/threshold_market_terms"
+      domain: "manual"
+      publisher: "local_curated"
+      source_type: manual_context
+      source_tier: 1
+
+  # ── Date/Time Nesting ──────────────────────────────────────────────────────
+
+  - context_rule_id: date_monotone_nesting_v1
+    context_space_id: date_time_nesting
+    context_type: date_time_nesting
+    rule_type: date_monotone_nesting
+    rule_family: world_context
+    confidence: 0.95
+    needs_manual_review: false
+    human_review_status: approved
+    rule_json:
+      implication: earlier_date_implies_later
+      deterministic: true
+      condition: >
+        If event E occurs before date D1, it necessarily occurs before
+        all dates D2 > D1. Temporal monotonicity is a logical necessity.
+    quoted_evidence:
+      - source: manual_curated
+        quote: >
+          If event E occurs before May 1, then by definition it occurred before
+          June 1, July 1, or any later date. The occurrence timestamp is fixed;
+          the threshold shifts. This is a definitional truth.
+    source:
+      title: "Deterministic template: date monotone nesting"
+      url: "manual://deterministic_templates/date_nesting"
+      domain: "manual"
+      publisher: "local_curated"
+      source_type: manual_context
+      source_tier: 1
+
+  - context_rule_id: date_nesting_market_terms_v1
+    context_space_id: date_time_nesting
+    context_type: date_time_nesting
+    rule_type: market_terms_date_scope
+    rule_family: market_terms
+    confidence: 0.85
+    needs_manual_review: false
+    human_review_status: approved
+    rule_json:
+      required_terms:
+        - same_event
+        - same_resolution_source
+        - nested_date_thresholds
+      deterministic: true
+    quoted_evidence:
+      - source: manual_curated
+        quote: >
+          Both markets must refer to the same event with different temporal
+          thresholds and the same resolution source to guarantee monotone nesting.
+    source:
+      title: "Deterministic template: date nesting market terms"
+      url: "manual://deterministic_templates/date_nesting_terms"
+      domain: "manual"
+      publisher: "local_curated"
+      source_type: manual_context
+      source_tier: 1
+
+  # ── Electoral Mutual Exclusion ─────────────────────────────────────────────
+
+  - context_rule_id: primary_candidates_mutually_exclusive_v1
+    context_space_id: electoral_mutual_exclusion
+    context_type: electoral_mutual_exclusion
+    rule_type: primary_candidates_mutually_exclusive
+    rule_family: world_context
+    confidence: 0.90
+    needs_manual_review: false
+    human_review_status: approved
+    rule_json:
+      implication: single_winner_exclusion
+      deterministic: true
+      condition: >
+        In a single-winner election or primary, at most one candidate can win.
+        Candidate A winning and Candidate B winning (A ≠ B, same race)
+        are mutually exclusive events.
+    quoted_evidence:
+      - source: manual_curated
+        quote: >
+          A primary election produces exactly one winner. If candidate A wins,
+          candidate B cannot also win the same primary. This is a structural
+          fact of single-winner voting systems.
+    source:
+      title: "Deterministic template: primary candidates mutually exclusive"
+      url: "manual://deterministic_templates/electoral_mutual_exclusion"
+      domain: "manual"
+      publisher: "local_curated"
+      source_type: manual_context
+      source_tier: 1
+
+  - context_rule_id: electoral_mutual_exclusion_market_terms_v1
+    context_space_id: electoral_mutual_exclusion
+    context_type: electoral_mutual_exclusion
+    rule_type: market_terms_same_election_scope
+    rule_family: market_terms
+    confidence: 0.80
+    needs_manual_review: false
+    human_review_status: approved
+    rule_json:
+      required_terms:
+        - same_election
+        - same_party
+        - different_candidates
+        - single_winner
+      deterministic: true
+    quoted_evidence:
+      - source: manual_curated
+        quote: >
+          Markets must refer to the same party primary or general election with
+          different named candidates to apply the single-winner mutual exclusion.
+    source:
+      title: "Deterministic template: electoral market terms"
+      url: "manual://deterministic_templates/electoral_market_terms"
+      domain: "manual"
+      publisher: "local_curated"
+      source_type: manual_context
+      source_tier: 1

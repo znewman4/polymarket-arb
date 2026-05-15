@@ -1,0 +1,1207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Semantic Quality Report</title>
+<style>
+  body { font-family: monospace; font-size: 13px; margin: 20px; background: #fafafa; color: #222; }
+  h1 { font-size: 1.4em; border-bottom: 2px solid #333; padding-bottom: 6px; }
+  h2 { font-size: 1.15em; margin-top: 2em; border-bottom: 1px solid #aaa; padding-bottom: 4px; }
+  h3 { font-size: 1em; margin-top: 1.5em; }
+  .summary-grid { display: flex; flex-wrap: wrap; gap: 12px; margin: 1em 0; }
+  .summary-card { background: #fff; border: 1px solid #ccc; border-radius: 4px;
+                  padding: 12px 18px; min-width: 140px; text-align: center; }
+  .summary-card .value { font-size: 1.8em; font-weight: bold; color: #1a73e8; }
+  .summary-card .label { font-size: 0.85em; color: #555; }
+  table.report-table { border-collapse: collapse; width: 100%; margin: 0.5em 0; }
+  table.report-table th { background: #333; color: #fff; padding: 5px 8px; text-align: left;
+                           position: sticky; top: 0; }
+  table.report-table td { padding: 4px 8px; border-bottom: 1px solid #ddd; }
+  table.report-table tr:nth-child(even) { background: #f5f5f5; }
+  .status-pass { color: #2e7d32; font-weight: bold; }
+  .status-warn { color: #e65100; font-weight: bold; }
+  .status-fail { color: #c62828; font-weight: bold; }
+  .chart-img { max-width: 100%; height: auto; margin: 0.5em 0; }
+  .empty-state { color: #888; font-style: italic; padding: 1em; }
+  footer { margin-top: 3em; font-size: 0.8em; color: #888; border-top: 1px solid #ddd; padding-top: 8px; }
+</style>
+</head>
+<body>
+
+<h1>Semantic Quality Report</h1>
+<p style="color:#666">Generated: 2026-05-11T15:39:55Z</p>
+
+
+
+
+<h2>Summary</h2>
+<div class="summary-grid">
+  <div class="summary-card"><div class="value">10</div><div class="label">Semantics Rows</div></div>
+  <div class="summary-card"><div class="value">10</div><div class="label">Scored Rows</div></div>
+  <div class="summary-card"><div class="value">108</div><div class="label">Total Implications</div></div>
+  <div class="summary-card"><div class="value">7</div><div class="label">Needs Review</div></div>
+  <div class="summary-card"><div class="value">0.895</div><div class="label">Avg Confidence</div></div>
+  <div class="summary-card"><div class="value">0.206</div><div class="label">Avg Ambiguity</div></div>
+</div>
+
+<h2>Semantic Confidence Distribution</h2>
+
+<img class="chart-img" src="chart_confidence_hist.png" alt="Semantic confidence distribution">
+
+
+<h2>Ambiguity Score Distribution</h2>
+
+<img class="chart-img" src="chart_ambiguity_hist.png" alt="Ambiguity score distribution">
+
+
+<h2>Ambiguity Flag Frequency</h2>
+
+<img class="chart-img" src="chart_flag_bar.png" alt="Ambiguity flag frequency">
+
+
+<h2>Markets Flagged for Review</h2>
+
+<table class="dataframe report-table">
+  <thead>
+    <tr style="text-align: right;">
+      <th>market_id</th>
+      <th>question</th>
+      <th>confidence</th>
+      <th>ambiguity</th>
+      <th>market_type</th>
+      <th>flags</th>
+      <th>needs_review</th>
+      <th>model</th>
+      <th>prompt_version</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>540881</td>
+      <td>GTA VI released before June 2026?</td>
+      <td>0.9500</td>
+      <td>0.5125</td>
+      <td>binary</td>
+      <td>['Release definition includes only official sources', 'vagu…</td>
+      <td>True</td>
+      <td>deepseek-r1:8b</td>
+      <td>market_semantics_v1</td>
+    </tr>
+    <tr>
+      <td>540819</td>
+      <td>Will Jesus Christ return before GTA VI?</td>
+      <td>0.7000</td>
+      <td>0.2333</td>
+      <td>binary</td>
+      <td>["Temporal ambiguity due to vague definition of 'return'", …</td>
+      <td>True</td>
+      <td>deepseek-r1:8b</td>
+      <td>market_semantics_v1</td>
+    </tr>
+    <tr>
+      <td>540817</td>
+      <td>New Rihanna Album before GTA VI?</td>
+      <td>0.8500</td>
+      <td>0.2208</td>
+      <td>binary</td>
+      <td>["Definition of 'new' album is not explicitly defined (coul…</td>
+      <td>True</td>
+      <td>deepseek-r1:8b</td>
+      <td>market_semantics_v1</td>
+    </tr>
+    <tr>
+      <td>540843</td>
+      <td>Will China invades Taiwan before GTA VI?</td>
+      <td>0.8500</td>
+      <td>0.2281</td>
+      <td>binary</td>
+      <td>['Military offensive definition', 'GTA VI release definitio…</td>
+      <td>True</td>
+      <td>deepseek-r1:8b</td>
+      <td>market_semantics_v1</td>
+    </tr>
+    <tr>
+      <td>553828</td>
+      <td>Will the Colorado Avalanche win the 2026 NHL Stanley Cup?</td>
+      <td>0.9000</td>
+      <td>0.2167</td>
+      <td>binary</td>
+      <td>['Temporal resolution depends on NHL schedule', "Definition…</td>
+      <td>True</td>
+      <td>deepseek-r1:8b</td>
+      <td>market_semantics_v1</td>
+    </tr>
+    <tr>
+      <td>540818</td>
+      <td>New Playboi Carti Album before GTA VI?</td>
+      <td>0.8500</td>
+      <td>0.2208</td>
+      <td>binary</td>
+      <td>['Release definitions may vary (e.g., what constitutes an o…</td>
+      <td>True</td>
+      <td>deepseek-r1:8b</td>
+      <td>market_semantics_v1</td>
+    </tr>
+    <tr>
+      <td>540844</td>
+      <td>Will bitcoin hit $1m before GTA VI?</td>
+      <td>0.9000</td>
+      <td>0.2167</td>
+      <td>binary</td>
+      <td>['Temporal resolution is vague', 'Release definition may be…</td>
+      <td>True</td>
+      <td>deepseek-r1:8b</td>
+      <td>market_semantics_v1</td>
+    </tr>
+  </tbody>
+</table>
+
+
+<h2>All Semantics Rows</h2>
+
+<table class="dataframe report-table">
+  <thead>
+    <tr style="text-align: right;">
+      <th>market_id</th>
+      <th>question</th>
+      <th>confidence</th>
+      <th>ambiguity</th>
+      <th>market_type</th>
+      <th>flags</th>
+      <th>needs_review</th>
+      <th>model</th>
+      <th>prompt_version</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>553824</td>
+      <td>Will the Carolina Hurricanes win the 2026 NHL Stanley Cup?</td>
+      <td>0.9500</td>
+      <td>0.2125</td>
+      <td>binary</td>
+      <td>['Temporal resolution is specific to 2026', 'NHL rules may …</td>
+      <td>False</td>
+      <td>deepseek-r1:8b</td>
+      <td>market_semantics_v1</td>
+    </tr>
+    <tr>
+      <td>540881</td>
+      <td>GTA VI released before June 2026?</td>
+      <td>0.9500</td>
+      <td>0.5125</td>
+      <td>binary</td>
+      <td>['Release definition includes only official sources', 'vagu…</td>
+      <td>True</td>
+      <td>deepseek-r1:8b</td>
+      <td>market_semantics_v1</td>
+    </tr>
+    <tr>
+      <td>540819</td>
+      <td>Will Jesus Christ return before GTA VI?</td>
+      <td>0.7000</td>
+      <td>0.2333</td>
+      <td>binary</td>
+      <td>["Temporal ambiguity due to vague definition of 'return'", …</td>
+      <td>True</td>
+      <td>deepseek-r1:8b</td>
+      <td>market_semantics_v1</td>
+    </tr>
+    <tr>
+      <td>540817</td>
+      <td>New Rihanna Album before GTA VI?</td>
+      <td>0.8500</td>
+      <td>0.2208</td>
+      <td>binary</td>
+      <td>["Definition of 'new' album is not explicitly defined (coul…</td>
+      <td>True</td>
+      <td>deepseek-r1:8b</td>
+      <td>market_semantics_v1</td>
+    </tr>
+    <tr>
+      <td>553843</td>
+      <td>Will the Philadelphia Flyers win the 2026 NHL Stanley Cup?</td>
+      <td>1.0000</td>
+      <td>0.0000</td>
+      <td>binary</td>
+      <td>[]</td>
+      <td>False</td>
+      <td>deepseek-r1:8b</td>
+      <td>market_semantics_v1</td>
+    </tr>
+    <tr>
+      <td>540843</td>
+      <td>Will China invades Taiwan before GTA VI?</td>
+      <td>0.8500</td>
+      <td>0.2281</td>
+      <td>binary</td>
+      <td>['Military offensive definition', 'GTA VI release definitio…</td>
+      <td>True</td>
+      <td>deepseek-r1:8b</td>
+      <td>market_semantics_v1</td>
+    </tr>
+    <tr>
+      <td>553828</td>
+      <td>Will the Colorado Avalanche win the 2026 NHL Stanley Cup?</td>
+      <td>0.9000</td>
+      <td>0.2167</td>
+      <td>binary</td>
+      <td>['Temporal resolution depends on NHL schedule', "Definition…</td>
+      <td>True</td>
+      <td>deepseek-r1:8b</td>
+      <td>market_semantics_v1</td>
+    </tr>
+    <tr>
+      <td>540818</td>
+      <td>New Playboi Carti Album before GTA VI?</td>
+      <td>0.8500</td>
+      <td>0.2208</td>
+      <td>binary</td>
+      <td>['Release definitions may vary (e.g., what constitutes an o…</td>
+      <td>True</td>
+      <td>deepseek-r1:8b</td>
+      <td>market_semantics_v1</td>
+    </tr>
+    <tr>
+      <td>553849</td>
+      <td>Will the Montreal Canadiens win the 2026 NHL Stanley Cup?</td>
+      <td>1.0000</td>
+      <td>0.0000</td>
+      <td>binary</td>
+      <td>[]</td>
+      <td>False</td>
+      <td>deepseek-r1:8b</td>
+      <td>market_semantics_v1</td>
+    </tr>
+    <tr>
+      <td>540844</td>
+      <td>Will bitcoin hit $1m before GTA VI?</td>
+      <td>0.9000</td>
+      <td>0.2167</td>
+      <td>binary</td>
+      <td>['Temporal resolution is vague', 'Release definition may be…</td>
+      <td>True</td>
+      <td>deepseek-r1:8b</td>
+      <td>market_semantics_v1</td>
+    </tr>
+  </tbody>
+</table>
+
+
+<h2>Rulebook Evaluations</h2>
+
+<table class="dataframe report-table">
+  <thead>
+    <tr style="text-align: right;">
+      <th>evaluation_id</th>
+      <th>market_id</th>
+      <th>rulebook_id</th>
+      <th>rulebook_version</th>
+      <th>score</th>
+      <th>flags</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>52323581977e</td>
+      <td>553824</td>
+      <td>ambiguity</td>
+      <td>1</td>
+      <td>0.2125</td>
+      <td>['Temporal resolution is specific to 2026', 'NHL rules may affect impossibility']</td>
+    </tr>
+    <tr>
+      <td>2a4f1542a775</td>
+      <td>540817</td>
+      <td>ambiguity</td>
+      <td>1</td>
+      <td>0.2208</td>
+      <td>["Definition of 'new' album is not explicitly defined (could be interpreted as any new release)", 'Potential for multiple releases or editions to be considered']</td>
+    </tr>
+    <tr>
+      <td>f87abb34ec2a</td>
+      <td>540881</td>
+      <td>ambiguity</td>
+      <td>1</td>
+      <td>0.5125</td>
+      <td>['Release definition includes only official sources', 'vague_deadline']</td>
+    </tr>
+    <tr>
+      <td>29508ad21922</td>
+      <td>540818</td>
+      <td>ambiguity</td>
+      <td>1</td>
+      <td>0.2208</td>
+      <td>['Release definitions may vary (e.g., what constitutes an official release)', 'Potential for multiple albums or re-releases to be considered']</td>
+    </tr>
+    <tr>
+      <td>505a653ac992</td>
+      <td>553849</td>
+      <td>ambiguity</td>
+      <td>1</td>
+      <td>0.0000</td>
+      <td>[]</td>
+    </tr>
+    <tr>
+      <td>37a7a20f4432</td>
+      <td>540844</td>
+      <td>ambiguity</td>
+      <td>1</td>
+      <td>0.2167</td>
+      <td>['Temporal resolution is vague', 'Release definition may be ambiguous']</td>
+    </tr>
+    <tr>
+      <td>b5f99ec6fd3f</td>
+      <td>553843</td>
+      <td>ambiguity</td>
+      <td>1</td>
+      <td>0.0000</td>
+      <td>[]</td>
+    </tr>
+    <tr>
+      <td>2267d09797fa</td>
+      <td>540843</td>
+      <td>ambiguity</td>
+      <td>1</td>
+      <td>0.2281</td>
+      <td>['Military offensive definition', 'GTA VI release definition', 'Deadline interpretation']</td>
+    </tr>
+    <tr>
+      <td>d48ac05bd859</td>
+      <td>540819</td>
+      <td>ambiguity</td>
+      <td>1</td>
+      <td>0.2333</td>
+      <td>["Temporal ambiguity due to vague definition of 'return'", "Source ambiguity for Jesus' return"]</td>
+    </tr>
+    <tr>
+      <td>bb5f2513110b</td>
+      <td>553828</td>
+      <td>ambiguity</td>
+      <td>1</td>
+      <td>0.2167</td>
+      <td>['Temporal resolution depends on NHL schedule', "Definition of 'win' may include playoffs"]</td>
+    </tr>
+    <tr>
+      <td>216b227213e2</td>
+      <td>553824</td>
+      <td>ambiguity</td>
+      <td>1</td>
+      <td>0.2125</td>
+      <td>['Temporal resolution is specific to 2026', 'NHL rules may affect impossibility']</td>
+    </tr>
+    <tr>
+      <td>ab7754a37f31</td>
+      <td>540881</td>
+      <td>ambiguity</td>
+      <td>1</td>
+      <td>0.5125</td>
+      <td>['Release definition includes only official sources', 'vague_deadline']</td>
+    </tr>
+    <tr>
+      <td>6ca79c9dbb5e</td>
+      <td>540819</td>
+      <td>ambiguity</td>
+      <td>1</td>
+      <td>0.2333</td>
+      <td>["Temporal ambiguity due to vague definition of 'return'", "Source ambiguity for Jesus' return"]</td>
+    </tr>
+    <tr>
+      <td>29e0c4e9fff0</td>
+      <td>540817</td>
+      <td>ambiguity</td>
+      <td>1</td>
+      <td>0.2208</td>
+      <td>["Definition of 'new' album is not explicitly defined (could be interpreted as any new release)", 'Potential for multiple releases or editions to be considered']</td>
+    </tr>
+    <tr>
+      <td>30dfb0c8ef9d</td>
+      <td>553843</td>
+      <td>ambiguity</td>
+      <td>1</td>
+      <td>0.0000</td>
+      <td>[]</td>
+    </tr>
+  </tbody>
+</table>
+
+
+<h2>Sample Implications</h2>
+
+<table class="dataframe report-table">
+  <thead>
+    <tr style="text-align: right;">
+      <th>market_id</th>
+      <th>implication_type</th>
+      <th>statement</th>
+      <th>confidence</th>
+      <th>needs_review</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>540818</td>
+      <td>sufficient_for_yes</td>
+      <td>A new Playboi Carti album is released before GTA VI and both by deadline</td>
+      <td>0.5303</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>540843</td>
+      <td>sufficient_for_yes</td>
+      <td>China commences a military offensive intended to control Taiwan before GTA VI r…</td>
+      <td>0.5231</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>540819</td>
+      <td>sufficient_for_yes</td>
+      <td>The Second Coming of Jesus Christ occurs before the official release of GTA VI</td>
+      <td>0.4267</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>540819</td>
+      <td>necessary_for_no</td>
+      <td>The Second Coming of Jesus Christ does not occur</td>
+      <td>0.3555</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>540819</td>
+      <td>necessary_for_no</td>
+      <td>It occurs after or at the same time as the official release of GTA VI</td>
+      <td>0.3555</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>540819</td>
+      <td>sufficient_for_no</td>
+      <td>The Second Coming of Jesus Christ occurs after the official release of GTA VI</td>
+      <td>0.4030</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>540819</td>
+      <td>sufficient_for_no</td>
+      <td>The Second Coming of Jesus Christ does not occur</td>
+      <td>0.4030</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>540819</td>
+      <td>evidence_updates_yes</td>
+      <td>Official release of GTA VI from Rockstar Games/Take-Two Interactive</td>
+      <td>0.2608</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>540819</td>
+      <td>evidence_updates_yes</td>
+      <td>Consensus of credible sources for the Second Coming</td>
+      <td>0.2608</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>540819</td>
+      <td>ambiguity_warning</td>
+      <td>Temporal ambiguity due to vague definition of 'return'</td>
+      <td>0.1185</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>540819</td>
+      <td>necessary_for_yes</td>
+      <td>It occurs before the official release of GTA VI</td>
+      <td>0.3793</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>540818</td>
+      <td>necessary_for_yes</td>
+      <td>GTA VI is officially released</td>
+      <td>0.4714</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>540818</td>
+      <td>necessary_for_yes</td>
+      <td>The album release occurs before the GTA VI release</td>
+      <td>0.4714</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>540818</td>
+      <td>necessary_for_yes</td>
+      <td>Both releases occur by the deadline</td>
+      <td>0.4714</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>540819</td>
+      <td>necessary_for_yes</td>
+      <td>The Second Coming of Jesus Christ occurs</td>
+      <td>0.3793</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>540818</td>
+      <td>necessary_for_no</td>
+      <td>GTA VI is released before the new Playboi Carti album, or neither is released b…</td>
+      <td>0.4419</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>540818</td>
+      <td>sufficient_for_no</td>
+      <td>GTA VI is released before the new Playboi Carti album</td>
+      <td>0.5008</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>540818</td>
+      <td>sufficient_for_no</td>
+      <td>Neither is released by the deadline</td>
+      <td>0.5008</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>540818</td>
+      <td>evidence_updates_yes</td>
+      <td>Official release information from sources like Rockstar Games or Playboi Carti'…</td>
+      <td>0.3241</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>540843</td>
+      <td>necessary_for_no</td>
+      <td>GTA VI is released before the offensive</td>
+      <td>0.4359</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>540818</td>
+      <td>ambiguity_warning</td>
+      <td>Release definitions may vary (e.g., what constitutes an official release)</td>
+      <td>0.1473</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>540818</td>
+      <td>ambiguity_warning</td>
+      <td>Potential for multiple albums or re-releases to be considered</td>
+      <td>0.1473</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>540844</td>
+      <td>necessary_for_yes</td>
+      <td>Bitcoin price reaches $1,000,000 on Binance BTCUSDT 1-minute candle</td>
+      <td>0.5028</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>540844</td>
+      <td>sufficient_for_yes</td>
+      <td>Bitcoin price reaches $1,000,000 on Binance BTCUSDT 1-minute candle before GTA …</td>
+      <td>0.5658</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>540844</td>
+      <td>necessary_for_no</td>
+      <td>Bitcoin price does not reach $1,000,000 on Binance BTCUSDT 1-minute candle befo…</td>
+      <td>0.4715</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>540844</td>
+      <td>sufficient_for_no</td>
+      <td>Bitcoin price does not reach $1,000,000 on Binance BTCUSDT 1-minute candle befo…</td>
+      <td>0.5343</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>540844</td>
+      <td>evidence_updates_yes</td>
+      <td>Binance BTCUSDT 1-minute candle data</td>
+      <td>0.3457</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>540817</td>
+      <td>evidence_updates_yes</td>
+      <td>Official release information from streaming or download sites for Rihanna's alb…</td>
+      <td>0.3241</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>540844</td>
+      <td>ambiguity_warning</td>
+      <td>Release definition may be ambiguous</td>
+      <td>0.1571</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>540818</td>
+      <td>evidence_updates_yes</td>
+      <td>Release dates confirmed by official sources</td>
+      <td>0.3241</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>540843</td>
+      <td>necessary_for_no</td>
+      <td>No offensive occurs</td>
+      <td>0.4359</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>540819</td>
+      <td>ambiguity_warning</td>
+      <td>Source ambiguity for Jesus' return</td>
+      <td>0.1185</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>540817</td>
+      <td>necessary_for_yes</td>
+      <td>GTA VI is released by the deadline</td>
+      <td>0.4714</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>540817</td>
+      <td>necessary_for_yes</td>
+      <td>The album release occurs before GTA VI release</td>
+      <td>0.4714</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>540817</td>
+      <td>sufficient_for_yes</td>
+      <td>Rihanna releases a new album before GTA VI release, and both by deadline</td>
+      <td>0.5303</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>540817</td>
+      <td>necessary_for_no</td>
+      <td>Either no new album is released by deadline, or GTA VI is released before the a…</td>
+      <td>0.4419</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>540817</td>
+      <td>sufficient_for_no</td>
+      <td>GTA VI released before album by deadline</td>
+      <td>0.5008</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>540817</td>
+      <td>sufficient_for_no</td>
+      <td>No album released by deadline</td>
+      <td>0.5008</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>540817</td>
+      <td>sufficient_for_no</td>
+      <td>Both events after deadline</td>
+      <td>0.5008</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>540817</td>
+      <td>evidence_updates_yes</td>
+      <td>Official release information from Rockstar Games or Take-Two Interactive for GT…</td>
+      <td>0.3241</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>540844</td>
+      <td>ambiguity_warning</td>
+      <td>Temporal resolution is vague</td>
+      <td>0.1571</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>540817</td>
+      <td>ambiguity_warning</td>
+      <td>Definition of 'new' album is not explicitly defined (could be interpreted as an…</td>
+      <td>0.1473</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>540817</td>
+      <td>ambiguity_warning</td>
+      <td>Potential for multiple releases or editions to be considered</td>
+      <td>0.1473</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>540843</td>
+      <td>necessary_for_yes</td>
+      <td>China commences a military offensive</td>
+      <td>0.4650</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>540843</td>
+      <td>necessary_for_yes</td>
+      <td>The offensive is intended to establish control over Taiwan</td>
+      <td>0.4650</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>540843</td>
+      <td>necessary_for_yes</td>
+      <td>The offensive occurs before GTA VI release</td>
+      <td>0.4650</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>540817</td>
+      <td>necessary_for_yes</td>
+      <td>Rihanna releases a new album by the deadline</td>
+      <td>0.4714</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>540881</td>
+      <td>sufficient_for_yes</td>
+      <td>Official release in the US by May 31, 2026, 11:59 PM ET</td>
+      <td>0.3100</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>540881</td>
+      <td>necessary_for_no</td>
+      <td>Not officially released in the US by June 1, 2026, 12:00 AM ET</td>
+      <td>0.2583</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>540881</td>
+      <td>sufficient_for_no</td>
+      <td>Not officially released in the US by June 1, 2026, 12:00 AM ET</td>
+      <td>0.2928</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>540881</td>
+      <td>evidence_updates_yes</td>
+      <td>Official information from Rockstar Games or Take-Two Interactive</td>
+      <td>0.1894</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>540881</td>
+      <td>ambiguity_warning</td>
+      <td>Release definition includes only official sources</td>
+      <td>0.0861</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>540881</td>
+      <td>ambiguity_warning</td>
+      <td>vague_deadline</td>
+      <td>0.0861</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>540843</td>
+      <td>ambiguity_warning</td>
+      <td>Deadline interpretation</td>
+      <td>0.1453</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>553828</td>
+      <td>ambiguity_warning</td>
+      <td>Temporal resolution depends on NHL schedule</td>
+      <td>0.1571</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>553828</td>
+      <td>evidence_updates_yes</td>
+      <td>Stanley Cup winner announcement</td>
+      <td>0.3457</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>553828</td>
+      <td>evidence_updates_yes</td>
+      <td>Official NHL resolution</td>
+      <td>0.3457</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>553828</td>
+      <td>sufficient_for_no</td>
+      <td>Colorado Avalanche does not win the 2026 NHL Stanley Cup</td>
+      <td>0.5343</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>553828</td>
+      <td>necessary_for_no</td>
+      <td>Colorado Avalanche does not win the 2026 NHL Stanley Cup</td>
+      <td>0.4715</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>553828</td>
+      <td>sufficient_for_yes</td>
+      <td>Colorado Avalanche wins the 2026 NHL Stanley Cup</td>
+      <td>0.5658</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>553828</td>
+      <td>necessary_for_yes</td>
+      <td>Colorado Avalanche wins the Stanley Cup Final</td>
+      <td>0.5028</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>553828</td>
+      <td>necessary_for_yes</td>
+      <td>Colorado Avalanche wins the Conference Finals</td>
+      <td>0.5028</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>540818</td>
+      <td>necessary_for_yes</td>
+      <td>A new Playboi Carti album is officially released</td>
+      <td>0.4714</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>540843</td>
+      <td>ambiguity_warning</td>
+      <td>GTA VI release definition</td>
+      <td>0.1453</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>540843</td>
+      <td>ambiguity_warning</td>
+      <td>Military offensive definition</td>
+      <td>0.1453</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>540843</td>
+      <td>evidence_updates_yes</td>
+      <td>Official confirmation from specified sources</td>
+      <td>0.3197</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>540843</td>
+      <td>sufficient_for_no</td>
+      <td>No military offensive by China</td>
+      <td>0.4941</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>540843</td>
+      <td>sufficient_for_no</td>
+      <td>GTA VI released before July 31, 2026</td>
+      <td>0.4941</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>540843</td>
+      <td>necessary_for_no</td>
+      <td>The deadline passes without the event</td>
+      <td>0.4359</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>553828</td>
+      <td>ambiguity_warning</td>
+      <td>Definition of 'win' may include playoffs</td>
+      <td>0.1571</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>553828</td>
+      <td>necessary_for_yes</td>
+      <td>Colorado Avalanche reaches the Stanley Cup Final</td>
+      <td>0.5028</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>553824</td>
+      <td>ambiguity_warning</td>
+      <td>Temporal resolution is specific to 2026</td>
+      <td>0.1672</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>553824</td>
+      <td>ambiguity_warning</td>
+      <td>NHL rules may affect impossibility</td>
+      <td>0.1672</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>553824</td>
+      <td>evidence_updates_yes</td>
+      <td>Official NHL resolution of the Stanley Cup winner</td>
+      <td>0.3677</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>540881</td>
+      <td>necessary_for_yes</td>
+      <td>Official release in the US</td>
+      <td>0.2756</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>540819</td>
+      <td>sufficient_for_no</td>
+      <td>The Second Coming of Jesus Christ does not occur</td>
+      <td>0.4030</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>540817</td>
+      <td>sufficient_for_no</td>
+      <td>No album released by deadline</td>
+      <td>0.5008</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>540817</td>
+      <td>sufficient_for_no</td>
+      <td>GTA VI released before album by deadline</td>
+      <td>0.5008</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>540817</td>
+      <td>ambiguity_warning</td>
+      <td>Definition of 'new' album is not explicitly defined (could be interpreted as an…</td>
+      <td>0.1473</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>540817</td>
+      <td>sufficient_for_no</td>
+      <td>Both events after deadline</td>
+      <td>0.5008</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>540817</td>
+      <td>evidence_updates_yes</td>
+      <td>Official release information from Rockstar Games or Take-Two Interactive for GT…</td>
+      <td>0.3241</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>540817</td>
+      <td>evidence_updates_yes</td>
+      <td>Official release information from streaming or download sites for Rihanna's alb…</td>
+      <td>0.3241</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>540881</td>
+      <td>sufficient_for_no</td>
+      <td>Not officially released in the US by June 1, 2026, 12:00 AM ET</td>
+      <td>0.2928</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>540817</td>
+      <td>sufficient_for_yes</td>
+      <td>Rihanna releases a new album before GTA VI release, and both by deadline</td>
+      <td>0.5303</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>540817</td>
+      <td>necessary_for_yes</td>
+      <td>The album release occurs before GTA VI release</td>
+      <td>0.4714</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>540817</td>
+      <td>necessary_for_yes</td>
+      <td>GTA VI is released by the deadline</td>
+      <td>0.4714</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>540817</td>
+      <td>necessary_for_yes</td>
+      <td>Rihanna releases a new album by the deadline</td>
+      <td>0.4714</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>540819</td>
+      <td>ambiguity_warning</td>
+      <td>Source ambiguity for Jesus' return</td>
+      <td>0.1185</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>540819</td>
+      <td>ambiguity_warning</td>
+      <td>Temporal ambiguity due to vague definition of 'return'</td>
+      <td>0.1185</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>540819</td>
+      <td>evidence_updates_yes</td>
+      <td>Consensus of credible sources for the Second Coming</td>
+      <td>0.2608</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>540819</td>
+      <td>evidence_updates_yes</td>
+      <td>Official release of GTA VI from Rockstar Games/Take-Two Interactive</td>
+      <td>0.2608</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>540881</td>
+      <td>ambiguity_warning</td>
+      <td>vague_deadline</td>
+      <td>0.0861</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>540817</td>
+      <td>necessary_for_no</td>
+      <td>Either no new album is released by deadline, or GTA VI is released before the a…</td>
+      <td>0.4419</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>553824</td>
+      <td>ambiguity_warning</td>
+      <td>Temporal resolution is specific to 2026</td>
+      <td>0.1672</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>553824</td>
+      <td>ambiguity_warning</td>
+      <td>NHL rules may affect impossibility</td>
+      <td>0.1672</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>540881</td>
+      <td>necessary_for_yes</td>
+      <td>Official release in the US</td>
+      <td>0.2756</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>540881</td>
+      <td>sufficient_for_yes</td>
+      <td>Official release in the US by May 31, 2026, 11:59 PM ET</td>
+      <td>0.3100</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>540881</td>
+      <td>necessary_for_no</td>
+      <td>Not officially released in the US by June 1, 2026, 12:00 AM ET</td>
+      <td>0.2583</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>540881</td>
+      <td>evidence_updates_yes</td>
+      <td>Official information from Rockstar Games or Take-Two Interactive</td>
+      <td>0.1894</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>540881</td>
+      <td>ambiguity_warning</td>
+      <td>Release definition includes only official sources</td>
+      <td>0.0861</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>540817</td>
+      <td>ambiguity_warning</td>
+      <td>Potential for multiple releases or editions to be considered</td>
+      <td>0.1473</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>540819</td>
+      <td>necessary_for_yes</td>
+      <td>The Second Coming of Jesus Christ occurs</td>
+      <td>0.3793</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>540819</td>
+      <td>necessary_for_yes</td>
+      <td>It occurs before the official release of GTA VI</td>
+      <td>0.3793</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>540819</td>
+      <td>sufficient_for_yes</td>
+      <td>The Second Coming of Jesus Christ occurs before the official release of GTA VI</td>
+      <td>0.4267</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>540819</td>
+      <td>necessary_for_no</td>
+      <td>The Second Coming of Jesus Christ does not occur</td>
+      <td>0.3555</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>540819</td>
+      <td>necessary_for_no</td>
+      <td>It occurs after or at the same time as the official release of GTA VI</td>
+      <td>0.3555</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>540819</td>
+      <td>sufficient_for_no</td>
+      <td>The Second Coming of Jesus Christ occurs after the official release of GTA VI</td>
+      <td>0.4030</td>
+      <td>True</td>
+    </tr>
+    <tr>
+      <td>553824</td>
+      <td>evidence_updates_yes</td>
+      <td>Official NHL resolution of the Stanley Cup winner</td>
+      <td>0.3677</td>
+      <td>True</td>
+    </tr>
+  </tbody>
+</table>
+
+
+
+
+<footer>polymarket-arb — research only, no trading</footer>
+</body>
+</html>

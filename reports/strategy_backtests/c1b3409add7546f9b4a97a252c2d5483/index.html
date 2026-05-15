@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Strategy Backtest Report — c1b3409add7546f9b4a97a252c2d5483</title>
+<style>
+  body { font-family: monospace; font-size: 13px; margin: 20px; background: #fafafa; color: #222; }
+  h1 { font-size: 1.4em; border-bottom: 2px solid #333; padding-bottom: 6px; }
+  h2 { font-size: 1.15em; margin-top: 2em; border-bottom: 1px solid #aaa; padding-bottom: 4px; }
+  h3 { font-size: 1em; margin-top: 1.5em; }
+  .summary-grid { display: flex; flex-wrap: wrap; gap: 12px; margin: 1em 0; }
+  .summary-card { background: #fff; border: 1px solid #ccc; border-radius: 4px;
+                  padding: 12px 18px; min-width: 140px; text-align: center; }
+  .summary-card .value { font-size: 1.8em; font-weight: bold; color: #1a73e8; }
+  .summary-card .label { font-size: 0.85em; color: #555; }
+  table.report-table { border-collapse: collapse; width: 100%; margin: 0.5em 0; }
+  table.report-table th { background: #333; color: #fff; padding: 5px 8px; text-align: left;
+                           position: sticky; top: 0; }
+  table.report-table td { padding: 4px 8px; border-bottom: 1px solid #ddd; }
+  table.report-table tr:nth-child(even) { background: #f5f5f5; }
+  .status-pass { color: #2e7d32; font-weight: bold; }
+  .status-warn { color: #e65100; font-weight: bold; }
+  .status-fail { color: #c62828; font-weight: bold; }
+  .chart-img { max-width: 100%; height: auto; margin: 0.5em 0; }
+  .empty-state { color: #888; font-style: italic; padding: 1em; }
+  footer { margin-top: 3em; font-size: 0.8em; color: #888; border-top: 1px solid #ddd; padding-top: 8px; }
+</style>
+</head>
+<body>
+
+<h1>Strategy Backtest Report: c1b3409add7546f9b4a97a252c2d5483</h1>
+<p style="color:#666">Generated: 2026-05-11T15:48:46Z</p>
+
+
+
+
+<div class="summary-grid">
+  <div class="summary-card">
+    <div class="value">10000.00000000</div>
+    <div class="label">Starting Cash (USDC)</div>
+  </div>
+  <div class="summary-card">
+    <div class="value">10000.00000000</div>
+    <div class="label">Ending Equity (USDC)</div>
+  </div>
+  <div class="summary-card">
+    <div class="value">0.00%</div>
+    <div class="label">Total Return</div>
+  </div>
+  <div class="summary-card">
+    <div class="value">0</div>
+    <div class="label">Trade Pairs</div>
+  </div>
+  <div class="summary-card">
+    <div class="value">0</div>
+    <div class="label">Candidates Accepted</div>
+  </div>
+  <div class="summary-card">
+    <div class="value">0.0%</div>
+    <div class="label">Max Drawdown</div>
+  </div>
+</div>
+
+
+<div style="background:#fff3cd; border:1px solid #ffc107; padding:12px; margin:1em 0; border-radius:4px;">
+  ⚠️ <strong>MARK-TO-MARKET ONLY</strong> — No market resolutions available. PnL figures are mark-to-market estimates only, not realized returns. Results are approximate.
+</div>
+
+
+<h2>Credibility Verdict</h2>
+<div style="font-size:2em; font-weight:bold; color:#888888; padding:12px 0;">
+  DATA_INSUFFICIENT
+</div>
+<p>Only 0 trade pairs executed; need ≥30 for credibility. Consider running backfill with more data or lowering min_net_edge.</p>
+
+<h2>Zoomed-out Analysis</h2>
+<table class="report-table">
+<thead><tr><th>Metric</th><th>Value</th></tr></thead>
+<tbody>
+  <tr><td>Gross PnL (USDC)</td><td>0E-8</td></tr>
+  <tr><td>Net PnL (USDC)</td><td>0E-8</td></tr>
+  <tr><td>Total Fees (USDC)</td><td>0E-8</td></tr>
+  <tr><td>Total Slippage (USDC)</td><td>0E-8</td></tr>
+  <tr><td>Relationships Considered</td><td>0</td></tr>
+  <tr><td>Signals Generated</td><td>0</td></tr>
+  <tr><td>Candidates Accepted</td><td>0</td></tr>
+  <tr><td>Candidates Rejected</td><td>0</td></tr>
+  <tr><td>Win Rate (when resolved)</td>
+    <td>N/A (no resolutions)
+    </td></tr>
+  <tr><td>Avg Gross Edge</td><td>0.0000</td></tr>
+  <tr><td>Avg Net Edge</td><td>0.0000</td></tr>
+  <tr><td>Max Drawdown</td><td>0.0%</td></tr>
+</tbody>
+</table>
+
+
+<h2>Equity Curve</h2>
+<img class="chart-img" src="chart_equity.png" alt="Equity Curve">
+
+
+
+
+
+
+
+
+<h2>Example Trades</h2>
+
+<p class="empty-state">No trades executed in this run.</p>
+
+
+<h2>Downloads</h2>
+<ul>
+  <li><a href="metrics.json">metrics.json</a></li>
+  <li><a href="trades.csv">Trades (CSV)</a></li>
+  <li><a href="signals.csv">Signals (CSV)</a></li>
+  <li><a href="rejected_candidates.csv">Rejected Candidates (CSV)</a></li>
+</ul>
+
+
+
+<footer>polymarket-arb — research only, no trading</footer>
+</body>
+</html>

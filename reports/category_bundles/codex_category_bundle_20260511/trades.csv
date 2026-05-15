@@ -1,0 +1,1 @@
+trade_id,run_id,opportunity_id,outcome_space_id,candidate,market_id,token_id,basket,side,fill_ts_ms,fill_price,shares,notional_usdc,fees_usdc,slippage_cost_usdc,resolution_outcome,realised_pnl_usdc
