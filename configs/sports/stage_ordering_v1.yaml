@@ -1,0 +1,112 @@
+schema_version: 1
+description: >
+  Stage prerequisite registry for sports progression expansion.
+  Maps competition families to their stage ordering and which implication
+  relationships are deterministically valid.
+
+  A team that wins stage S necessarily won all prerequisite stages of S.
+
+  NOTE: This registry does NOT mix league titles with cup/continental competitions.
+  PSG winning Champions League does NOT imply PSG winning Ligue 1.
+  Man City winning the Premier League does NOT imply winning the Champions League.
+  These are separate competitions; implications across them are NOT valid.
+
+competition_families:
+
+  nba:
+    description: NBA single-elimination playoff bracket
+    notes: >
+      NBA champion must win conference bracket (Eastern or Western),
+      then win the NBA Finals. Conference path is structurally required.
+    stages:
+      - stage_id: nba_champion
+        stage_name: NBA Champion
+        stage_rank: 1          # lower = harder to achieve
+        outcome_subtypes:
+          - team_wins_championship
+        prerequisite_stage_ids:
+          - nba_conference_winner
+        implication_allowed: true
+        notes: Winning the NBA Finals requires winning the Conference first.
+
+      - stage_id: nba_conference_winner
+        stage_name: Conference Winner (Eastern or Western)
+        stage_rank: 2
+        outcome_subtypes:
+          - team_wins_conference
+        prerequisite_stage_ids: []
+        implication_allowed: false
+        notes: >
+          Conference winner is a prerequisite for the Finals, not the other
+          way around. No further structural prerequisite in the current model.
+
+  nhl:
+    description: NHL Stanley Cup single-elimination playoff bracket
+    stages:
+      - stage_id: nhl_stanley_cup_champion
+        stage_name: Stanley Cup Champion
+        stage_rank: 1
+        outcome_subtypes:
+          - team_wins_championship
+        prerequisite_stage_ids:
+          - nhl_conference_winner
+        implication_allowed: true
+        notes: Stanley Cup champion must win Conference Finals first.
+
+      - stage_id: nhl_conference_winner
+        stage_name: NHL Conference Winner
+        stage_rank: 2
+        outcome_subtypes:
+          - team_wins_conference
+        prerequisite_stage_ids: []
+        implication_allowed: false
+
+  nfl:
+    description: NFL Super Bowl single-elimination playoffs
+    stages:
+      - stage_id: nfl_super_bowl_champion
+        stage_name: Super Bowl Champion
+        stage_rank: 1
+        outcome_subtypes:
+          - team_wins_championship
+        prerequisite_stage_ids:
+          - nfl_conference_champion
+        implication_allowed: true
+
+      - stage_id: nfl_conference_champion
+        stage_name: NFC/AFC Champion
+        stage_rank: 2
+        outcome_subtypes:
+          - team_wins_conference
+        prerequisite_stage_ids: []
+        implication_allowed: false
+
+  premier_league:
+    description: Premier League final table — no knockout stage
+    notes: >
+      In a round-robin league table, winning the league implies finishing 1st.
+      Finishing 1st implies finishing in the top-N for any N >= 1.
+      No stage ordering beyond table position applies here.
+      DO NOT mix with Champions League or domestic cups.
+    stages:
+      - stage_id: premier_league_champion
+        stage_name: Premier League Champion (1st place)
+        stage_rank: 1
+        outcome_subtypes:
+          - team_wins_championship
+        prerequisite_stage_ids: []
+        implication_allowed: false
+        notes: >
+          League winner does NOT structurally imply anything beyond finishing 1st
+          in the table (which is handled by the ranking ladder expansion).
+
+restrictions:
+  - >
+    "wins_premier_league" does NOT imply "wins_champions_league".
+    These are separate competitions. Never emit cross-competition stage implications.
+  - >
+    "wins_champions_league" does NOT imply "wins_domestic_league".
+    Continental and domestic cups are distinct.
+  - >
+    Cup winner (FA Cup, Carabao Cup, etc.) does NOT imply league champion.
+    Cup and league are separate competitions.

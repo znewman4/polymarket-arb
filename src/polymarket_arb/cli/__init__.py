@@ -28,6 +28,7 @@ from . import (
     record,
     relationships,
     report,
+    research,
     score,
     strategy,
 )
@@ -62,6 +63,7 @@ cli.add_command(relationships.relationships_cmd)
 cli.add_command(strategy.strategy_cmd)
 cli.add_command(pipeline.pipeline_cmd)
 cli.add_command(diagnostic.diagnostic_cmd)
+cli.add_command(research.research_cmd)
 
 
 # Flat aliases for compatibility with the user's spec; same callbacks.

@@ -110,7 +110,7 @@ def group_template_mutual_exclusion_spaces(
     for rel in relationships:
         if rel.relationship_id not in template_rel_ids:
             continue
-        space_id = (rel.outcome_space_id or "").strip()
+        space_id = _template_bundle_space_id(rel)
         if not space_id or space_id in ("same_topic_no_trade", "unknown", ""):
             continue
         normalized = normalize_outcome_space_id(space_id)
@@ -121,9 +121,8 @@ def group_template_mutual_exclusion_spaces(
             "relationship_ids": set(),
         })
         bucket["relationship_ids"].add(rel.relationship_id)
-        # Prefer team_a/b as candidate name for sports; use candidate_a/b for electoral.
-        cand_a = rel.candidate_a or rel.team_a or None
-        cand_b = rel.candidate_b or rel.team_b or None
+        cand_a = _template_candidate_label(rel, "a")
+        cand_b = _template_candidate_label(rel, "b")
         _add_candidate(
             bucket["candidates"],
             market_id=rel.market_id_a,
@@ -157,6 +156,61 @@ def group_template_mutual_exclusion_spaces(
             completeness_reason="template auto-applied — RESEARCH-ONLY, pending human review",
         ))
     return sorted(spaces, key=lambda s: (-len(s.candidates), s.outcome_space_id))
+
+
+def _template_bundle_space_id(rel: RelationshipCandidateRow) -> str:
+    """Return the N-way bundle space for a template-approved pair.
+
+    Most template pairs group naturally by outcome_space_id. Exact-position
+    sports ranking pairs are different: "Liverpool finishes 2nd" and
+    "Liverpool finishes 3rd" are mutually exclusive for a single team, so the
+    bundle space must include the team as well as the competition/season.
+    """
+    base = (rel.outcome_space_id or rel.shared_event or "").strip()
+    subtype = rel.relationship_subtype or ""
+    if subtype in {
+        "exact_positions_mutually_exclusive",
+        "exact_finish_positions_mutually_exclusive",
+    } or (
+        rel.outcome_subtype_a == rel.outcome_subtype_b == "team_exact_finish_position"
+        and (rel.team_a or rel.team_b)
+    ):
+        team = rel.team_a or rel.team_b or ""
+        if base and team:
+            return f"{base}_{normalize_outcome_space_id(team)}_exact_finish_positions"
+    return base
+
+
+def _template_candidate_label(rel: RelationshipCandidateRow, side: str) -> str | None:
+    """Return the display candidate for one side of a template bundle.
+
+    For winner/candidate markets the entrant is candidate/team. For same-team
+    exact-position bundles the tradable alternatives are the positions, not the
+    team, so parse the position from the question.
+    """
+    question = rel.question_a if side == "a" else rel.question_b
+    candidate = rel.candidate_a if side == "a" else rel.candidate_b
+    team = rel.team_a if side == "a" else rel.team_b
+    outcome_subtype = rel.outcome_subtype_a if side == "a" else rel.outcome_subtype_b
+    if outcome_subtype == "team_exact_finish_position":
+        position = _exact_position_label(question)
+        if position:
+            return position
+    return candidate or team or None
+
+
+def _exact_position_label(question: str) -> str | None:
+    lower = question.lower()
+    match = re.search(r"\bfinish(?:es)?(?:\s+in(?:\s+the)?)?\s+(\d+)(?:st|nd|rd|th)\b", lower)
+    if not match:
+        match = re.search(r"\bfinish\b.*?\b(\d+)(?:st|nd|rd|th)\b", lower)
+    if not match:
+        return None
+    n = int(match.group(1))
+    suffix = "th"
+    if n % 100 not in {11, 12, 13}:
+        suffix = {1: "st", 2: "nd", 3: "rd"}.get(n % 10, "th")
+    return f"exact_{n}{suffix}"
 
 
 def group_category_outcome_spaces(

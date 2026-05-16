@@ -90,6 +90,7 @@ def run_template_bundle_scan(
     price_repo = ParquetPriceHistoryRepository(data_root)
 
     scan_rows: list[dict[str, Any]] = []
+    diagnostics: list[dict[str, Any]] = []
     for space in spaces:
         yes_prices, no_prices = _latest_prices(price_repo, space)
         bundle_row = scan_category_bundle(
@@ -99,14 +100,33 @@ def run_template_bundle_scan(
             min_net_edge=cfg.min_net_edge,
             fee_bps=cfg.fee_bps,
             slippage_bps=cfg.slippage_bps,
-            allow_uncertain=True,  # always True — template-approved partial bundles
+            allow_uncertain=True,
         )
-        scan_rows.append(_enrich_scan_row(bundle_row, space))
+        # Apply completeness gate in the scan too — mark spurious yes-baskets.
+        gate_reason = _completeness_gate(bundle_row, space)
+        enriched = _enrich_scan_row(bundle_row, space)
+        if gate_reason and not enriched.get("rejection_reason"):
+            enriched["rejection_reason"] = gate_reason
+            enriched["best_executable_basket"] = "blocked_incomplete_yes"
+        scan_rows.append(enriched)
+        diagnostics.append(_diagnostic_row(
+            run_id,
+            space,
+            bundle_row,
+            None,
+            accepted=(
+                enriched.get("best_executable_basket") in {"buy_all_yes", "buy_all_no"}
+                and not enriched.get("rejection_reason")
+            ),
+            blocker=str(enriched.get("rejection_reason") or ""),
+            basket=str(enriched.get("best_executable_basket") or ""),
+        ))
 
     metrics = _scan_metrics(run_id, cfg, scan_rows, template_ids)
     _write_json(out_dir / "config.json", cfg.model_dump(mode="json"))
     _write_json(out_dir / "metrics.json", metrics)
     _write_csv(out_dir / "bundle_scan.csv", scan_rows)
+    _write_csv(out_dir / "bundle_diagnostics.csv", diagnostics)
     _write_markdown(out_dir / "bundle_scan.md", scan_rows, run_id)
     return {"run_id": run_id, "output_dir": out_dir, "metrics": metrics, "scan_rows": scan_rows}
 
@@ -136,12 +156,19 @@ def run_template_bundle_backtest(
             min_net_edge=cfg.min_net_edge, fee_bps=cfg.fee_bps,
             slippage_bps=cfg.slippage_bps, allow_uncertain=True,
         )
-        latest_scan_rows.append(_enrich_scan_row(row, space))
+        enriched = _enrich_scan_row(row, space)
+        gate_reason = _completeness_gate(row, space)
+        if gate_reason and not enriched.get("rejection_reason"):
+            enriched["rejection_reason"] = gate_reason
+            enriched["best_executable_basket"] = "blocked_incomplete_yes"
+        latest_scan_rows.append(enriched)
 
     # Historical replay
     opportunities: list[dict[str, Any]] = []
     trades: list[dict[str, Any]] = []
-    open_spaces: set[str] = set()
+    diagnostics: list[dict[str, Any]] = []
+    last_bundle_ts: dict[str, int] = {}
+    previous_tick_had_valid_opportunity: dict[str, bool] = {}
     cash = cfg.starting_cash_usdc
     total_fees = Decimal("0")
     total_slippage = Decimal("0")
@@ -154,8 +181,11 @@ def run_template_bundle_backtest(
         "gross_violations": 0,
         "net_violations": 0,
         "accepted": 0,
+        "rejected_incomplete_yes": 0,
         "rejected_costs": 0,
         "rejected_already_open": 0,
+        "rejected_cooldown": 0,
+        "rejected_same_violation_window": 0,
     }
 
     for space in spaces:
@@ -178,30 +208,91 @@ def run_template_bundle_backtest(
                 funnel["gross_violations"] += 1
             if row.rejection_reason:
                 opportunities.append(_opp_row(run_id, space, row, ts_ms, accepted=False))
+                diagnostics.append(_diagnostic_row(
+                    run_id, space, row, ts_ms,
+                    accepted=False,
+                    blocker=row.rejection_reason,
+                ))
+                previous_tick_had_valid_opportunity[space.outcome_space_id] = False
+                continue
+
+            # Completeness gate: buy_all_yes on incomplete bundles is spurious.
+            gate_reason = _completeness_gate(row, space)
+            if gate_reason:
+                funnel["rejected_incomplete_yes"] += 1
+                opp = _opp_row(run_id, space, row, ts_ms, accepted=False)
+                opp["rejection_reason"] = gate_reason
+                opportunities.append(opp)
+                diagnostics.append(_diagnostic_row(
+                    run_id, space, row, ts_ms,
+                    accepted=False,
+                    blocker=gate_reason,
+                    basket="blocked_incomplete_yes",
+                ))
+                previous_tick_had_valid_opportunity[space.outcome_space_id] = False
                 continue
 
             funnel["net_violations"] += 1
-            if space.outcome_space_id in open_spaces:
-                funnel["rejected_already_open"] += 1
+            enter, blocked_reason, entry_kind = _bundle_entry_decision(
+                space.outcome_space_id,
+                ts_ms,
+                cfg,
+                last_bundle_ts,
+                previous_tick_had_valid_opportunity,
+            )
+            if not enter:
+                if blocked_reason == "cooldown":
+                    funnel["rejected_cooldown"] += 1
+                elif blocked_reason == "same_violation_window":
+                    funnel["rejected_same_violation_window"] += 1
+                else:
+                    funnel["rejected_already_open"] += 1
                 opp = _opp_row(run_id, space, row, ts_ms, accepted=False)
-                opp["rejection_reason"] = "already_open"
+                opp["rejection_reason"] = blocked_reason
                 opportunities.append(opp)
+                diagnostics.append(_diagnostic_row(
+                    run_id, space, row, ts_ms,
+                    accepted=False,
+                    blocker=blocked_reason,
+                ))
+                previous_tick_had_valid_opportunity[space.outcome_space_id] = True
                 continue
             if cash < cfg.max_stake_per_bundle_usdc:
                 funnel["rejected_costs"] += 1
                 opp = _opp_row(run_id, space, row, ts_ms, accepted=False)
                 opp["rejection_reason"] = "cash_limit"
                 opportunities.append(opp)
+                diagnostics.append(_diagnostic_row(
+                    run_id, space, row, ts_ms,
+                    accepted=False,
+                    blocker="cash_limit",
+                ))
+                previous_tick_had_valid_opportunity[space.outcome_space_id] = True
                 continue
 
             funnel["accepted"] += 1
-            opportunities.append(_opp_row(run_id, space, row, ts_ms, accepted=True))
-            leg_trades, fees, slippage = _execute(run_id, space, row, ts_ms, yes_prices, no_prices, cfg)
+            bundle_event_id = f"{run_id}:{space.outcome_space_id}:{ts_ms}:{bundle_count + 1}"
+            opp = _opp_row(run_id, space, row, ts_ms, accepted=True)
+            opp["bundle_event_id"] = bundle_event_id
+            opp["entry_kind"] = entry_kind
+            opportunities.append(opp)
+            diagnostics.append(_diagnostic_row(
+                run_id, space, row, ts_ms,
+                accepted=True,
+                blocker="",
+                bundle_event_id=bundle_event_id,
+            ))
+            leg_trades, fees, slippage = _execute(
+                run_id, space, row, ts_ms, yes_prices, no_prices, cfg,
+                bundle_event_id=bundle_event_id,
+                entry_kind=entry_kind,
+            )
             trades.extend(leg_trades)
             total_fees += fees
             total_slippage += slippage
             cash -= cfg.max_stake_per_bundle_usdc + fees
-            open_spaces.add(space.outcome_space_id)
+            last_bundle_ts[space.outcome_space_id] = ts_ms
+            previous_tick_had_valid_opportunity[space.outcome_space_id] = True
             bundle_count += 1
 
     funnel["bundles_executed"] = bundle_count
@@ -215,6 +306,7 @@ def run_template_bundle_backtest(
     _write_json(out_dir / "funnel.json", funnel)
     _write_csv(out_dir / "bundle_scan.csv", latest_scan_rows)
     _write_csv(out_dir / "opportunities.csv", opportunities)
+    _write_csv(out_dir / "bundle_diagnostics.csv", diagnostics)
     _write_csv(out_dir / "trades.csv", trades)
     _write_markdown(out_dir / "bundle_report.md", latest_scan_rows, run_id)
     return {
@@ -227,6 +319,76 @@ def run_template_bundle_backtest(
 
 
 # ── helpers ───────────────────────────────────────────────────────────────────
+
+
+def _completeness_gate(row: "CategoryBundleScanRow", space: CategoryOutcomeSpace) -> str | None:
+    """Return a rejection reason string if the completeness gate blocks this basket, else None.
+
+    buy_all_yes (underround) REQUIRES a complete/exhaustive outcome space.
+      - Missing competitors mean we might not hold the winner → guaranteed loss.
+      - Block any buy_all_yes whose completeness_status != "complete".
+
+    buy_all_no (overround) is VALID on mutually exclusive subsets.
+      - If a winner outside our subset exists, ALL observed NO tokens still pay out.
+      - Missing competitors can only make the overround larger, never smaller.
+      - Allow buy_all_no regardless of completeness.
+    """
+    basket = row.best_executable_basket
+    if basket == "buy_all_yes" and row.completeness_status != "complete":
+        return (
+            f"incomplete_bundle_buy_all_yes_blocked "
+            f"(completeness={row.completeness_status}, "
+            f"observed={row.candidate_count}/{row.known_total_candidates or '?'})"
+        )
+    return None
+
+
+def _bundle_entry_decision(
+    outcome_space_id: str,
+    ts_ms: int,
+    cfg: CategoryBundleBacktestConfig,
+    last_bundle_ts: dict[str, int],
+    previous_tick_had_valid_opportunity: dict[str, bool],
+) -> tuple[bool, str, str]:
+    """Return (enter, blocked_reason, entry_kind) for a bundle opportunity."""
+    last_ts = last_bundle_ts.get(outcome_space_id)
+    if cfg.reentry_policy == "already_open":
+        if last_ts is not None:
+            return False, "already_open", ""
+        return True, "", "first"
+
+    if cfg.reentry_policy == "reenter_after_cooldown":
+        if last_ts is None:
+            return True, "", "first"
+        if ts_ms - last_ts < cfg.cooldown_ms:
+            return False, "cooldown", ""
+        return True, "", "reentry"
+
+    if cfg.reentry_policy == "trade_every_distinct_violation_window":
+        if previous_tick_had_valid_opportunity.get(outcome_space_id, False):
+            return False, "same_violation_window", ""
+        return True, "", "first" if last_ts is None else "reentry"
+
+    if last_ts is not None:
+        return False, "already_open", ""
+    return True, "", "first"
+
+
+def buy_all_no_subset_payout(candidate_count: int, winning_index: int | None) -> int:
+    """Return NO-token payout count for a mutually exclusive observed subset.
+
+    ``winning_index`` is the index of the true winner within the observed subset,
+    or ``None`` when the true winner is outside the observed subset.  The minimum
+    payout is N-1, which is why buy_all_no remains valid even when the observed
+    bundle is incomplete.
+    """
+    if candidate_count <= 0:
+        return 0
+    if winning_index is None:
+        return candidate_count
+    if 0 <= winning_index < candidate_count:
+        return candidate_count - 1
+    raise ValueError("winning_index must be None or within the observed subset")
 
 
 def _load_spaces(data_root: Path) -> tuple[list[CategoryOutcomeSpace], set[str]]:
@@ -259,37 +421,56 @@ def _aligned_ticks(
     cfg: CategoryBundleBacktestConfig,
 ) -> list[tuple[int, dict[str, CategoryPricePoint], dict[str, CategoryPricePoint]]] | None:
     from bisect import bisect_right
+
+    def _load(token_id: str) -> list:
+        return sorted(
+            (
+                r for r in price_repo.iter_for_token(token_id)
+                if (cfg.start_ts_ms is None or r.ts_ms >= cfg.start_ts_ms)
+                and (cfg.end_ts_ms is None or r.ts_ms <= cfg.end_ts_ms)
+            ),
+            key=lambda r: r.ts_ms,
+        )
+
     yes_series: dict[str, list] = {}
+    no_series: dict[str, list] = {}
     for candidate in space.candidates:
-        rows = [
-            r for r in price_repo.iter_for_token(candidate.yes_token_id)
-            if (cfg.start_ts_ms is None or r.ts_ms >= cfg.start_ts_ms)
-            and (cfg.end_ts_ms is None or r.ts_ms <= cfg.end_ts_ms)
-        ]
+        rows = _load(candidate.yes_token_id)
         if not rows:
-            return None
-        yes_series[candidate.yes_token_id] = sorted(rows, key=lambda r: r.ts_ms)
+            return None  # YES prices required for every candidate
+        yes_series[candidate.yes_token_id] = rows
+        no_rows = _load(candidate.no_token_id)
+        if no_rows:
+            no_series[candidate.no_token_id] = no_rows
 
     first_ts = max(rows[0].ts_ms for rows in yes_series.values())
     last_ts = min(rows[-1].ts_ms for rows in yes_series.values())
     if first_ts > last_ts:
         return []
 
+    def _at_or_before(rows: list, ts: int) -> "PriceHistoryRow | None":  # type: ignore[name-defined]
+        timestamps = [r.ts_ms for r in rows]
+        idx = bisect_right(timestamps, ts) - 1
+        return rows[idx] if idx >= 0 else None
+
     aligned: list[tuple] = []
     ts_ms = first_ts
     while ts_ms <= last_ts:
         yes_pts: dict[str, CategoryPricePoint] = {}
+        # All YES prices must be fresh — bail on the entire tick if any is stale.
         for tok, rows in yes_series.items():
-            timestamps = [r.ts_ms for r in rows]
-            idx = bisect_right(timestamps, ts_ms) - 1
-            if idx < 0:
-                break
-            row = rows[idx]
-            if ts_ms - row.ts_ms > cfg.quote_staleness_limit_ms:
+            row = _at_or_before(rows, ts_ms)
+            if row is None or ts_ms - row.ts_ms > cfg.quote_staleness_limit_ms:
                 break
             yes_pts[tok] = CategoryPricePoint(tok, row.price, row.ts_ms)
         else:
-            aligned.append((ts_ms, yes_pts, {}))  # no_prices not needed for YES bundle scan
+            # NO prices are optional — we load what's available (missing = buy_all_no won't fire).
+            no_pts: dict[str, CategoryPricePoint] = {}
+            for tok, rows in no_series.items():
+                row = _at_or_before(rows, ts_ms)
+                if row is not None and ts_ms - row.ts_ms <= cfg.quote_staleness_limit_ms:
+                    no_pts[tok] = CategoryPricePoint(tok, row.price, row.ts_ms)
+            aligned.append((ts_ms, yes_pts, no_pts))
         ts_ms += cfg.signal_interval_ms
     return aligned
 
@@ -302,6 +483,9 @@ def _execute(
     yes_prices: dict[str, CategoryPricePoint],
     no_prices: dict[str, CategoryPricePoint],
     cfg: CategoryBundleBacktestConfig,
+    *,
+    bundle_event_id: str,
+    entry_kind: str,
 ) -> tuple[list[dict[str, Any]], Decimal, Decimal]:
     trades: list[dict[str, Any]] = []
     total_fees = Decimal("0")
@@ -325,7 +509,8 @@ def _execute(
         total_fees += fee
         total_slippage += slippage
         trades.append({
-            "trade_id": f"{run_id}:{space.outcome_space_id}:{ts_ms}:{idx}",
+            "trade_id": f"{bundle_event_id}:{idx}",
+            "bundle_event_id": bundle_event_id,
             "run_id": run_id,
             "outcome_space_id": space.outcome_space_id,
             "candidate": candidate.candidate,
@@ -339,6 +524,9 @@ def _execute(
             "notional_usdc": str(stake_per_leg),
             "fees_usdc": str(fee),
             "slippage_usdc": str(slippage),
+            "entry_kind": entry_kind,
+            "reentry_policy": cfg.reentry_policy,
+            "cooldown_ms": cfg.cooldown_ms,
             "label": _LABEL,
         })
     return trades, total_fees, total_slippage
@@ -385,13 +573,57 @@ def _opp_row(
     return d
 
 
+def _diagnostic_row(
+    run_id: str,
+    space: CategoryOutcomeSpace,
+    row: CategoryBundleScanRow,
+    ts_ms: int | None,
+    *,
+    accepted: bool,
+    blocker: str,
+    basket: str | None = None,
+    bundle_event_id: str = "",
+) -> dict[str, Any]:
+    gross_yes = (
+        Decimal("1") - row.sum_yes_prices
+        if row.sum_yes_prices is not None
+        else None
+    )
+    gross_no = (
+        Decimal(row.candidate_count - 1) - row.sum_no_prices
+        if row.sum_no_prices is not None
+        else None
+    )
+    return {
+        "run_id": run_id,
+        "bundle_event_id": bundle_event_id,
+        "outcome_space_id": space.outcome_space_id,
+        "signal_ts_ms": ts_ms if ts_ms is not None else "",
+        "observed_count": len(space.candidates),
+        "known_total": space.known_total_candidates if space.known_total_candidates is not None else "",
+        "configured_expected_total": space.configured_expected_total if space.configured_expected_total is not None else "",
+        "completeness_status": row.completeness_status,
+        "completeness_reason": space.completeness_reason,
+        "basket": basket or row.best_executable_basket,
+        "gross_yes_underround": str(gross_yes) if gross_yes is not None else "",
+        "gross_no_overround": str(gross_no) if gross_no is not None else "",
+        "net_after_costs": str(row.net_edge_after_costs),
+        "accepted": accepted,
+        "blocker": blocker,
+        "label": _LABEL,
+    }
+
+
 def _scan_metrics(
     run_id: str,
     cfg: CategoryBundleBacktestConfig,
     scan_rows: list[dict[str, Any]],
     template_ids: set[str],
 ) -> dict[str, Any]:
-    opportunities = sum(1 for r in scan_rows if r.get("best_executable_basket") != "none")
+    overround = sum(1 for r in scan_rows if r.get("best_executable_basket") == "buy_all_no")
+    underround_ok = sum(1 for r in scan_rows if r.get("best_executable_basket") == "buy_all_yes")
+    underround_blocked = sum(1 for r in scan_rows if r.get("best_executable_basket") == "blocked_incomplete_yes")
+    opportunities = overround + underround_ok
     return {
         "run_id": run_id,
         "strategy": "template_bundle_scan",
@@ -399,6 +631,9 @@ def _scan_metrics(
         "note": _NOTE,
         "outcome_spaces_scanned": len(scan_rows),
         "template_relationships_loaded": len(template_ids),
+        "overround_opportunities": overround,
+        "underround_opportunities_complete": underround_ok,
+        "underround_blocked_incomplete": underround_blocked,
         "opportunities_found": opportunities,
         "trades_executed": 0,
         "starting_cash_usdc": str(cfg.starting_cash_usdc),
@@ -447,6 +682,8 @@ def _backtest_metrics(
         "gross_violations": funnel.get("gross_violations", 0),
         "net_violations": funnel.get("net_violations", 0),
         "bundles_executed": bundle_count,
+        "reentry_policy": cfg.reentry_policy,
+        "cooldown_ms": cfg.cooldown_ms,
         "starting_cash_usdc": str(cfg.starting_cash_usdc),
         "ending_cash_usdc": str(ending_cash),
         "ending_equity_usdc": str(ending_equity),
@@ -461,14 +698,69 @@ def _backtest_metrics(
 
 def _write_markdown(path: Path, scan_rows: list[dict[str, Any]], run_id: str) -> None:
     ts = _now_iso()
+
+    overround = [r for r in scan_rows if r.get("best_executable_basket") == "buy_all_no"]
+    underround_ok = [r for r in scan_rows if r.get("best_executable_basket") == "buy_all_yes"]
+    underround_blocked = [r for r in scan_rows if r.get("best_executable_basket") == "blocked_incomplete_yes"]
+    no_opportunity = [r for r in scan_rows
+                      if r.get("best_executable_basket") not in ("buy_all_yes", "buy_all_no", "blocked_incomplete_yes")]
+
     lines = [
-        f"# Template Bundle Scan — {ts}",
+        f"# Template Bundle Report — {ts}",
         "",
         f"> {_LABEL}",
         f"> {_NOTE}",
         f"> run_id: `{run_id}`",
         "",
-        "## Bundle summary",
+        "## Summary",
+        "",
+        "| Category | Count | Logic |",
+        "| --- | --- | --- |",
+        f"| buy_all_no (overround — valid on subset) | {len(overround)} | sum_yes > 1 + costs; valid even when bundle is incomplete |",
+        f"| buy_all_yes (underround — complete bundle required) | {len(underround_ok)} | sum_yes < 1 - costs; ONLY valid if all competitors present |",
+        f"| buy_all_yes blocked (incomplete bundle) | {len(underround_blocked)} | sum_yes < 1 but bundle not exhaustive — spurious signal |",
+        f"| no opportunity | {len(no_opportunity)} | edge below threshold after costs |",
+        "",
+    ]
+
+    if overround:
+        lines += [
+            "## Overround opportunities (buy_all_no) — valid on incomplete bundles",
+            "",
+            "| Outcome space | Markets | Sum YES | Gross edge | Net edge |",
+            "| --- | --- | --- | --- | --- |",
+        ]
+        for r in overround:
+            lines.append(
+                f"| `{r['outcome_space_id']}` "
+                f"| {r.get('candidate_count_observed', '?')} "
+                f"| {r.get('sum_yes_prices', '—')} "
+                f"| {r.get('gross_edge', '—')} "
+                f"| {r.get('net_edge_after_costs', '—')} |"
+            )
+        lines.append("")
+
+    if underround_blocked:
+        lines += [
+            "## Underround signals BLOCKED — incomplete bundles",
+            "",
+            "These appear to show underround but are spurious: the bundle does not include",
+            "all competitors, so the `buy_all_yes` strategy cannot guarantee receiving 1.0 USDC.",
+            "",
+            "| Outcome space | Markets | Sum YES | Rejection |",
+            "| --- | --- | --- | --- |",
+        ]
+        for r in underround_blocked:
+            lines.append(
+                f"| `{r['outcome_space_id']}` "
+                f"| {r.get('candidate_count_observed', '?')} "
+                f"| {r.get('sum_yes_prices', '—')} "
+                f"| {(r.get('rejection_reason') or '')[:80]} |"
+            )
+        lines.append("")
+
+    lines += [
+        "## All bundles",
         "",
         "| outcome_space_id | markets | sum_yes | basket | gross_edge | rejection |",
         "| --- | --- | --- | --- | --- | --- |",
@@ -480,25 +772,8 @@ def _write_markdown(path: Path, scan_rows: list[dict[str, Any]], run_id: str) ->
             f"| {r.get('sum_yes_prices', '—')} "
             f"| {r.get('best_executable_basket', '—')} "
             f"| {r.get('gross_edge', '—')} "
-            f"| {r.get('rejection_reason') or 'none'} |"
+            f"| {(r.get('rejection_reason') or 'none')[:60]} |"
         )
-    lines += [
-        "",
-        "## Market detail per bundle",
-        "",
-    ]
-    for r in scan_rows:
-        lines += [
-            f"### `{r['outcome_space_id']}`",
-            f"- **Markets ({r.get('candidate_count_observed', '?')})**: {r.get('candidate_names', '—')[:200]}",
-            f"- **Sum YES prices**: {r.get('sum_yes_prices', '—')}",
-            f"- **Best basket**: {r.get('best_executable_basket', '—')}",
-            f"- **Gross edge**: {r.get('gross_edge', '—')}",
-            f"- **Net edge**: {r.get('net_edge_after_costs', '—')}",
-            f"- **Rejection**: {r.get('rejection_reason') or 'none'}",
-            f"- **Source relationships**: {r.get('source_relationship_count', '?')}",
-            "",
-        ]
     path.write_text("\n".join(lines), encoding="utf-8")
 
 

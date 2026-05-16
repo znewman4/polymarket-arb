@@ -81,6 +81,12 @@ class CategoryBundleBacktestConfig(BaseModel):
 
     max_stake_per_bundle_usdc: Decimal = Decimal("1000")
     allow_uncertain_bundles: bool = False
+    reentry_policy: Literal[
+        "already_open",
+        "reenter_after_cooldown",
+        "trade_every_distinct_violation_window",
+    ] = "already_open"
+    cooldown_ms: int = Field(default=0, ge=0)
 
     fee_bps: Decimal = Decimal("0")
     slippage_bps: Decimal = Decimal("50")

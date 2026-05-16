@@ -39,6 +39,10 @@ class AlignedPricePoint:
     price_b: Decimal
     price_a_ts_ms: int   # actual timestamp of the price_a snapshot
     price_b_ts_ms: int
+    # Phase B alignment metadata — default values preserve backward compatibility
+    staleness_a_ms: int = 0   # tick - price_a_ts_ms
+    staleness_b_ms: int = 0   # tick - price_b_ts_ms
+    alignment_quality: str = "fresh"  # "exact" | "fresh" | "stale"
 
 
 def _candidate_id(relationship_id: str, signal_ts_ms: int, token_id_a: str, token_id_b: str) -> str:

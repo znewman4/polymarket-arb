@@ -60,13 +60,17 @@ def scan_category_bundle(
     completeness_status: Literal["complete", "probably_incomplete", "unknown"]
     if is_complete:
         completeness_status = "complete"
+    elif known_total and candidate_count > known_total:
+        completeness_status = "unknown"
     elif known_total:
         completeness_status = "probably_incomplete"
     else:
         completeness_status = "unknown"
     exhaustiveness_confidence = 1.0 if is_complete else (0.5 if known_total else 0.0)
     missing_warning = ""
-    if known_total and candidate_count < known_total:
+    if known_total and candidate_count > known_total:
+        missing_warning = f"observed {candidate_count}>{known_total} known candidates; registry total is stale or wrong"
+    elif known_total and candidate_count < known_total:
         missing_warning = f"observed {candidate_count}/{known_total} known candidates"
     elif known_total is None:
         missing_warning = "known_total_candidates is not configured"
@@ -145,7 +149,7 @@ def _registry_complete(space: CategoryOutcomeSpace, candidate_count: int) -> boo
         return False
     policy = space.completeness_policy
     if policy == "complete_if_all_expected_present":
-        return bool(space.known_total_candidates and candidate_count >= space.known_total_candidates)
+        return bool(space.known_total_candidates and candidate_count == space.known_total_candidates)
     if policy == "complete_if_required_options_present":
         return "satisfied" in space.completeness_reason
     return False

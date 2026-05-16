@@ -34,6 +34,44 @@ Phase 4.5 data inspection, audit, review exports, REST recording
 Phase 5   offline backtest/replay foundation
 ```
 
+## Current Research Status
+
+This project is research-only. The current context-aware audit state is:
+
+- Manual context rules: 7 approved rules, with invalidating rules still
+  analysis-only.
+- Relationship coverage: all 5,214 relationship pairs have both price
+  histories; no stale coverage rows remain in the latest audit.
+- NBA Finals -> Conference rows are normalized as sports-progression nesting:
+  `P(championship) <= P(conference)`.
+- Latest reviewed low-confidence context-aware run:
+  `reviewed_context_low_conf`.
+- Latest reviewed result: 2 simulated non-diagnostic trade pairs, +$1,375.26
+  simulated PnL, $0.00 drawdown, $5.00 slippage.
+- Latest null baseline: 0 trades, $0.00 PnL.
+- Latest slim sensitivity: 24 cells, 7 positive cells.
+- Final credibility label: `data_insufficient`, because fewer than 30 reviewed
+  non-diagnostic trade pairs executed.
+- Diagnostic comparison remains `diagnostic_only_not_credible` and must not be
+  used as credible positive evidence.
+
+Latest local reports:
+
+```text
+reports/master_audit/latest/index.html
+reports/master_audit/latest/master_audit.csv
+reports/master_audit/latest/all_source_rows.csv
+reports/master_audit/latest/nba_finals_conference_audit.csv
+reports/context_strategy_backtests/reviewed_context_low_conf/index.html
+```
+
+Next required research work is to increase reviewed deterministic sample size
+without promoting non-deterministic pairs. Good candidates are more sports
+progression, EPL exact-finish -> top-N, complete balance-of-power spaces, and
+threshold nesting. Pairs such as Champions League vs domestic league winners or
+endorsement markets should stay research-only unless their market terms prove a
+deterministic relationship.
+
 ## CLI
 
 Canonical commands use subgroups; flat aliases are also registered for the

@@ -1,0 +1,61 @@
+bucket,source_file,relationship_id,bundle_event_id,relationship_type,relationship_subtype,outcome_space_id,strategy_lane,question_a,question_b,flags,rejection_reason,suggested_action
+rejected,blocked_opportunities.csv,,,,,2026_colombian_presidential_election_first_round,,,,,net_edge_below_threshold,
+rejected,blocked_opportunities.csv,,,,,2026_nhl_stanley_cup,,,,,"incomplete_bundle_buy_all_yes_blocked (completeness=unknown, observed=8/?)",
+rejected,blocked_opportunities.csv,,,,,2026_nhl_stanley_cup,,,,,"incomplete_bundle_buy_all_yes_blocked (completeness=unknown, observed=8/?)",
+rejected,blocked_opportunities.csv,,,,,2026_nhl_stanley_cup,,,,,"incomplete_bundle_buy_all_yes_blocked (completeness=unknown, observed=8/?)",
+rejected,blocked_opportunities.csv,,,,,2026_nhl_stanley_cup,,,,,"incomplete_bundle_buy_all_yes_blocked (completeness=unknown, observed=8/?)",
+rejected,blocked_opportunities.csv,,,,,2026_nhl_stanley_cup,,,,,"incomplete_bundle_buy_all_yes_blocked (completeness=unknown, observed=8/?)",
+rejected,blocked_opportunities.csv,,,,,2026_nhl_stanley_cup,,,,,"incomplete_bundle_buy_all_yes_blocked (completeness=unknown, observed=8/?)",
+rejected,blocked_opportunities.csv,,,,,2026_nhl_stanley_cup,,,,,"incomplete_bundle_buy_all_yes_blocked (completeness=unknown, observed=8/?)",
+rejected,blocked_opportunities.csv,,,,,2026_nhl_stanley_cup,,,,,"incomplete_bundle_buy_all_yes_blocked (completeness=unknown, observed=8/?)",
+rejected,blocked_opportunities.csv,,,,,2026_nhl_stanley_cup,,,,,"incomplete_bundle_buy_all_yes_blocked (completeness=unknown, observed=8/?)",
+rejected,blocked_opportunities.csv,,,,,2028_democrats_presidential_nomination,,,,,"incomplete_bundle_buy_all_yes_blocked (completeness=unknown, observed=19/?)",
+rejected,blocked_opportunities.csv,,,,,nba_finals,,,,,"incomplete_bundle_buy_all_yes_blocked (completeness=unknown, observed=7/?)",
+rejected,blocked_opportunities.csv,,,,,nba_finals,,,,,"incomplete_bundle_buy_all_yes_blocked (completeness=unknown, observed=7/?)",
+rejected,blocked_opportunities.csv,,,,,nba_finals,,,,,"incomplete_bundle_buy_all_yes_blocked (completeness=unknown, observed=7/?)",
+rejected,blocked_opportunities.csv,,,,,nba_finals,,,,,"incomplete_bundle_buy_all_yes_blocked (completeness=unknown, observed=7/?)",
+rejected,blocked_opportunities.csv,,,,,nba_finals,,,,,"incomplete_bundle_buy_all_yes_blocked (completeness=unknown, observed=7/?)",
+rejected,blocked_opportunities.csv,,,,,premier_league_finish_position,,,,,"incomplete_bundle_buy_all_yes_blocked (completeness=unknown, observed=2/?)",
+rejected,blocked_opportunities.csv,,,,,premier_league_finish_position,,,,,"incomplete_bundle_buy_all_yes_blocked (completeness=unknown, observed=2/?)",
+rejected,blocked_opportunities.csv,,,,,premier_league_finish_position,,,,,"incomplete_bundle_buy_all_yes_blocked (completeness=unknown, observed=2/?)",
+rejected,blocked_opportunities.csv,,,,,premier_league_finish_position,,,,,"incomplete_bundle_buy_all_yes_blocked (completeness=unknown, observed=2/?)",
+traded,accepted_simulated_trades.csv,,phase_g_bundle_20260516:2026_colombian_presidential_election_first_round:1767358826000:43,,,2026_colombian_presidential_election_first_round,,,,,,
+traded,accepted_simulated_trades.csv,,phase_g_bundle_20260516:2026_colombian_presidential_election_first_round:1767369626000:46,,,2026_colombian_presidential_election_first_round,,,,,,
+traded,accepted_simulated_trades.csv,,phase_g_bundle_20260516:2026_colombian_presidential_election_first_round:1767441626000:54,,,2026_colombian_presidential_election_first_round,,,,,,
+traded,accepted_simulated_trades.csv,,phase_g_bundle_20260516:2026_colombian_presidential_election_first_round:1767452426000:57,,,2026_colombian_presidential_election_first_round,,,,,,
+traded,accepted_simulated_trades.csv,,phase_g_bundle_20260516:2026_colombian_presidential_election_first_round:1767884426000:113,,,2026_colombian_presidential_election_first_round,,,,,,
+traded,accepted_simulated_trades.csv,,phase_g_bundle_20260516:2026_colombian_presidential_election_first_round:1768615226000:202,,,2026_colombian_presidential_election_first_round,,,,,,
+traded,accepted_simulated_trades.csv,,phase_g_bundle_20260516:2026_colombian_presidential_election_first_round:1768622426000:204,,,2026_colombian_presidential_election_first_round,,,,,,
+traded,accepted_simulated_trades.csv,,phase_g_bundle_20260516:2026_colombian_presidential_election_first_round:1770260426000:362,,,2026_colombian_presidential_election_first_round,,,,,,
+traded,accepted_simulated_trades.csv,,phase_g_bundle_20260516:2026_colombian_presidential_election_first_round:1770519626000:387,,,2026_colombian_presidential_election_first_round,,,,,,
+traded,accepted_simulated_trades.csv,,phase_g_bundle_20260516:2026_colombian_presidential_election_first_round:1773064826000:502,,,2026_colombian_presidential_election_first_round,,,,,,
+traded,accepted_simulated_trades.csv,,phase_g_bundle_20260516:2026_colombian_presidential_election_first_round:1773806426000:515,,,2026_colombian_presidential_election_first_round,,,,,,
+traded,accepted_simulated_trades.csv,,phase_g_bundle_20260516:2026_colombian_presidential_election_first_round:1774281626000:526,,,2026_colombian_presidential_election_first_round,,,,,,
+traded,accepted_simulated_trades.csv,,phase_g_bundle_20260516:2026_colombian_presidential_election_first_round:1774324826000:531,,,2026_colombian_presidential_election_first_round,,,,,,
+traded,accepted_simulated_trades.csv,,phase_g_bundle_20260516:2026_colombian_presidential_election_first_round:1774486826000:533,,,2026_colombian_presidential_election_first_round,,,,,,
+traded,accepted_simulated_trades.csv,,phase_g_bundle_20260516:2026_colombian_presidential_election_first_round:1776913226000:572,,,2026_colombian_presidential_election_first_round,,,,,,
+traded,accepted_simulated_trades.csv,,phase_g_bundle_20260516:2026_colombian_presidential_election_first_round:1776992426000:575,,,2026_colombian_presidential_election_first_round,,,,,,
+traded,accepted_simulated_trades.csv,,phase_g_bundle_20260516:2026_colombian_presidential_election_first_round:1778691626000:753,,,2026_colombian_presidential_election_first_round,,,,,,
+traded,accepted_simulated_trades.csv,,phase_g_bundle_20260516:2026_nhl_stanley_cup:1752066007000:977,,,2026_nhl_stanley_cup,,,,,,
+traded,accepted_simulated_trades.csv,,phase_g_bundle_20260516:2026_nhl_stanley_cup:1752069607000:978,,,2026_nhl_stanley_cup,,,,,,
+traded,accepted_simulated_trades.csv,,phase_g_bundle_20260516:nba_finals:1751076007000:1043,,,nba_finals,,,,,,
+suspicious,suspicious_matches.csv,,,,,2026_nhl_stanley_cup,,,,incomplete_yes_blocked,,manual review
+suspicious,suspicious_matches.csv,,,,,2026_nhl_stanley_cup,,,,incomplete_yes_blocked,,manual review
+suspicious,suspicious_matches.csv,,,,,2026_nhl_stanley_cup,,,,incomplete_yes_blocked,,manual review
+suspicious,suspicious_matches.csv,,,,,2026_nhl_stanley_cup,,,,incomplete_yes_blocked,,manual review
+suspicious,suspicious_matches.csv,,,,,2026_nhl_stanley_cup,,,,incomplete_yes_blocked,,manual review
+suspicious,suspicious_matches.csv,,,,,2026_nhl_stanley_cup,,,,incomplete_yes_blocked,,manual review
+suspicious,suspicious_matches.csv,,,,,2026_nhl_stanley_cup,,,,incomplete_yes_blocked,,manual review
+suspicious,suspicious_matches.csv,,,,,2028_democrats_presidential_nomination,,,,incomplete_yes_blocked,,manual review
+suspicious,suspicious_matches.csv,,,,,nba_finals,,,,incomplete_yes_blocked,,manual review
+suspicious,suspicious_matches.csv,,,,,nba_finals,,,,incomplete_yes_blocked,,manual review
+suspicious,suspicious_matches.csv,,,,,nba_finals,,,,incomplete_yes_blocked,,manual review
+suspicious,suspicious_matches.csv,,,,,nba_finals,,,,incomplete_yes_blocked,,manual review
+suspicious,suspicious_matches.csv,,,,,premier_league_finish_position,,,,incomplete_yes_blocked,,manual review
+suspicious,suspicious_matches.csv,,,,,premier_league_finish_position,,,,incomplete_yes_blocked,,manual review
+suspicious,suspicious_matches.csv,,,,,premier_league_finish_position,,,,incomplete_yes_blocked,,manual review
+suspicious,suspicious_matches.csv,,,,,premier_league_finish_position,,,,incomplete_yes_blocked,,manual review
+suspicious,suspicious_matches.csv,,,,,premier_league_finish_position,,,,incomplete_yes_blocked,,manual review
+suspicious,suspicious_matches.csv,,,,,premier_league_finish_position,,,,incomplete_yes_blocked,,manual review
+suspicious,suspicious_matches.csv,,,,,premier_league_finish_position,,,,incomplete_yes_blocked,,manual review
+suspicious,suspicious_matches.csv,phase_g_bundle_20260516:2026_nhl_stanley_cup:1750723207000:772,,,,2026_nhl_stanley_cup,,,,subset_no_incomplete_but_valid,,manual review

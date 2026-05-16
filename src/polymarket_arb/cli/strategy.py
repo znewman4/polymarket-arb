@@ -466,6 +466,23 @@ def category_bundle_report(ctx: click.Context, run_id: str, output_path: str | N
               help="Pair viability: min P(A)+P(B) across price history for sum-based types.")
 @click.option("--min-single-prob", type=float, default=0.0, show_default=True,
               help="Pair viability: min P(A) or P(B) across price history for sum-based types.")
+@click.option(
+    "--preset",
+    "preset_name",
+    default=None,
+    type=click.Choice([
+        "strict_research",
+        "exploratory_trade_surface",
+        "gross_violation_scan",
+        "net_after_cost_scan",
+        "replay_many_entries",
+    ]),
+    help=(
+        "Named research preset from configs/research_presets/trade_surface_v1.yaml. "
+        "Overrides threshold/lane/universe flags. "
+        "Exploratory presets label all outputs RESEARCH-ONLY/EXPLORATORY."
+    ),
+)
 @click.option("--run-id", default=None)
 @click.pass_context
 def context_aware_backtest(
@@ -484,12 +501,16 @@ def context_aware_backtest(
     diagnostic_allow_unresolved: bool,
     min_combined_prob: float,
     min_single_prob: float,
+    preset_name: str | None,
     run_id: str | None,
 ) -> None:
     """Run a context-aware simulated backtest for one strategy lane.
 
     When any --diagnostic-* flag is set the run uses DiagnosticBacktestConfig
     and is labelled diagnostic_only_not_credible. Never eligible for credible_positive.
+
+    When --preset is supplied, the preset overrides threshold/lane/universe flags.
+    Exploratory presets label all outputs RESEARCH-ONLY/EXPLORATORY.
     """
     import uuid
     from decimal import Decimal
@@ -497,6 +518,31 @@ def context_aware_backtest(
     settings: Settings = ctx.obj["settings"]
     _run_id = run_id or uuid.uuid4().hex
     is_diagnostic = diagnostic_bypass_review or diagnostic_ignore_coverage or diagnostic_allow_unresolved
+
+    # Apply preset overrides before building config.  Preset values replace any
+    # explicitly-typed flags so the caller only needs --preset for one-line runs.
+    _preset_label = ""
+    if preset_name is not None:
+        from ..research_presets import load_preset
+
+        _preset = load_preset(preset_name)
+        _preset_label = _preset.label
+        lane = _preset.lane
+        relationship_universe = _preset.relationship_universe
+        include_auto_approved = _preset.include_auto_approved
+        min_relationship_confidence = _preset.min_relationship_confidence
+        min_combined_prob = _preset.min_combined_prob
+        min_single_prob = _preset.min_single_prob
+        min_net_edge = _preset.min_net_edge
+        slippage_bps = _preset.slippage_bps
+        if _preset.stake_size_usdc > 0:
+            starting_cash = max(starting_cash, _preset.stake_size_usdc * 100)
+        if _preset.label_all_outputs_exploratory:
+            click.echo(
+                f"  NOTE: preset={preset_name!r} ({_preset.label}) — "
+                "all outputs are EXPLORATORY / RESEARCH-ONLY.",
+                err=True,
+            )
 
     if is_diagnostic:
         import click as _click
@@ -545,6 +591,34 @@ def context_aware_backtest(
             f"  net_pnl={float(m['net_pnl_usdc']):.2f} USDC\n"
             f"  output: {result['output_dir']}"
         )
+    elif preset_name is not None and preset_name != "strict_research":
+        # Non-strict preset → route to the exploratory research replay engine.
+        from ..backtest.research_replay import run_research_backtest
+        from ..research_presets import apply_preset, load_preset
+        from ..strategies.models import ContextAwareBacktestConfig
+
+        _preset_obj = load_preset(preset_name)
+        base_cfg = ContextAwareBacktestConfig(
+            run_id=_run_id,
+            context_time_mode=cast(Literal["ex_post_research", "historical_replay_safe"], context_time_mode),
+            starting_cash_usdc=Decimal(str(starting_cash)),
+            fee_bps=Decimal(str(fee_bps)),
+            start_ts_ms=None,
+            end_ts_ms=None,
+        )
+        research_cfg = apply_preset(_preset_obj, base_cfg)
+        research_cfg = research_cfg.model_copy(update={"run_id": _run_id})
+        result = run_research_backtest(settings.data_root, research_cfg, _preset_obj)
+        m = result["metrics"]
+        click.echo(
+            f"✓ research backtest run_id={result['run_id']} preset={preset_name!r}\n"
+            f"  entry_policy={m.get('entry_policy', '?')}\n"
+            f"  trades_executed={m['trades_executed']}\n"
+            f"  distinct_relationships_traded={m.get('distinct_relationships_traded', '?')}\n"
+            f"  net_pnl={float(m['net_pnl_usdc']):.2f} USDC\n"
+            f"  credibility={m['credibility_label']}\n"
+            f"  output: {result['output_dir']}"
+        )
     else:
         from ..backtest.context_aware_replay import run_context_aware_backtest
         from ..strategies.models import ContextAwareBacktestConfig
@@ -577,8 +651,10 @@ def context_aware_backtest(
         )
         result = run_context_aware_backtest(settings.data_root, context_cfg)
         m = result["metrics"]
-        if include_auto_approved:
+        if include_auto_approved and not preset_name:
             click.echo("  NOTE: --include-auto-approved active — results are EXPLORATORY ONLY.")
+        if _preset_label:
+            click.echo(f"  preset={preset_name!r} label={_preset_label}")
         click.echo(
             f"✓ context-aware backtest run_id={result['run_id']} lane={lane}\n"
             f"  trades_executed={m['trades_executed']}\n"
@@ -760,6 +836,26 @@ def template_bundle_scan(
 @click.option("--slippage-bps", type=int, default=50, show_default=True)
 @click.option("--min-net-edge", type=float, default=0.01, show_default=True)
 @click.option("--max-stake-per-bundle", type=float, default=1000.0, show_default=True)
+@click.option(
+    "--reentry-policy",
+    type=click.Choice(["already_open", "reenter_after_cooldown", "trade_every_distinct_violation_window"]),
+    default="already_open",
+    show_default=True,
+)
+@click.option("--cooldown-minutes", type=int, default=0, show_default=True)
+@click.option(
+    "--preset",
+    "preset_name",
+    default=None,
+    type=click.Choice([
+        "strict_research",
+        "exploratory_trade_surface",
+        "gross_violation_scan",
+        "net_after_cost_scan",
+        "replay_many_entries",
+    ]),
+    help="Named research preset. Overrides bundle re-entry/cooldown/cost/edge/stake settings.",
+)
 @click.option("--run-id", default=None)
 @click.pass_context
 def template_bundle_backtest(
@@ -769,6 +865,9 @@ def template_bundle_backtest(
     slippage_bps: int,
     min_net_edge: float,
     max_stake_per_bundle: float,
+    reentry_policy: str,
+    cooldown_minutes: int,
+    preset_name: str | None,
     run_id: str | None,
 ) -> None:
     """Replay template-bundle opportunities over historical price data.
@@ -782,6 +881,17 @@ def template_bundle_backtest(
     from ..backtest.template_bundle_replay import run_template_bundle_backtest
     from ..strategies.models import CategoryBundleBacktestConfig
 
+    if preset_name:
+        from ..research_presets import load_preset
+
+        preset = load_preset(preset_name)
+        slippage_bps = preset.slippage_bps
+        min_net_edge = preset.min_net_edge
+        reentry_policy = _bundle_reentry_policy(preset.reentry_policy)
+        cooldown_minutes = preset.cooldown_minutes
+        if preset.stake_size_usdc > 0:
+            max_stake_per_bundle = preset.stake_size_usdc
+
     settings: Settings = ctx.obj["settings"]
     cfg = CategoryBundleBacktestConfig(
         run_id=run_id or uuid.uuid4().hex,
@@ -791,6 +901,8 @@ def template_bundle_backtest(
         slippage_bps=Decimal(str(slippage_bps)),
         min_net_edge=Decimal(str(min_net_edge)),
         max_stake_per_bundle_usdc=Decimal(str(max_stake_per_bundle)),
+        reentry_policy=reentry_policy,  # type: ignore[arg-type]
+        cooldown_ms=cooldown_minutes * 60 * 1000,
     )
     result = run_template_bundle_backtest(settings.data_root, cfg)
     m = result["metrics"]
@@ -803,7 +915,14 @@ def template_bundle_backtest(
         f"  gross_violations={m['gross_violations']}\n"
         f"  net_violations={m['net_violations']}\n"
         f"  bundles_executed={m['bundles_executed']}\n"
+        f"  reentry_policy={cfg.reentry_policy} cooldown_ms={cfg.cooldown_ms}\n"
         f"  net_pnl={float(m['net_pnl_usdc']):.2f} USDC\n"
         f"  credibility={m['credibility_label']}\n"
         f"  output: {result['output_dir']}"
     )
+
+
+def _bundle_reentry_policy(preset_policy: str) -> str:
+    if preset_policy in {"reenter_after_cooldown", "trade_every_distinct_violation_window"}:
+        return preset_policy
+    return "already_open"

@@ -80,6 +80,16 @@ class ParquetMarketsRepository:
         ")"
     )
 
+    def iter_all_markets(self) -> "Iterator[MarketRow]":
+        """Yield all latest-version markets regardless of active/closed status."""
+        rows = self._query(
+            self._LATEST_VIEW_SQL +
+            " SELECT * EXCLUDE rn FROM latest WHERE rn = 1",
+            [],
+        )
+        for r in rows:
+            yield self._row_from_dict(r)
+
     def get_market(self, market_id: str) -> MarketRow | None:
         rows = self._query(
             self._LATEST_VIEW_SQL +

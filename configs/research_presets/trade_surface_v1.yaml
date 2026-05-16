@@ -1,0 +1,193 @@
+schema_version: 1
+description: >
+  Named research presets for the trade-surface expansion layer.
+  All outputs are labelled RESEARCH-ONLY. None of these presets introduce
+  live trading, wallets, or order placement.
+
+  Preset summary:
+    strict_research          — current-style conservative mode (credibility baseline)
+    exploratory_trade_surface — lower thresholds, re-entry, more fills for analysis
+    gross_violation_scan     — records all gross violations before costs; no execution
+    net_after_cost_scan      — records violations that survive costs; limited execution
+    replay_many_entries      — allows repeated entries after cooldown for sample-size build
+
+  Logical guards (same-team, same-season, same-competition, same-metric, same-unit,
+  same-event, completeness for buy_all_yes) are NEVER relaxed by any preset.
+  Only economic and replay gates differ.
+
+presets:
+
+  strict_research:
+    label: STRICT_RESEARCH
+    # Lane + universe: reviewed/strict only
+    lane: all_context_research
+    relationship_universe: reviewed_lanes
+    include_auto_approved: false
+    # Confidence + probability filters
+    min_relationship_confidence: 0.35
+    min_combined_prob: 0.40
+    min_single_prob: 0.0
+    # Edge filters
+    min_gross_edge: 0.02
+    min_net_edge: 0.01
+    # Costs
+    slippage_bps: 50
+    # Alignment (Phase B: enforced; Phase A: informational)
+    alignment_mode: forward_fill_max_age
+    max_staleness_minutes: 360  # 6h — current default
+    # Replay policy (Phase B: enforced; Phase A: informational)
+    reentry_policy: one_trade_per_relationship
+    cooldown_minutes: 0
+    max_trades_per_relationship: 1
+    entry_policy: first_violation_only
+    exit_policy: hold_to_resolution
+    sizing_policy: flat_small
+    # Sizing
+    stake_size_usdc: 250
+    # Expansion features (Phase C+: enforced; Phase A: informational)
+    include_transitive_closure: false
+    include_exploratory_relationships: false
+    # Output labelling
+    label_all_outputs_exploratory: false
+    record_before_costs: false
+    execute_trades: true
+
+  exploratory_trade_surface:
+    label: EXPLORATORY
+    # Lane + universe: all lanes including auto-approved templates
+    lane: all_context_research
+    relationship_universe: all_with_context_decisions
+    include_auto_approved: true
+    # Confidence + probability filters (much lower for exploration)
+    min_relationship_confidence: 0.20
+    min_combined_prob: 0.02
+    min_single_prob: 0.005
+    # Edge filters (disabled — record all gross violations)
+    min_gross_edge: 0.0
+    min_net_edge: 0.0
+    # Costs
+    slippage_bps: 50
+    # Alignment (Phase B) — 24h is 4× more permissive than strict
+    alignment_mode: forward_fill_max_age
+    max_staleness_minutes: 1440  # 24h — more coverage from sparse markets
+    # Replay policy (Phase B)
+    reentry_policy: reenter_after_cooldown
+    cooldown_minutes: 60
+    max_trades_per_relationship: 20
+    entry_policy: reenter_after_cooldown
+    exit_policy: close_on_reversal
+    sizing_policy: flat_small
+    # Sizing (small stakes for exploration — sample-size focus, not PnL)
+    stake_size_usdc: 5
+    # Expansion features (Phase C+)
+    include_transitive_closure: true
+    include_exploratory_relationships: true
+    # Output labelling
+    label_all_outputs_exploratory: true
+    record_before_costs: true
+    execute_trades: true
+
+  gross_violation_scan:
+    label: GROSS_VIOLATION_SCAN
+    # Lane + universe: everything
+    lane: all_context_research
+    relationship_universe: all_with_context_decisions
+    include_auto_approved: true
+    # Confidence + probability filters (minimal — catch everything)
+    min_relationship_confidence: 0.15
+    min_combined_prob: 0.0
+    min_single_prob: 0.0
+    # Edge filters (zero — record all violations before costs)
+    min_gross_edge: 0.0
+    min_net_edge: 0.0
+    # Costs (zero for gross scan)
+    slippage_bps: 0
+    # Alignment (Phase B) — 7 days for maximum historical coverage
+    alignment_mode: forward_fill_max_age
+    max_staleness_minutes: 10080  # 7 days
+    # Replay policy (Phase B): record every distinct violation window
+    reentry_policy: trade_every_distinct_violation_window
+    cooldown_minutes: 0
+    max_trades_per_relationship: 9999
+    entry_policy: trade_every_distinct_violation_window
+    exit_policy: diagnostic_no_exit_only_mark_to_market
+    sizing_policy: flat_small
+    # Sizing (zero — no execution, just recording)
+    stake_size_usdc: 0
+    # Expansion features (Phase C+)
+    include_transitive_closure: true
+    include_exploratory_relationships: true
+    # Output labelling
+    label_all_outputs_exploratory: true
+    record_before_costs: true
+    execute_trades: false
+
+  net_after_cost_scan:
+    label: NET_AFTER_COST_SCAN
+    # Lane + universe: all including auto-approved
+    lane: all_context_research
+    relationship_universe: all_with_context_decisions
+    include_auto_approved: true
+    # Confidence + probability filters
+    min_relationship_confidence: 0.15
+    min_combined_prob: 0.0
+    min_single_prob: 0.0
+    # Edge filters (net edge > 0 required; gross can be 0)
+    min_gross_edge: 0.0
+    min_net_edge: 0.005
+    # Costs
+    slippage_bps: 50
+    # Alignment (Phase B) — 7 days for maximum coverage
+    alignment_mode: forward_fill_max_age
+    max_staleness_minutes: 10080  # 7 days
+    # Replay policy (Phase B): every distinct violation
+    reentry_policy: trade_every_distinct_violation_window
+    cooldown_minutes: 0
+    max_trades_per_relationship: 9999
+    entry_policy: trade_every_distinct_violation_window
+    exit_policy: diagnostic_no_exit_only_mark_to_market
+    sizing_policy: flat_small
+    # Sizing (small)
+    stake_size_usdc: 5
+    # Expansion features (Phase C+)
+    include_transitive_closure: true
+    include_exploratory_relationships: true
+    # Output labelling
+    label_all_outputs_exploratory: true
+    record_before_costs: true
+    execute_trades: true
+
+  replay_many_entries:
+    label: REPLAY_MANY_ENTRIES
+    # Lane + universe: all including auto-approved
+    lane: all_context_research
+    relationship_universe: all_with_context_decisions
+    include_auto_approved: true
+    # Confidence + probability filters
+    min_relationship_confidence: 0.20
+    min_combined_prob: 0.02
+    min_single_prob: 0.005
+    # Edge filters
+    min_gross_edge: 0.0
+    min_net_edge: 0.0
+    # Costs
+    slippage_bps: 50
+    # Alignment (Phase B) — 24h for good coverage
+    alignment_mode: forward_fill_max_age
+    max_staleness_minutes: 1440  # 24h
+    # Replay policy (Phase B): re-enter after short cooldown
+    reentry_policy: reenter_after_cooldown
+    cooldown_minutes: 30
+    max_trades_per_relationship: 9999
+    entry_policy: reenter_after_cooldown
+    exit_policy: close_on_reversal
+    sizing_policy: flat_small
+    # Sizing (small — maximise fills for sample-size study)
+    stake_size_usdc: 5
+    # Expansion features (Phase C+)
+    include_transitive_closure: true
+    include_exploratory_relationships: true
+    # Output labelling
+    label_all_outputs_exploratory: true
+    record_before_costs: true
+    execute_trades: true

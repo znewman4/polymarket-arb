@@ -1,0 +1,1 @@
+relationship_id,signal_ts_ms,opportunity_type,relationship_type,relationship_subtype,outcome_space_id,strategy_lane,gross_edge,net_edge,accepted_for_simulation,flags,label
