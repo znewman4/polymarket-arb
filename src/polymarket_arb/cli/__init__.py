@@ -22,6 +22,7 @@ from . import (
     diagnostic,
     gamma,
     healthcheck,
+    ingest,
     inspect,
     nlp,
     pipeline,
@@ -50,6 +51,7 @@ def cli(ctx: click.Context, env: str | None) -> None:
 # Subgroups (canonical surface)
 cli.add_command(healthcheck.healthcheck)
 cli.add_command(gamma.gamma)
+cli.add_command(ingest.ingest_cmd)
 cli.add_command(nlp.nlp)
 cli.add_command(clob.clob)
 cli.add_command(context.context_cmd)

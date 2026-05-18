@@ -297,7 +297,7 @@ def run_template_bundle_backtest(
 
     funnel["bundles_executed"] = bundle_count
     ending_equity = cash + _mtm_all(trades, price_repo)
-    net_pnl = ending_equity - cfg.starting_cash_usdc
+    ending_equity - cfg.starting_cash_usdc
     metrics = _backtest_metrics(run_id, cfg, latest_scan_rows, opportunities, trades,
                                 cash, ending_equity, total_fees, total_slippage, funnel, template_ids)
 
@@ -321,7 +321,7 @@ def run_template_bundle_backtest(
 # ── helpers ───────────────────────────────────────────────────────────────────
 
 
-def _completeness_gate(row: "CategoryBundleScanRow", space: CategoryOutcomeSpace) -> str | None:
+def _completeness_gate(row: CategoryBundleScanRow, space: CategoryOutcomeSpace) -> str | None:
     """Return a rejection reason string if the completeness gate blocks this basket, else None.
 
     buy_all_yes (underround) REQUIRES a complete/exhaustive outcome space.
@@ -448,7 +448,7 @@ def _aligned_ticks(
     if first_ts > last_ts:
         return []
 
-    def _at_or_before(rows: list, ts: int) -> "PriceHistoryRow | None":  # type: ignore[name-defined]
+    def _at_or_before(rows: list, ts: int) -> PriceHistoryRow | None:  # type: ignore[name-defined]  # noqa: F821
         timestamps = [r.ts_ms for r in rows]
         idx = bisect_right(timestamps, ts) - 1
         return rows[idx] if idx >= 0 else None

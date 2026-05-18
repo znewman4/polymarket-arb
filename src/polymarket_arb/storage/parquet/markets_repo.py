@@ -80,7 +80,7 @@ class ParquetMarketsRepository:
         ")"
     )
 
-    def iter_all_markets(self) -> "Iterator[MarketRow]":
+    def iter_all_markets(self) -> Iterator[MarketRow]:
         """Yield all latest-version markets regardless of active/closed status."""
         rows = self._query(
             self._LATEST_VIEW_SQL +

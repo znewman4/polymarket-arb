@@ -6,11 +6,8 @@ import textwrap
 from datetime import datetime, timezone
 from pathlib import Path
 
-import pytest
-
 from polymarket_arb.context.template_registry import (
     DeterministicTemplate,
-    TemplateMatchConditions,
     find_matching_template,
     load_template_registry,
 )

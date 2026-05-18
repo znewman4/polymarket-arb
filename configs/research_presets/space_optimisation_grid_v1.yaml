@@ -1,0 +1,61 @@
+schema_version: 1
+description: >
+  Per-space parameter grid for trade-surface optimisation.
+  Each grid point produces a SpaceOptimisationRow.
+
+  RESEARCH-ONLY: outputs never produce credible_positive credibility.
+
+  Robustness > best-PnL: the optimisation report ranks by a robustness score
+  that combines median PnL across nearby configs, drawdown, sensitivity to
+  slippage, and dominant-trade share — not raw maximum PnL.
+
+grid:
+  slippage_bps: [0, 25, 50, 100, 200]
+  min_edge: [0.0, 0.005, 0.01, 0.02, 0.05]
+  min_confidence: [0.2, 0.35, 0.5, 0.7]
+  max_exposure_per_space: [50, 100, 250, 500, 1000]
+  max_stake_per_trade: [5, 10, 25, 50, 100]
+  reentry_policy:
+    - first_violation_only
+    - reenter_after_cooldown
+    - trade_every_distinct_violation_window
+  cooldown_minutes: [0, 15, 60, 360]
+  alignment_mode:
+    - strict_exact
+    - nearest_within_window
+    - forward_fill_max_age
+  sizing_policy:
+    - flat_small
+    - edge_weighted
+
+# A smaller "slim" grid intended for quick smoke tests / fast iteration.
+slim_grid:
+  slippage_bps: [0, 50]
+  min_edge: [0.0, 0.01]
+  min_confidence: [0.35, 0.7]
+  max_exposure_per_space: [100, 500]
+  max_stake_per_trade: [5, 25]
+  reentry_policy:
+    - first_violation_only
+    - reenter_after_cooldown
+  cooldown_minutes: [0, 60]
+  alignment_mode:
+    - forward_fill_max_age
+  sizing_policy:
+    - flat_small
+
+# Sampling strategy when full grid is intractable.
+# "exhaustive" enumerates everything; "lhs" uses a Latin-hypercube sample
+# of size sample_size; "slim" uses the slim_grid above.
+default_sampling:
+  strategy: slim
+  sample_size: 60
+
+# Robustness scoring weights (must sum to 1.0).
+robustness_weights:
+  positive_after_costs_share: 0.30   # % of nearby configs that are positive
+  median_pnl_share: 0.25              # median PnL across nearby configs
+  distinct_relationships_share: 0.15  # how many distinct relationships traded
+  drawdown_penalty: 0.15              # lower drawdown → higher robustness
+  slippage_sensitivity_penalty: 0.10  # less PnL-loss when slippage rises
+  dominant_trade_penalty: 0.05        # less dominance → higher robustness

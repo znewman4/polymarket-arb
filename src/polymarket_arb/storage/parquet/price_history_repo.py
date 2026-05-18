@@ -76,6 +76,14 @@ class ParquetPriceHistoryRepository:
         for r in rows:
             yield self._row_from_dict(r)
 
+    def distinct_token_ids(self) -> set[str]:
+        """Return every token_id with at least one stored price row."""
+        rows = self._query(
+            "SELECT DISTINCT token_id FROM read_parquet('{glob}', hive_partitioning=true)",
+            [],
+        )
+        return {str(r["token_id"]) for r in rows if r.get("token_id") is not None}
+
     def count_for_token(self, token_id: str) -> int:
         rows = self._query(
             "SELECT count(*) AS c FROM read_parquet('{glob}', hive_partitioning=true) "

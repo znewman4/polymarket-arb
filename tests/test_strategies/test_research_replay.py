@@ -10,7 +10,11 @@ from pathlib import Path
 
 import pytest
 
-from polymarket_arb.backtest.research_replay import _EntryState, _should_enter, run_research_backtest
+from polymarket_arb.backtest.research_replay import (
+    _EntryState,
+    _should_enter,
+    run_research_backtest,
+)
 from polymarket_arb.research_presets import apply_preset, load_preset
 from polymarket_arb.storage.base import (
     BackfillCoverageRow,
@@ -239,7 +243,7 @@ def test_trade_every_distinct_window_enters_on_new_window() -> None:
     states["r1"]
 
     # No previous violation → new window → enter
-    enter1, kind1 = _should_enter("r1", TS, "trade_every_distinct_violation_window", cooldown, 99, states, True)
+    enter1, _kind1 = _should_enter("r1", TS, "trade_every_distinct_violation_window", cooldown, 99, states, True)
     assert enter1
 
     # Mark as having violated
@@ -428,7 +432,7 @@ def test_cooldown_prevents_reentry_within_window(tmp_data_root) -> None:
 
     # replay_many_entries has 30-min cooldown; data spans 10 hours
     preset = load_preset("replay_many_entries")
-    cfg = apply_preset(preset, ContextAwareBacktestConfig(run_id="cooldown_test"))
+    apply_preset(preset, ContextAwareBacktestConfig(run_id="cooldown_test"))
 
     # Run twice with zero cooldown override (test the unit level directly)
     from collections import defaultdict

@@ -13,7 +13,7 @@ YAML contract (templates_v1.yaml):
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
@@ -192,9 +192,8 @@ def _matches(rel: RelationshipCandidateRow, cond: TemplateMatchConditions) -> bo
             return False
 
     # ── Same event ───────────────────────────────────────────────────────────
-    if cond.same_event_required:
-        if not rel.shared_event and not rel.shared_reference_event:
-            return False
+    if cond.same_event_required and not rel.shared_event and not rel.shared_reference_event:
+        return False
 
     # ── Same outcome space (shared competition detected by taxonomy) ──────────
     if cond.same_outcome_space_required:

@@ -6,8 +6,6 @@ import csv
 import json
 from pathlib import Path
 
-import pytest
-
 from polymarket_arb.reports.opportunity_surface_report import (
     generate_opportunity_surface_report,
 )

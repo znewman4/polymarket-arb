@@ -3,6 +3,9 @@
 from __future__ import annotations
 
 import asyncio
+import json
+import time
+from pathlib import Path
 
 import click
 
@@ -11,13 +14,89 @@ from ..backfill.models import BackfillConfig
 from ..backfill.price_history import run_price_history_backfill, run_relationship_price_backfill
 from ..backfill.semantic_pipeline import run_semantic_pipeline
 from ..backfill.trade_history import run_trade_history_backfill
+from ..ingest.gamma.parser import parse_event, parse_market
 from ..settings import Settings
 from ..storage.parquet.backfill_coverage_repo import ParquetBackfillCoverageRepository
+from ..storage.parquet.events_repo import ParquetEventsRepository
+from ..storage.parquet.markets_repo import ParquetMarketsRepository
 
 
 @click.group(name="backfill")
 def backfill_cmd() -> None:
     """Historical price/trade data backfill and dataset verification."""
+
+
+@backfill_cmd.command(name="discovered-universe")
+@click.option("--discovery-run-id", required=True)
+@click.option("--semantic/--no-semantic", default=False, show_default=True)
+@click.option("--prices/--no-prices", default=False, show_default=True)
+@click.option("--orderbooks/--no-orderbooks", default=False, show_default=True)
+@click.option("--max-markets", type=int, default=None)
+@click.pass_context
+def backfill_discovered_universe(
+    ctx: click.Context,
+    discovery_run_id: str,
+    semantic: bool,
+    prices: bool,
+    orderbooks: bool,
+    max_markets: int | None,
+) -> None:
+    """Seed repositories from a discovered universe, then chain research backfills.
+
+    All downstream steps are existing research/read-only commands.  This command
+    does not add live trading, wallets, or order placement.
+    """
+
+    from ._subprocess import run_cli_subcommand
+
+    settings: Settings = ctx.obj["settings"]
+    run_dir = settings.data_root / "raw" / "market_universe" / discovery_run_id
+    if not run_dir.exists():
+        raise click.ClickException(f"discovery run not found: {run_dir}")
+
+    market_rows = []
+    for raw in _read_discovery_payloads(run_dir / "markets.jsonl")[:max_markets]:
+        row = parse_market(raw, ingested_ts_ms=_now_ms())
+        if row is not None:
+            market_rows.append(row)
+
+    event_rows = []
+    for raw in _read_discovery_payloads(run_dir / "events.jsonl"):
+        row = parse_event(raw, ingested_ts_ms=_now_ms())
+        if row is not None:
+            event_rows.append(row)
+
+    markets_repo = ParquetMarketsRepository(
+        settings.data_root,
+        compression=settings.storage.parquet.compression,
+        row_group_size=settings.storage.parquet.row_group_size,
+    )
+    events_repo = ParquetEventsRepository(
+        settings.data_root,
+        compression=settings.storage.parquet.compression,
+        row_group_size=settings.storage.parquet.row_group_size,
+    )
+    n_markets = markets_repo.upsert_markets(market_rows)
+    n_events = events_repo.upsert_events(event_rows)
+
+    if semantic:
+        limit = str(max_markets or 1_000_000)
+        run_cli_subcommand(["backfill", "semantic-pipeline", "--limit", limit], settings)
+        run_cli_subcommand(["relationships", "generate", "--limit", limit], settings)
+        run_cli_subcommand(["research", "expand-relationships", "--commit"], settings)
+        run_cli_subcommand(["relationships", "apply-context", "--all", "--keep-reviewed"], settings)
+    if prices:
+        run_cli_subcommand(["backfill", "prices", "--limit", str(max_markets or 1_000_000)], settings)
+    if orderbooks:
+        run_cli_subcommand(["clob", "fetch-quotes", "--limit", str(max_markets or 200)], settings)
+
+    click.echo(
+        f"✓ discovered universe backfill run_id={discovery_run_id}\n"
+        f"  markets_upserted={n_markets}\n"
+        f"  events_upserted={n_events}\n"
+        f"  semantic={semantic} prices={prices} orderbooks={orderbooks}\n"
+        "  label=RESEARCH-ONLY public/read-only"
+    )
 
 
 @backfill_cmd.command(name="prices")
@@ -239,3 +318,21 @@ def backfill_targeted_semantic_queue(ctx: click.Context, output_path: str | None
     )
     click.echo(f"✓ targeted semantics queue written to: {path}")
     click.echo("  Use: polymarket-arb backfill semantic-pipeline --queue-csv " + str(path))
+
+
+def _now_ms() -> int:
+    return int(time.time() * 1000)
+
+
+def _read_discovery_payloads(path: Path) -> list[dict]:
+    if not path.exists():
+        return []
+    out: list[dict] = []
+    for line in path.read_text(encoding="utf-8").splitlines():
+        if not line.strip():
+            continue
+        raw = json.loads(line)
+        payload = raw.get("payload", raw)
+        if isinstance(payload, dict):
+            out.append(payload)
+    return out

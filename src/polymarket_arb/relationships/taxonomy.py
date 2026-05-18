@@ -427,7 +427,7 @@ def _sports_side(q: str) -> OutcomeSide:
     league_match = _LEAGUE_CHAMPIONSHIPS.search(lower)
     if league_match and re.search(r"\bwins?\b", lower):
         league = _league_key(lower) or _slug(league_match.group(0))
-        team = _extract_before(q, r"\s+wins?\s+(?:the\s+)?(?:\d{4}[–\-]\d{2,4}\s+)?")
+        team = _extract_before(q, r"\s+wins?\s+(?:the\s+)?(?:\d{4}[–\-]\d{2,4}\s+)?")  # noqa: RUF001
         return OutcomeSide(
             outcome_space_id=f"{league}_champion",
             outcome_subtype="team_wins_championship",

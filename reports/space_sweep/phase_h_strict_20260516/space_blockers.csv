@@ -1,0 +1,6 @@
+blocker_category,count,space_id
+confidence_gate,602,electoral_mutual_exclusion
+other,300,electoral_mutual_exclusion
+economic_or_replay,9,sports_championship_conference_progression
+economic_or_replay,2666,sports_ranking_finish_position
+confidence_gate,426,sports_title_competition_mutual_exclusion

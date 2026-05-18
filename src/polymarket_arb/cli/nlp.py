@@ -131,6 +131,316 @@ def _failure_to_row(f: ExtractionFailure) -> NlpValidationFailureRow:
     )
 
 
+# ─── propose-hypotheses ────────────────────────────────────────────────
+
+
+@nlp.command(name="propose-hypotheses")
+@click.option("--output", "output_path", required=True, type=click.Path(),
+              help="Where to write the JSONL of proposed hypotheses.")
+@click.option("--max-markets", type=int, default=400,
+              help="Cap the market sample (highest-volume by default).")
+@click.option("--sim-threshold", type=float, default=0.78,
+              help="Cosine / Jaccard similarity threshold.")
+@click.option("--max-pairs-per-market", type=int, default=4)
+@click.option("--overall-pair-cap", type=int, default=300)
+@click.option("--ollama-base", default=None, type=str,
+              help="Override Ollama base URL (e.g. http://172.22.16.1:11434).")
+@click.pass_context
+def propose_hypotheses(
+    ctx: click.Context,
+    output_path: str,
+    max_markets: int,
+    sim_threshold: float,
+    max_pairs_per_market: int,
+    overall_pair_cap: int,
+    ollama_base: str | None,
+) -> None:
+    """Propose relationship hypotheses outside the current deterministic space.
+
+    Uses Ollama `nomic-embed-text` cosine similarity when reachable, otherwise
+    falls back to token-Jaccard.  RESEARCH-ONLY; no LLM reasoning, no trade.
+    """
+    import glob
+    from pathlib import Path
+
+    import pandas as pd
+
+    from ..nlp.hypothesis_engine import generate_hypotheses, write_hypotheses_jsonl
+
+    settings: Settings = ctx.obj["settings"]
+    markets_repo = _markets_repo(settings)
+
+    # Pull all markets, take the highest-volume slice (volume is a proxy for
+    # relevance — low-volume markets emit too many spurious near-duplicates).
+    all_markets = list(markets_repo.iter_all_markets())
+    all_markets.sort(key=lambda m: m.volume or 0.0, reverse=True)
+    sample = all_markets[:max_markets]
+
+    # Build the "existing relationship pair" set so we only emit hypotheses
+    # OUTSIDE the current deterministic relationship space.
+    rel_files = sorted(glob.glob(
+        str(settings.data_root / "normalised" / "relationship_candidates" /
+            "**" / "*.parquet"),
+        recursive=True,
+    ))
+    existing: set[frozenset] = set()
+    if rel_files:
+        df = pd.concat([pd.read_parquet(f) for f in rel_files], ignore_index=True)
+        df = df.drop_duplicates(subset="relationship_id", keep="last")
+        for _, r in df.iterrows():
+            a = str(r.get("market_id_a") or "")
+            b = str(r.get("market_id_b") or "")
+            if a and b:
+                existing.add(frozenset({a, b}))
+
+    hyps, meta = generate_hypotheses(
+        sample,
+        existing_pair_keys=existing,
+        sim_threshold=sim_threshold,
+        max_pairs_per_market=max_pairs_per_market,
+        overall_pair_cap=overall_pair_cap,
+        ollama_base=ollama_base,
+    )
+    out = Path(output_path)
+    write_hypotheses_jsonl(out, hyps, meta)
+    click.echo(
+        f"✓ proposed {len(hyps)} hypotheses\n"
+        f"  engine={meta.get('engine')} "
+        f"sim_threshold={sim_threshold} "
+        f"considered={meta.get('markets_considered')}\n"
+        f"  output={out}\n"
+        "  label=RESEARCH-ONLY hypothesis (no LLM reasoning, no execution)"
+    )
+
+
+# ─── promote-hypotheses-to-relationships ───────────────────────────────
+
+
+@nlp.command(name="promote-hypotheses")
+@click.option("--input", "input_path", required=True, type=click.Path(exists=True))
+@click.option("--min-similarity", type=float, default=0.82,
+              help="Skip hypotheses with similarity below this threshold.")
+@click.pass_context
+def promote_hypotheses(
+    ctx: click.Context,
+    input_path: str,
+    min_similarity: float,
+) -> None:
+    """Promote LLM/embedding hypotheses to relationship_candidates rows.
+
+    Each promoted row gets relationship_subtype='llm_hypothesis_near_duplicate'
+    and lane='exploratory_context_unreviewed' via auto-attribution.
+    RESEARCH-ONLY.
+    """
+    import json
+    from pathlib import Path
+
+    from ..storage.base import RelationshipCandidateRow
+    from ..storage.parquet.relationship_candidates_repo import (
+        ParquetRelationshipCandidatesRepository,
+    )
+
+    settings: Settings = ctx.obj["settings"]
+    markets_repo = _markets_repo(settings)
+    market_by_id = {m.id: m for m in markets_repo.iter_all_markets()}
+
+    in_path = Path(input_path)
+    rows: list[RelationshipCandidateRow] = []
+    promoted = 0
+    skipped_low_sim = 0
+    skipped_missing_tokens = 0
+    seen_pair: set[tuple[str, str]] = set()
+    seen_rel_id: set[str] = set()
+    with in_path.open() as fh:
+        for line in fh:
+            try:
+                d = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            if "_meta" in d:
+                continue
+            sim = float(d.get("similarity") or 0.0)
+            if sim < min_similarity:
+                skipped_low_sim += 1
+                continue
+            ma_id = str(d["market_id_a"])
+            mb_id = str(d["market_id_b"])
+            pair = tuple(sorted([ma_id, mb_id]))
+            if pair in seen_pair:
+                continue
+            seen_pair.add(pair)
+            ma = market_by_id.get(ma_id)
+            mb = market_by_id.get(mb_id)
+            if not ma or not mb:
+                skipped_missing_tokens += 1
+                continue
+            # Need both YES tokens.
+            tok_a_yes = ma.clob_token_ids[0] if ma.clob_token_ids else None
+            tok_a_no = ma.clob_token_ids[1] if ma.clob_token_ids and len(ma.clob_token_ids) > 1 else None
+            tok_b_yes = mb.clob_token_ids[0] if mb.clob_token_ids else None
+            tok_b_no = mb.clob_token_ids[1] if mb.clob_token_ids and len(mb.clob_token_ids) > 1 else None
+            if not tok_a_yes or not tok_b_yes:
+                skipped_missing_tokens += 1
+                continue
+            # We treat near-duplicate hypotheses as `contradiction` so the
+            # replay engine considers the price-sum violation: if both are
+            # essentially the same proposition, YES_A + YES_B should equal 1
+            # if the outcomes are mirror — but for "duplicate" we treat them
+            # as `inverse` (sum should equal 1 when one is YES and the other
+            # NO of same event) or just `same_topic_no_trade` if not safe.
+            # We use the explicit hypothesis subtype to flag this for the
+            # ollama_hypothesis_surface preset.
+            htype = d.get("hypothesis_type") or "near_duplicate_or_overlap"
+            relationship_type = (
+                "contradiction"
+                if htype in ("likely_duplicate_market", "temporal_ordering_pair")
+                else "mutually_exclusive_category"
+                if htype in ("primary_race_pairwise",)
+                else "same_topic_no_trade"
+            )
+            relationship_subtype = f"llm_hypothesis_{htype}"
+            # outcome_space_id is a per-pair slug so each hypothesis is its
+            # own named context space.
+            comp_id = f"llm_hyp_{pair[0][-8:]}_{pair[1][-8:]}_{htype}"
+            rel_id = d["hypothesis_id"]
+            if rel_id in seen_rel_id:
+                continue
+            seen_rel_id.add(rel_id)
+            row = RelationshipCandidateRow(
+                relationship_id=rel_id,
+                market_id_a=ma_id,
+                market_id_b=mb_id,
+                condition_id_a=ma.condition_id,
+                condition_id_b=mb.condition_id,
+                token_id_a_yes=tok_a_yes,
+                token_id_a_no=tok_a_no,
+                token_id_b_yes=tok_b_yes,
+                token_id_b_no=tok_b_no,
+                question_a=ma.question or "",
+                question_b=mb.question or "",
+                relationship_type=relationship_type,
+                entity_match_score=0.0,
+                time_scope_match_score=0.0,
+                resolution_criteria_match_score=0.0,
+                threshold_relation_json="{}",
+                semantic_similarity_score=sim,
+                deterministic_confidence=0.0,
+                model_confidence=float(d.get("confidence") or 0.5),
+                final_confidence=float(d.get("confidence") or 0.5),
+                validation_status="needs_manual_review",
+                rejection_reasons_json="[]",
+                rationale_summary=str(d.get("explanation") or "")[:500],
+                evidence_json=json.dumps({
+                    "source": "llm_hypothesis",
+                    "hypothesis_engine": d.get("hypothesis_engine"),
+                    "hypothesis_type": htype,
+                    "similarity": sim,
+                    "proposed_trade_logic": d.get("proposed_trade_logic"),
+                    "expected_failure_modes": d.get("expected_failure_modes") or [],
+                    "uncertainty_flags": d.get("uncertainty_flags") or [],
+                }),
+                rulebook_id="hypothesis_engine_v1",
+                rulebook_version=1,
+                rulebook_content_hash="",
+                relationship_validity_status="needs_manual_review",
+                strategy_eligibility_status="eligible",
+                strategy_family="hypothesis_research",
+                strategy_eligible_reason="LLM hypothesis (research-only)",
+                relationship_subtype=relationship_subtype,
+                outcome_space_id=comp_id,
+                shared_event=comp_id,
+                relationship_family="hypothesis",
+            )
+            rows.append(row)
+            promoted += 1
+    repo = ParquetRelationshipCandidatesRepository(settings.data_root)
+    if rows:
+        repo.append_many(rows)
+    click.echo(
+        f"✓ promoted {promoted} hypotheses to relationships\n"
+        f"  skipped_low_sim={skipped_low_sim} "
+        f"skipped_missing_tokens={skipped_missing_tokens}\n"
+        "  label=RESEARCH-ONLY needs_manual_review"
+    )
+
+
+# ─── extract-deterministic ─────────────────────────────────────────────
+
+
+@nlp.command(name="extract-deterministic")
+@click.option(
+    "--limit", type=int, default=None,
+    help="Max number of unsemantic markets to process this run (default: all).",
+)
+@click.option(
+    "--only-missing/--all", default=True, show_default=True,
+    help="Only process markets that have no semantics row yet.",
+)
+@click.pass_context
+def extract_deterministic(
+    ctx: click.Context,
+    limit: int | None,
+    only_missing: bool,
+) -> None:
+    """Rule-based semantics extraction (no LLM, no network).
+
+    Emits MarketSemanticsRow with model_name=deterministic_rules for markets
+    matching curated question shapes (primary nominees, state elections,
+    sports H2H, crypto thresholds, generic winner). RESEARCH-ONLY.
+    """
+    from ..nlp.deterministic import build_semantics_row
+
+    settings: Settings = ctx.obj["settings"]
+    markets_repo = _markets_repo(settings)
+    semantics_repo = _semantics_repo(settings)
+
+    if only_missing:
+        existing_ids = {
+            r.source_market_id for r in semantics_repo.iter_latest(limit=10_000_000)
+        }
+    else:
+        existing_ids = set()
+
+    rows: list[MarketSemanticsRow] = []
+    counts = {
+        "scanned": 0, "skipped_with_semantics": 0,
+        "no_pattern": 0, "wrote": 0,
+    }
+    pattern_counts: dict[str, int] = {}
+    for m in markets_repo.iter_all_markets():
+        counts["scanned"] += 1
+        if only_missing and m.id in existing_ids:
+            counts["skipped_with_semantics"] += 1
+            continue
+        row = build_semantics_row(m)
+        if row is None:
+            counts["no_pattern"] += 1
+            continue
+        rows.append(row)
+        counts["wrote"] += 1
+        # Track pattern via explanation_summary
+        if row.explanation_summary:
+            tag = row.explanation_summary.replace("deterministic rule: ", "")
+            pattern_counts[tag] = pattern_counts.get(tag, 0) + 1
+        if limit is not None and counts["wrote"] >= limit:
+            break
+
+    if rows:
+        semantics_repo.upsert_many(rows)
+
+    click.echo(
+        "✓ deterministic semantic extraction\n"
+        f"  scanned={counts['scanned']} "
+        f"already_with_semantics={counts['skipped_with_semantics']} "
+        f"no_pattern={counts['no_pattern']} wrote={counts['wrote']}"
+    )
+    if pattern_counts:
+        click.echo("  patterns: " + ", ".join(
+            f"{k}={v}" for k, v in sorted(pattern_counts.items(), key=lambda x: -x[1])
+        ))
+    click.echo("  label=RESEARCH-ONLY rule-based / no LLM / no network")
+
+
 # ─── extract-market-semantics ───────────────────────────────────────────
 
 

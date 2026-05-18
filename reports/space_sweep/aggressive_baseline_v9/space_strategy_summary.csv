@@ -1,0 +1,6 @@
+accepted_trades,raw_fills,simulated_pnl,space_id,strategy_family
+11,22,6.6,2026_us_presidential_election_candidate_winner,mutual_exclusion
+20,40,2.0,unknown_year_us_presidential_election_candidate_winner,mutual_exclusion
+20,40,2.6,llm_hyp_540881_559651_temporal_ordering_pair,temporal
+52,104,5.98,sports_championship_conference_progression,nesting
+20,40,0.0,sports_ranking_finish_position,nesting

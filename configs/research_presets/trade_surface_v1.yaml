@@ -191,3 +191,183 @@ presets:
     label_all_outputs_exploratory: true
     record_before_costs: true
     execute_trades: true
+
+
+  # ── AGGRESSIVE EXPLORATORY PRESETS (research-only, designed to maximise
+  # ── sample size including losing trades — never credible by themselves)
+
+  aggressive_learning_surface:
+    label: AGGRESSIVE_LEARNING
+    lane: all_context_research
+    relationship_universe: all_with_context_decisions
+    include_auto_approved: true
+    # Very loose confidence + probability gates
+    min_relationship_confidence: 0.20
+    min_combined_prob: 0.0
+    min_single_prob: 0.0
+    # Edge gates dropped to zero (every gross violation counts)
+    min_gross_edge: 0.0
+    min_net_edge: 0.0
+    # Cost realism kept
+    slippage_bps: 50
+    # 48h staleness allowed (more coverage from sparse markets)
+    alignment_mode: forward_fill_max_age
+    max_staleness_minutes: 2880
+    # Many re-entries to grow sample
+    reentry_policy: reenter_after_cooldown
+    cooldown_minutes: 15
+    max_trades_per_relationship: 50
+    entry_policy: reenter_after_cooldown
+    exit_policy: close_on_reversal
+    sizing_policy: flat_small
+    stake_size_usdc: 2
+    include_transitive_closure: true
+    include_exploratory_relationships: true
+    label_all_outputs_exploratory: true
+    record_before_costs: true
+    execute_trades: true
+
+  aggressive_deterministic_surface:
+    label: AGGRESSIVE_DETERMINISTIC
+    lane: all_context_research
+    relationship_universe: all_with_context_decisions
+    include_auto_approved: true
+    min_relationship_confidence: 0.20
+    min_combined_prob: 0.0
+    min_single_prob: 0.0
+    min_gross_edge: 0.0
+    min_net_edge: 0.0
+    slippage_bps: 50
+    alignment_mode: forward_fill_max_age
+    max_staleness_minutes: 2880
+    reentry_policy: reenter_after_cooldown
+    cooldown_minutes: 15
+    max_trades_per_relationship: 50
+    entry_policy: reenter_after_cooldown
+    exit_policy: close_on_reversal
+    sizing_policy: flat_small
+    stake_size_usdc: 2
+    include_transitive_closure: true
+    include_exploratory_relationships: true
+    include_relationship_subtype_prefixes: []
+    exclude_relationship_subtype_prefixes:
+      - llm_hypothesis_
+      - embedding_hypothesis_
+      - deepseek_hypothesis_
+    label_all_outputs_exploratory: true
+    record_before_costs: true
+    execute_trades: true
+
+  embedding_hypothesis_surface:
+    label: EMBEDDING_ONLY_HYPOTHESIS
+    lane: exploratory_context_unreviewed
+    relationship_universe: all_with_context_decisions
+    include_auto_approved: true
+    min_relationship_confidence: 0.20
+    min_combined_prob: 0.0
+    min_single_prob: 0.0
+    min_gross_edge: 0.0
+    min_net_edge: 0.0
+    slippage_bps: 50
+    alignment_mode: forward_fill_max_age
+    max_staleness_minutes: 2880
+    reentry_policy: reenter_after_cooldown
+    cooldown_minutes: 30
+    max_trades_per_relationship: 25
+    entry_policy: reenter_after_cooldown
+    exit_policy: close_on_reversal
+    sizing_policy: flat_small
+    stake_size_usdc: 2
+    include_transitive_closure: false
+    include_exploratory_relationships: true
+    include_relationship_subtype_prefixes:
+      - embedding_hypothesis_
+    exclude_relationship_subtype_prefixes: []
+    label_all_outputs_exploratory: true
+    record_before_costs: true
+    execute_trades: true
+
+  deepseek_hypothesis_surface:
+    label: DEEPSEEK_GENERATIVE_HYPOTHESIS
+    lane: exploratory_context_unreviewed
+    relationship_universe: all_with_context_decisions
+    include_auto_approved: true
+    min_relationship_confidence: 0.20
+    min_combined_prob: 0.0
+    min_single_prob: 0.0
+    min_gross_edge: 0.0
+    min_net_edge: 0.0
+    slippage_bps: 50
+    alignment_mode: forward_fill_max_age
+    max_staleness_minutes: 2880
+    reentry_policy: reenter_after_cooldown
+    cooldown_minutes: 30
+    max_trades_per_relationship: 25
+    entry_policy: reenter_after_cooldown
+    exit_policy: close_on_reversal
+    sizing_policy: flat_small
+    stake_size_usdc: 2
+    include_transitive_closure: false
+    include_exploratory_relationships: true
+    include_relationship_subtype_prefixes:
+      - deepseek_hypothesis_
+    exclude_relationship_subtype_prefixes: []
+    label_all_outputs_exploratory: true
+    record_before_costs: true
+    execute_trades: true
+
+  ultra_loose_diagnostic_surface:
+    label: ULTRA_LOOSE_DIAGNOSTIC
+    lane: all_context_research
+    relationship_universe: all_with_context_decisions
+    include_auto_approved: true
+    # Maximally loose: only structural rules + tiny stake gate
+    min_relationship_confidence: 0.10
+    min_combined_prob: 0.0
+    min_single_prob: 0.0
+    min_gross_edge: 0.0
+    min_net_edge: -0.10  # allow negative edge trades for failure-mode study
+    slippage_bps: 0      # zero costs to see raw signal sample
+    alignment_mode: forward_fill_max_age
+    max_staleness_minutes: 10080  # 7 days
+    reentry_policy: trade_every_distinct_violation_window
+    cooldown_minutes: 0
+    max_trades_per_relationship: 9999
+    entry_policy: trade_every_distinct_violation_window
+    exit_policy: diagnostic_no_exit_only_mark_to_market
+    sizing_policy: flat_small
+    stake_size_usdc: 1
+    include_transitive_closure: true
+    include_exploratory_relationships: true
+    label_all_outputs_exploratory: true
+    record_before_costs: true
+    execute_trades: true
+
+  ollama_hypothesis_surface:
+    label: OLLAMA_HYPOTHESIS
+    # Only the LLM-hypothesis lane (added relationships have strategy_lane
+    # = "exploratory_context_unreviewed" with explanation_summary containing
+    # "hypothesis:llm_embedding") — the research_replay engine filters by lane.
+    lane: exploratory_context_unreviewed
+    relationship_universe: all_with_context_decisions
+    include_auto_approved: true
+    min_relationship_confidence: 0.20
+    min_combined_prob: 0.0
+    min_single_prob: 0.0
+    min_gross_edge: 0.0
+    min_net_edge: 0.0
+    slippage_bps: 50
+    alignment_mode: forward_fill_max_age
+    max_staleness_minutes: 2880
+    reentry_policy: reenter_after_cooldown
+    cooldown_minutes: 30
+    max_trades_per_relationship: 25
+    entry_policy: reenter_after_cooldown
+    exit_policy: close_on_reversal
+    sizing_policy: flat_small
+    stake_size_usdc: 2
+    include_transitive_closure: false
+    include_exploratory_relationships: true
+    label_all_outputs_exploratory: true
+    record_before_costs: true
+    execute_trades: true

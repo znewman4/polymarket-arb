@@ -476,6 +476,12 @@ def category_bundle_report(ctx: click.Context, run_id: str, output_path: str | N
         "gross_violation_scan",
         "net_after_cost_scan",
         "replay_many_entries",
+        "aggressive_learning_surface",
+        "aggressive_deterministic_surface",
+        "embedding_hypothesis_surface",
+        "deepseek_hypothesis_surface",
+        "ultra_loose_diagnostic_surface",
+        "ollama_hypothesis_surface",
     ]),
     help=(
         "Named research preset from configs/research_presets/trade_surface_v1.yaml. "
@@ -853,6 +859,9 @@ def template_bundle_scan(
         "gross_violation_scan",
         "net_after_cost_scan",
         "replay_many_entries",
+        "aggressive_learning_surface",
+        "ultra_loose_diagnostic_surface",
+        "ollama_hypothesis_surface",
     ]),
     help="Named research preset. Overrides bundle re-entry/cooldown/cost/edge/stake settings.",
 )
@@ -906,7 +915,7 @@ def template_bundle_backtest(
     )
     result = run_template_bundle_backtest(settings.data_root, cfg)
     m = result["metrics"]
-    f = result["funnel"]
+    result["funnel"]
     click.echo(
         f"✓ template bundle backtest run_id={result['run_id']}\n"
         f"  spaces_scanned={m['outcome_spaces_scanned']}\n"

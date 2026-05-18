@@ -3,9 +3,6 @@
 from __future__ import annotations
 
 from decimal import Decimal
-from pathlib import Path
-
-import pytest
 
 from polymarket_arb.relationships.expansion.sports_progression import (
     _competition_family,
@@ -51,6 +48,7 @@ def test_stage_ordering_yaml_exists():
 
 def test_stage_ordering_yaml_valid():
     import yaml
+
     from polymarket_arb.relationships.expansion.sports_progression import _STAGE_REGISTRY_PATH
     data = yaml.safe_load(_STAGE_REGISTRY_PATH.read_text(encoding="utf-8"))
     assert "competition_families" in data
@@ -62,6 +60,7 @@ def test_stage_ordering_yaml_valid():
 def test_nba_championship_implies_conference():
     """NBA registry must permit championship→conference implication."""
     import yaml
+
     from polymarket_arb.relationships.expansion.sports_progression import _STAGE_REGISTRY_PATH
     data = yaml.safe_load(_STAGE_REGISTRY_PATH.read_text(encoding="utf-8"))
     nba = data["competition_families"]["nba"]
@@ -76,6 +75,7 @@ def test_nba_championship_implies_conference():
 def test_premier_league_champion_no_cross_competition_implication():
     """Premier League champion should NOT imply Champions League participation via the registry."""
     import yaml
+
     from polymarket_arb.relationships.expansion.sports_progression import _STAGE_REGISTRY_PATH
     data = yaml.safe_load(_STAGE_REGISTRY_PATH.read_text(encoding="utf-8"))
     pl = data["competition_families"]["premier_league"]

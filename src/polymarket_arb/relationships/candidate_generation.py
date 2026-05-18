@@ -14,7 +14,7 @@ from .terms_similarity import infer_outcome_space_from_question, infer_temporal_
 @dataclass
 class RelationshipMiningConfig:
     max_candidates_per_market: int = 50
-    max_total_candidates: int = 5000
+    max_total_candidates: int = 200_000
     embedding_threshold: float = 0.85
     time_window_days: int = 30
 

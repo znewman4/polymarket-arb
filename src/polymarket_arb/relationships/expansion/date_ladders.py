@@ -137,11 +137,8 @@ def _is_shared_reference_clock(right_event_slug: str) -> bool:
     # Any month name → absolute date
     if any(t in _MONTH_NAMES for t in tokens):
         return False
-    # Quarter token q1/q2/q3/q4 → absolute date
-    if any(re.fullmatch(r"q[1-4]", t) for t in tokens):
-        return False
-    # No date indicator → shared reference clock
-    return True
+    # Quarter token q1/q2/q3/q4 → absolute date; otherwise shared reference clock
+    return not any(re.fullmatch(r"q[1-4]", t) for t in tokens)
 
 
 def run_date_ladder_expansion(

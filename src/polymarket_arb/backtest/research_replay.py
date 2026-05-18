@@ -34,7 +34,7 @@ flat_small:
     Fixed stake = preset.stake_size_usdc per leg.
 edge_weighted:
     Scale stake by gross_edge relative to a reference edge (0.10).
-    Bounded between 0.5× and 3× of preset.stake_size_usdc.
+    Bounded between 0.5x and 3x of preset.stake_size_usdc.
 """
 
 from __future__ import annotations
@@ -43,7 +43,7 @@ import hashlib
 import json
 import uuid
 from collections import defaultdict
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from decimal import Decimal
 from pathlib import Path
@@ -226,6 +226,8 @@ def _make_trade_rows(
     rows = []
     total_fees = Decimal("0")
     total_slippage = Decimal("0")
+    provenance = _relationship_provenance(rel)
+    trade_group_id = candidate.candidate_id
     for leg, token_id, market_id, price in [
         ("a", candidate.token_id_a, rel.market_id_a, candidate.price_a),
         ("b", candidate.token_id_b, rel.market_id_b, candidate.price_b),
@@ -242,9 +244,15 @@ def _make_trade_rows(
         total_slippage += costs.slippage_usdc
         rows.append({
             "trade_id": uuid.uuid4().hex,
+            "trade_group_id": trade_group_id,
             "candidate_id": candidate.candidate_id,
             "run_id": run_id,
             "relationship_id": rel.relationship_id,
+            "relationship_type": rel.relationship_type,
+            "relationship_subtype": rel.relationship_subtype,
+            "relationship_family": rel.relationship_family,
+            "strategy_family": rel.strategy_family,
+            "outcome_space_id": rel.outcome_space_id,
             "context_space_id": decision.context_space_id,
             "strategy_lane": decision.strategy_lane,
             "leg": leg,
@@ -270,8 +278,34 @@ def _make_trade_rows(
             "preset_name": preset.preset_name,
             "preset_label": preset.label,
             "label": _LABEL,
+            **provenance,
         })
     return rows, total_fees, total_slippage
+
+
+def _relationship_provenance(rel: RelationshipCandidateRow) -> dict[str, Any]:
+    try:
+        evidence = json.loads(rel.evidence_json or "{}")
+    except json.JSONDecodeError:
+        evidence = {}
+    source = (
+        evidence.get("hypothesis_source")
+        or evidence.get("source")
+        or evidence.get("source_candidate_method")
+        or "deterministic_relationship"
+    )
+    model_type = evidence.get("model_type") or (
+        "deterministic" if source == "deterministic_relationship" else ""
+    )
+    return {
+        "hypothesis_source": source,
+        "hypothesis_id": evidence.get("hypothesis_id") or rel.relationship_id,
+        "hypothesis_model_name": evidence.get("model_name") or evidence.get("deepseek_model") or "",
+        "hypothesis_model_type": model_type,
+        "hypothesis_prompt_version": evidence.get("prompt_version") or "",
+        "hypothesis_relationship_type": evidence.get("hypothesis_relationship_type") or evidence.get("relationship_type") or "",
+        "hypothesis_confidence": evidence.get("confidence") or rel.model_confidence,
+    }
 
 
 def _filter_decisions(
@@ -281,6 +315,12 @@ def _filter_decisions(
     """Reuse the lane-filter logic from context_aware_replay (local copy to stay standalone)."""
     reviewed = {"strict_context_valid", "reviewed_context_valid"}
     lane = cfg.lane
+
+    # When the caller asks for ALL relationships with context decisions, honour it —
+    # research_only/analysis_only lanes are still RESEARCH-ONLY but should not be
+    # silently dropped here.  Downstream credibility labelling still applies.
+    if cfg.relationship_universe == "all_with_context_decisions":
+        return list(decisions)
 
     if cfg.relationship_universe == "reviewed_lanes":
         if lane == "all_context_research":
@@ -342,6 +382,75 @@ def run_research_backtest(
         accepted_ids = {r.relationship_id for r in rels.values() if r.validation_status == "accepted"}
         decisions = [d for d in decisions if d.relationship_id in accepted_ids]
 
+    # Drop decisions whose relationship is missing/confidence-too-low BEFORE we
+    # consume memory on price prefetch.  This keeps the working set bounded when
+    # an expanded universe yields tens of thousands of low-confidence rows.
+    decisions = [
+        d for d in decisions
+        if (r := rels.get(d.relationship_id)) is not None
+        and r.final_confidence >= cfg.min_relationship_confidence
+        and r.token_id_a_yes
+        and r.token_id_b_yes
+    ]
+    # Diagnostic-only subtypes (`same_topic_no_trade`, `same_reference_clock_only`,
+    # `mixed_party_nomination`) are recorded as relationships but are NEVER
+    # tradeable surfaces — the space-sweep contracts strip them from PnL
+    # totals.  We also strip them from the replay's working set so they do
+    # not consume the simulated cash budget and drown out real signals.
+    _DIAGNOSTIC_ONLY_SUBTYPES = frozenset({
+        "same_topic_no_trade",
+        "same_reference_clock_only",
+        "mixed_party_nomination",
+    })
+    decisions_pre_diag = len(decisions)
+    decisions = [
+        d for d in decisions
+        if rels[d.relationship_id].relationship_subtype not in _DIAGNOSTIC_ONLY_SUBTYPES
+    ]
+    decisions_dropped_diagnostic = decisions_pre_diag - len(decisions)
+
+    include_prefixes = tuple(preset.include_relationship_subtype_prefixes or [])
+    exclude_prefixes = tuple(preset.exclude_relationship_subtype_prefixes or [])
+    decisions_pre_source_filter = len(decisions)
+    if include_prefixes:
+        decisions = [
+            d for d in decisions
+            if (rels[d.relationship_id].relationship_subtype or "").startswith(include_prefixes)
+        ]
+    if exclude_prefixes:
+        decisions = [
+            d for d in decisions
+            if not (rels[d.relationship_id].relationship_subtype or "").startswith(exclude_prefixes)
+        ]
+    decisions_dropped_source_filter = decisions_pre_source_filter - len(decisions)
+
+    # Pre-filter to relationships whose tokens have price history.  Without
+    # this we shard millions of empty-result token lookups.  The covered-token
+    # set is loaded once from DuckDB.
+    try:
+        priced_tokens = price_repo.distinct_token_ids()
+    except AttributeError:
+        priced_tokens = None
+    if priced_tokens is not None:
+        decisions_pre = len(decisions)
+        decisions = [
+            d for d in decisions
+            if rels[d.relationship_id].token_id_a_yes in priced_tokens
+            and rels[d.relationship_id].token_id_b_yes in priced_tokens
+        ]
+        decisions_dropped_no_prices = decisions_pre - len(decisions)
+    else:
+        decisions_dropped_no_prices = 0
+
+    # Sort by confidence so the highest-signal relationships always run first,
+    # but no longer hard-cap.  The replay loop is sharded by `_BATCH_SIZE`
+    # below so the price-history cache stays bounded in RAM.
+    decisions.sort(
+        key=lambda d: rels[d.relationship_id].final_confidence,
+        reverse=True,
+    )
+    relationships_cap_applied = False
+
     # ── state ─────────────────────────────────────────────────────────────────
     funnel: dict[str, Any] = {
         "run_id": run_id,
@@ -349,6 +458,10 @@ def run_research_backtest(
         "preset_label": preset.label,
         "counts": {
             "relationships_loaded": len(decisions),
+            "relationships_cap_applied": int(relationships_cap_applied),
+            "relationships_dropped_no_prices": decisions_dropped_no_prices,
+            "relationships_dropped_diagnostic_only_subtype": decisions_dropped_diagnostic,
+            "relationships_dropped_source_filter": decisions_dropped_source_filter,
             "rejected_by_context": 0,
             "rejected_by_coverage": 0,
             "rejected_by_viability": 0,
@@ -371,8 +484,16 @@ def run_research_backtest(
 
     signals: list[dict[str, Any]] = []
     trades: list[dict[str, Any]] = []
+    # CappedList: bounded list of rejected rows so the expanded universe doesn't
+    # blow RAM via a multi-million-row reject log.  We keep counts in `funnel`.
+    _REJECT_CAP = 100_000
+    _NO_LOOKAHEAD_CAP = 200_000
     rejected: list[dict[str, Any]] = []
     no_lookahead_rows: list[dict[str, Any]] = []
+
+    def _bounded_append(target: list, item: dict, cap: int) -> None:
+        if len(target) < cap:
+            target.append(item)
     total_fees = Decimal("0")
     total_slippage = Decimal("0")
     cooldown_ms = preset.cooldown_minutes * 60 * 1000
@@ -384,8 +505,49 @@ def run_research_backtest(
             price_cache[token_id] = list(price_repo.iter_for_token(token_id))
         return price_cache[token_id]
 
+    # Sharded price-cache. We process the decision list in fixed-size batches:
+    # before each batch we pre-fetch (in one DuckDB scan) the price history for
+    # exactly that batch's tokens, run the decision loop for the batch, then
+    # drop those tokens from the cache before the next batch.  This keeps RAM
+    # bounded on the expanded universe without a hard 1,500-relationship cap.
+    _BATCH_SIZE = 300
+    funnel["counts"]["replay_batches"] = 0
+    funnel["counts"]["replay_batch_size"] = _BATCH_SIZE
+
+    def _prepare_shard(start: int) -> tuple[list, list[str]]:
+        end = min(start + _BATCH_SIZE, len(decisions))
+        shard_decisions = decisions[start:end]
+        shard_tokens: list[str] = []
+        seen: set[str] = set()
+        for d in shard_decisions:
+            r = rels.get(d.relationship_id)
+            if r is None:
+                continue
+            for tok in (r.token_id_a_yes, r.token_id_b_yes):
+                if tok and tok not in seen:
+                    seen.add(tok)
+                    shard_tokens.append(tok)
+        if shard_tokens:
+            for row in price_repo.iter_for_tokens(shard_tokens):
+                price_cache.setdefault(row.token_id, []).append(row)
+        funnel["counts"]["replay_batches"] += 1
+        return shard_decisions, shard_tokens
+
+    _shard_idx = 0
+    _shard_decisions, _shard_tokens = _prepare_shard(_shard_idx)
+    _decisions_seen_in_shard = 0
+
     # ── relationship loop ─────────────────────────────────────────────────────
     for decision in decisions:
+        _decisions_seen_in_shard += 1
+        if _decisions_seen_in_shard > len(_shard_decisions):
+            # Crossed a shard boundary: drop the prior shard's tokens and load
+            # the next shard.
+            for tok in _shard_tokens:
+                price_cache.pop(tok, None)
+            _shard_idx += _BATCH_SIZE
+            _shard_decisions, _shard_tokens = _prepare_shard(_shard_idx)
+            _decisions_seen_in_shard = 1
         rel = rels.get(decision.relationship_id)
         if rel is None:
             funnel["counts"]["rejected_by_context"] += 1
@@ -394,31 +556,38 @@ def run_research_backtest(
 
         if rel.final_confidence < cfg.min_relationship_confidence:
             funnel["counts"]["rejected_by_context"] += 1
-            rejected.append(_reject_row(rel, decision, "confidence_below_threshold", preset))
+            _bounded_append(rejected, _reject_row(rel, decision, "confidence_below_threshold", preset), _REJECT_CAP)
             continue
 
-        if decision.new_strategy_eligibility != "eligible":
+        # In RESEARCH mode (all_with_context_decisions), we record every relationship
+        # that has a decision regardless of `new_strategy_eligibility`.  Lane labels
+        # still flow through to credibility downstream.  In stricter universes we
+        # still gate on eligibility.
+        if (
+            cfg.relationship_universe != "all_with_context_decisions"
+            and decision.new_strategy_eligibility != "eligible"
+        ):
             funnel["counts"]["rejected_by_context"] += 1
-            rejected.append(_reject_row(rel, decision, "context_not_strategy_eligible", preset))
+            _bounded_append(rejected, _reject_row(rel, decision, "context_not_strategy_eligible", preset), _REJECT_CAP)
             continue
 
         cov_a = coverage.get(rel.market_id_a)
         cov_b = coverage.get(rel.market_id_b)
         if not _cov_ok(cov_a, cfg.min_coverage_score) or not _cov_ok(cov_b, cfg.min_coverage_score):
             funnel["counts"]["rejected_by_coverage"] += 1
-            rejected.append(_reject_row(rel, decision, "coverage_below_threshold", preset))
+            _bounded_append(rejected, _reject_row(rel, decision, "coverage_below_threshold", preset), _REJECT_CAP)
             continue
 
         if not rel.token_id_a_yes or not rel.token_id_b_yes:
             funnel["counts"]["rejected_by_context"] += 1
-            rejected.append(_reject_row(rel, decision, "missing_yes_tokens", preset))
+            _bounded_append(rejected, _reject_row(rel, decision, "missing_yes_tokens", preset), _REJECT_CAP)
             continue
 
         rows_a = _prices(rel.token_id_a_yes)
         rows_b = _prices(rel.token_id_b_yes)
         if not rows_a or not rows_b:
             funnel["counts"]["rejected_by_context"] += 1
-            rejected.append(_reject_row(rel, decision, "missing_price_history", preset))
+            _bounded_append(rejected, _reject_row(rel, decision, "missing_price_history", preset), _REJECT_CAP)
             continue
 
         funnel["counts"]["price_history_present"] += 1
@@ -429,7 +598,7 @@ def run_research_backtest(
             min_single=cfg.min_single_prob_for_pairwise,
         ):
             funnel["counts"]["rejected_by_viability"] += 1
-            rejected.append(_reject_row(rel, decision, "pairwise_not_viable", preset))
+            _bounded_append(rejected, _reject_row(rel, decision, "pairwise_not_viable", preset), _REJECT_CAP)
             continue
 
         aligned = align_price_series(
@@ -442,7 +611,7 @@ def run_research_backtest(
         )
         if not aligned:
             funnel["counts"]["rejected_by_alignment"] += 1
-            rejected.append(_reject_row(rel, decision, "alignment_failed", preset))
+            _bounded_append(rejected, _reject_row(rel, decision, "alignment_failed", preset), _REJECT_CAP)
             continue
 
         funnel["counts"]["aligned_price_series"] += 1
@@ -450,17 +619,27 @@ def run_research_backtest(
         entry_states[rel_id]  # ensure entry in defaultdict
 
         # ── tick loop ─────────────────────────────────────────────────────────
-        for point in aligned:
+        # Sample no-lookahead audit rows at most 1-in-100 ticks per relationship
+        # on large universes — full enumeration blows the RAM budget.
+        _NO_LOOKAHEAD_SAMPLE = 100
+        for _tick_idx, point in enumerate(aligned):
             funnel["counts"]["ticks_evaluated"] += 1
 
-            # No-lookahead audit
-            no_lookahead_rows.append({
-                "relationship_id": rel_id,
-                "signal_ts_ms": point.ts_ms,
-                "price_a_ts_ms": point.price_a_ts_ms,
-                "price_b_ts_ms": point.price_b_ts_ms,
-                "violation": point.price_a_ts_ms > point.ts_ms or point.price_b_ts_ms > point.ts_ms,
-            })
+            # No-lookahead audit (sampled + bounded)
+            if (
+                _tick_idx % _NO_LOOKAHEAD_SAMPLE == 0
+                and len(no_lookahead_rows) < _NO_LOOKAHEAD_CAP
+            ):
+                no_lookahead_rows.append({
+                    "relationship_id": rel_id,
+                    "signal_ts_ms": point.ts_ms,
+                    "price_a_ts_ms": point.price_a_ts_ms,
+                    "price_b_ts_ms": point.price_b_ts_ms,
+                    "violation": (
+                        point.price_a_ts_ms > point.ts_ms
+                        or point.price_b_ts_ms > point.ts_ms
+                    ),
+                })
 
             candidate = evaluate_relationship_at_tick(
                 rel=rel,
@@ -481,10 +660,13 @@ def run_research_backtest(
             if is_violation:
                 funnel["counts"]["gross_violations"] += 1
 
-                # Tag candidate with alignment quality for downstream use
-                candidate.__dict__  # access dataclass fields if needed
-                sig = _sig_row(rel, decision, candidate, point, preset)
-                signals.append(sig)
+                # Memory guard: on the expanded universe gross violations can
+                # exceed several hundred thousand rows.  Cap the persisted
+                # signal sample at 50k (still gives the surface a healthy
+                # audit trail without OOMing).
+                if len(signals) < 50_000:
+                    sig = _sig_row(rel, decision, candidate, point, preset)
+                    signals.append(sig)
 
                 if candidate.accepted_for_simulation:
                     funnel["counts"]["net_violations"] += 1
@@ -505,11 +687,15 @@ def run_research_backtest(
 
                     if not enter:
                         funnel["counts"]["entry_blocked_policy"] += 1
-                        rejected.append({
-                            **_reject_row(rel, decision, entry_kind, preset),
-                            "signal_ts_ms": point.ts_ms,
-                            "gross_edge": str(candidate.gross_edge),
-                        })
+                        _bounded_append(
+                            rejected,
+                            {
+                                **_reject_row(rel, decision, entry_kind, preset),
+                                "signal_ts_ms": point.ts_ms,
+                                "gross_edge": str(candidate.gross_edge),
+                            },
+                            _REJECT_CAP,
+                        )
                     elif not preset.execute_trades:
                         # gross_violation_scan: record but don't execute
                         funnel["counts"]["candidates_accepted"] += 1
@@ -521,10 +707,14 @@ def run_research_backtest(
                         required = stake * 2
                         if cash < required and not cfg.allow_negative_cash:
                             funnel["counts"]["entry_blocked_costs"] += 1
-                            rejected.append({
-                                **_reject_row(rel, decision, "cash_limit", preset),
-                                "signal_ts_ms": point.ts_ms,
-                            })
+                            _bounded_append(
+                                rejected,
+                                {
+                                    **_reject_row(rel, decision, "cash_limit", preset),
+                                    "signal_ts_ms": point.ts_ms,
+                                },
+                                _REJECT_CAP,
+                            )
                         else:
                             leg_rows, leg_fees, leg_slippage = _make_trade_rows(
                                 rel, decision, candidate, stake, run_id, preset,
@@ -579,6 +769,8 @@ def run_research_backtest(
         "exit_policy": preset.exit_policy,
         "sizing_policy": preset.sizing_policy,
         "alignment_mode": preset.alignment_mode,
+        "include_relationship_subtype_prefixes": preset.include_relationship_subtype_prefixes,
+        "exclude_relationship_subtype_prefixes": preset.exclude_relationship_subtype_prefixes,
         "starting_cash_usdc": str(cfg.starting_cash_usdc),
         "ending_cash_usdc": str(cash),
         "ending_equity_usdc": str(ending_equity),

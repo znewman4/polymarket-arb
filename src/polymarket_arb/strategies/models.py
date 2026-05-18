@@ -36,7 +36,9 @@ class RelationshipBacktestConfig(BaseModel):
 
     # Signal thresholds
     min_gross_edge: float = Field(default=0.02, ge=0.0)
-    min_net_edge: float = Field(default=0.01, ge=0.0)
+    # Diagnostic presets may record negative-edge trades for failure-mode
+    # study — the hard floor is -0.5 to catch accidental sign-flips.
+    min_net_edge: float = Field(default=0.01, ge=-0.5)
     quote_staleness_limit_ms: int = 6 * 60 * 60 * 1000
 
     # Sizing
@@ -120,7 +122,9 @@ class ContextAwareBacktestConfig(BaseModel):
     min_context_rule_confidence: float = Field(default=0.65, ge=0.0, le=1.0)
     min_coverage_score: float = Field(default=0.60, ge=0.0, le=1.0)
     min_gross_edge: float = Field(default=0.02, ge=0.0)
-    min_net_edge: float = Field(default=0.01, ge=0.0)
+    # Diagnostic presets may record negative-edge trades for failure-mode
+    # study — the hard floor is -0.5 to catch accidental sign-flips.
+    min_net_edge: float = Field(default=0.01, ge=-0.5)
     quote_staleness_limit_ms: int = 6 * 60 * 60 * 1000
     signal_interval_ms: int = 60 * 60 * 1000
 

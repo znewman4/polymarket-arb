@@ -4,8 +4,6 @@ from __future__ import annotations
 
 from decimal import Decimal
 
-import pytest
-
 from polymarket_arb.backtest.price_alignment import align_price_series
 from polymarket_arb.storage.base import PriceHistoryRow
 from polymarket_arb.strategies.nesting_contradiction import AlignedPricePoint
@@ -172,7 +170,7 @@ def test_default_mode_unchanged_behaviour() -> None:
         alignment_mode="forward_fill_max_age",
     )
     assert len(pts_default) == len(pts_explicit)
-    for a, b in zip(pts_default, pts_explicit):
+    for a, b in zip(pts_default, pts_explicit, strict=False):
         assert a.price_a == b.price_a
         assert a.price_b == b.price_b
         assert a.ts_ms == b.ts_ms

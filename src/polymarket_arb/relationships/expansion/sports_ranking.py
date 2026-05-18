@@ -44,7 +44,7 @@ from ...storage.base import MarketRow, MarketSemanticsRow, RelationshipCandidate
 from ...storage.parquet.market_semantics_repo import ParquetMarketSemanticsRepository
 from ...storage.parquet.markets_repo import ParquetMarketsRepository
 from ...storage.parquet.relationship_candidates_repo import ParquetRelationshipCandidatesRepository
-from ..taxonomy import classify_market, _slug  # reuse existing slug normalisation
+from ..taxonomy import classify_market  # reuse existing slug normalisation
 from . import ExpansionResult
 from .audit import (
     GENERATED_BY,
@@ -126,7 +126,7 @@ def _tokens(market: MarketRow) -> tuple[str | None, str | None]:
 def _classify_market_info(
     market: MarketRow,
     sem: MarketSemanticsRow | None,
-) -> "_MarketInfo | None":
+) -> _MarketInfo | None:
     """Classify a market; return None if it's not a ranking-relevant market."""
     side = classify_market(market.question, sem)
     if side.outcome_subtype not in _RANKING_SUBTYPES:
@@ -172,7 +172,7 @@ def _year_guard(year_a: str | None, year_b: str | None) -> tuple[bool, str]:
     return True, "year_not_in_both_questions"
 
 
-def _implication_dir(a: "_MarketInfo", b: "_MarketInfo") -> str | None:
+def _implication_dir(a: _MarketInfo, b: _MarketInfo) -> str | None:
     """Return 'a_implies_b' / 'b_implies_a' for implication pairs, None otherwise.
 
     Handles:
@@ -206,10 +206,10 @@ def _implication_dir(a: "_MarketInfo", b: "_MarketInfo") -> str | None:
 
 
 def _make_pair(
-    a: "_MarketInfo",
-    b: "_MarketInfo",
+    a: _MarketInfo,
+    b: _MarketInfo,
     year_guard_result: tuple[bool, str],
-) -> "RelationshipCandidateRow | None":
+) -> RelationshipCandidateRow | None:
     """Build a RelationshipCandidateRow for the (a, b) pair, or None if invalid."""
     year_ok, year_note = year_guard_result
     if not year_ok:
@@ -318,7 +318,7 @@ def _make_pair(
     )
 
 
-def _should_be_mutually_exclusive(a: "_MarketInfo", b: "_MarketInfo") -> bool:
+def _should_be_mutually_exclusive(a: _MarketInfo, b: _MarketInfo) -> bool:
     """True if these two markets are logically mutually exclusive."""
     # Two different exact positions for the same team/season
     if a.exact_position is not None and b.exact_position is not None:

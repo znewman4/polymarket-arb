@@ -323,6 +323,25 @@ def _shared_nba_team_name(question_a: str, question_b: str) -> bool:
     return False
 
 
+_AUTO_ATTRIBUTE_SUBTYPES = frozenset({
+    # High-confidence pairwise-mutex / nesting subtypes whose outcome_space_id is
+    # tightly slugged by either the taxonomy or the deterministic semantic
+    # extractor.  When the curated context registry has no matching space we
+    # synthesise an `exploratory_context_unreviewed` decision so the relationship
+    # is replayable and attributable in the space-sweep rather than dropped into
+    # `research_only / context_missing`.
+    "primary_candidates_mutually_exclusive",
+    "candidate_wins_nomination",
+    "candidate_winner_same_election",
+    "first_round_winner",
+    "team_wins_championship",
+    "team_wins_conference",
+    "team_top_n_finish",
+    "team_exact_finish_position",
+    "party_winner_same_election",
+})
+
+
 def _decide(
     rel: RelationshipCandidateRow,
     space: ContextSpace | None,
@@ -332,6 +351,36 @@ def _decide(
     matched_template: DeterministicTemplate | None = None,
 ) -> dict[str, Any]:
     if space is None:
+        # Auto-attribute high-confidence trade-eligible subtypes whose
+        # outcome_space_id is a stable slug (year+race+party for primaries,
+        # league+season for sports, etc.).  These get an
+        # `exploratory_context_unreviewed` lane decision and use their own
+        # outcome_space_id as the context_space_id so the space-sweep can
+        # aggregate them under a named space rather than `synthetic_or_missing`.
+        is_auto_subtype = (
+            rel.relationship_subtype in _AUTO_ATTRIBUTE_SUBTYPES
+            or rel.relationship_subtype.startswith("llm_hypothesis_")
+            or rel.relationship_subtype.startswith("embedding_hypothesis_")
+            or rel.relationship_subtype.startswith("deepseek_hypothesis_")
+        )
+        if (
+            is_auto_subtype
+            and rel.outcome_space_id
+            and rel.final_confidence >= 0.45
+        ):
+            return _decision(
+                rel,
+                rel.outcome_space_id,
+                [],
+                "context_auto_attributed",
+                "exploratory_context_unreviewed",
+                rel.validation_status if rel.validation_status != "rejected" else "accepted",
+                "eligible",
+                (
+                    "auto-attributed: stable outcome_space_id + trade-eligible subtype"
+                    " (RESEARCH-ONLY, no curated context rules required)"
+                ),
+            )
         return _decision(
             rel,
             "",

@@ -1,0 +1,3 @@
+strategy_family,relationship_subtype,relationships_seen,gross_violations,accepted_simulated_trades,distinct_relationships_traded,simulated_pnl_note
+inverse,same_topic_no_trade,5987,5759,1,1,see accepted_simulated_trades.csv — RESEARCH-ONLY
+nested_a_implies_b,championship_implies_conference,483,97,3,3,see accepted_simulated_trades.csv — RESEARCH-ONLY

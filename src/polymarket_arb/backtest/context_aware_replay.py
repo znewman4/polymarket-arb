@@ -493,6 +493,8 @@ def _execute_candidate(
     rows = []
     total_fees = Decimal("0")
     total_slippage = Decimal("0")
+    provenance = _relationship_provenance(rel)
+    trade_group_id = candidate.candidate_id
     for leg, token_id, market_id, price in [
         ("a", candidate.token_id_a, rel.market_id_a, candidate.price_a),
         ("b", candidate.token_id_b, rel.market_id_b, candidate.price_b),
@@ -509,9 +511,15 @@ def _execute_candidate(
         total_slippage += costs.slippage_usdc
         rows.append({
             "trade_id": uuid.uuid4().hex,
+            "trade_group_id": trade_group_id,
             "candidate_id": candidate.candidate_id,
             "run_id": cfg.run_id,
             "relationship_id": rel.relationship_id,
+            "relationship_type": rel.relationship_type,
+            "relationship_subtype": rel.relationship_subtype,
+            "relationship_family": rel.relationship_family,
+            "strategy_family": rel.strategy_family,
+            "outcome_space_id": rel.outcome_space_id,
             "context_space_id": decision.context_space_id,
             "strategy_lane": decision.strategy_lane,
             "leg": leg,
@@ -526,8 +534,34 @@ def _execute_candidate(
             "slippage_cost_usdc": str(costs.slippage_usdc),
             "execution_model": cfg.execution_model,
             "holdout_bucket": _holdout_bucket(decision),
+            **provenance,
         })
     return rows, total_fees, total_slippage
+
+
+def _relationship_provenance(rel: RelationshipCandidateRow) -> dict[str, Any]:
+    try:
+        evidence = json.loads(rel.evidence_json or "{}")
+    except json.JSONDecodeError:
+        evidence = {}
+    source = (
+        evidence.get("hypothesis_source")
+        or evidence.get("source")
+        or evidence.get("source_candidate_method")
+        or "deterministic_relationship"
+    )
+    model_type = evidence.get("model_type") or (
+        "deterministic" if source == "deterministic_relationship" else ""
+    )
+    return {
+        "hypothesis_source": source,
+        "hypothesis_id": evidence.get("hypothesis_id") or rel.relationship_id,
+        "hypothesis_model_name": evidence.get("model_name") or evidence.get("deepseek_model") or "",
+        "hypothesis_model_type": model_type,
+        "hypothesis_prompt_version": evidence.get("prompt_version") or "",
+        "hypothesis_relationship_type": evidence.get("hypothesis_relationship_type") or evidence.get("relationship_type") or "",
+        "hypothesis_confidence": evidence.get("confidence") or rel.model_confidence,
+    }
 
 
 def _mark_to_market(trades: list[dict[str, Any]], price_repo: ParquetPriceHistoryRepository) -> Decimal:

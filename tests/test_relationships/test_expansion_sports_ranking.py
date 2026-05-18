@@ -27,12 +27,10 @@ from __future__ import annotations
 from decimal import Decimal
 from pathlib import Path
 
-import pytest
-
 from polymarket_arb.relationships.expansion.sports_ranking import (
-    _MarketInfo,
     _implication_dir,
     _make_pair,
+    _MarketInfo,
     _parse_position,
     _should_be_mutually_exclusive,
     _year_guard,
@@ -86,7 +84,7 @@ def test_year_guard_mismatch():
     assert "mismatch" in note.lower() or "2025" in note
 
 def test_year_guard_one_missing():
-    ok, note = _year_guard(None, "2026")
+    ok, _note = _year_guard(None, "2026")
     assert ok  # conservative: allow but flag
 
 def test_year_guard_both_missing():

@@ -8,21 +8,13 @@ from datetime import datetime, timezone
 from decimal import Decimal
 from pathlib import Path
 
-import pytest
-
 from polymarket_arb.backtest.template_bundle_replay import (
-    buy_all_no_subset_payout,
     _completeness_gate,
     _template_rel_ids,
+    buy_all_no_subset_payout,
     run_template_bundle_backtest,
     run_template_bundle_scan,
 )
-from polymarket_arb.strategies.category_bundle_scanner import (
-    CategoryBundleScanRow,
-    CategoryPricePoint,
-    scan_category_bundle,
-)
-from polymarket_arb.strategies.category_outcome_spaces import CategoryCandidate, CategoryOutcomeSpace
 from polymarket_arb.storage.base import (
     ContextRelationshipDecisionRow,
     PriceHistoryRow,
@@ -35,7 +27,16 @@ from polymarket_arb.storage.parquet.price_history_repo import ParquetPriceHistor
 from polymarket_arb.storage.parquet.relationship_candidates_repo import (
     ParquetRelationshipCandidatesRepository,
 )
-from polymarket_arb.strategies.category_outcome_spaces import group_template_mutual_exclusion_spaces
+from polymarket_arb.strategies.category_bundle_scanner import (
+    CategoryBundleScanRow,
+    CategoryPricePoint,
+    scan_category_bundle,
+)
+from polymarket_arb.strategies.category_outcome_spaces import (
+    CategoryCandidate,
+    CategoryOutcomeSpace,
+    group_template_mutual_exclusion_spaces,
+)
 from polymarket_arb.strategies.models import CategoryBundleBacktestConfig
 
 TS = int(datetime.now(timezone.utc).timestamp() * 1000)

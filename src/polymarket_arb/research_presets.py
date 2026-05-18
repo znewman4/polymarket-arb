@@ -36,6 +36,13 @@ PRESET_NAMES = frozenset({
     "gross_violation_scan",
     "net_after_cost_scan",
     "replay_many_entries",
+    # Aggressive exploratory presets (RESEARCH-ONLY).
+    "aggressive_learning_surface",
+    "aggressive_deterministic_surface",
+    "embedding_hypothesis_surface",
+    "deepseek_hypothesis_surface",
+    "ultra_loose_diagnostic_surface",
+    "ollama_hypothesis_surface",
 })
 
 
@@ -72,7 +79,9 @@ class ResearchPreset(BaseModel):
 
     # ── Edge gates ─────────────────────────────────────────────────────────────
     min_gross_edge: float = Field(default=0.02, ge=0.0)
-    min_net_edge: float = Field(default=0.01, ge=0.0)
+    # Diagnostic presets are allowed to record negative-edge trades for failure-mode
+    # study — the hard floor is -0.50 to catch accidental sign-flips.
+    min_net_edge: float = Field(default=0.01, ge=-0.5)
 
     # ── Costs ──────────────────────────────────────────────────────────────────
     slippage_bps: int = Field(default=50, ge=0)
@@ -95,6 +104,8 @@ class ResearchPreset(BaseModel):
     # ── Expansion features (Phase C+) ─────────────────────────────────────────
     include_transitive_closure: bool = False
     include_exploratory_relationships: bool = False
+    include_relationship_subtype_prefixes: list[str] = Field(default_factory=list)
+    exclude_relationship_subtype_prefixes: list[str] = Field(default_factory=list)
 
     # ── Output labelling ───────────────────────────────────────────────────────
     label_all_outputs_exploratory: bool = False
@@ -130,8 +141,8 @@ def load_preset(
 
 def apply_preset(
     preset: ResearchPreset,
-    base: "ContextAwareBacktestConfig | None" = None,  # noqa: F821  (imported lazily)
-) -> "ContextAwareBacktestConfig":
+    base: ContextAwareBacktestConfig | None = None,  # noqa: F821  (imported lazily)
+) -> ContextAwareBacktestConfig:  # noqa: F821  (imported lazily)
     """Return a ContextAwareBacktestConfig with preset values merged in.
 
     Only fields that ContextAwareBacktestConfig already knows about are written.

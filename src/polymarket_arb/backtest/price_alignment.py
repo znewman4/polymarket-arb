@@ -63,9 +63,9 @@ def align_price_series(
         Useful to reduce density when interval is small.
 
     Every returned AlignedPricePoint carries:
-        staleness_a_ms   — tick − price_a actual ts
-        staleness_b_ms   — tick − price_b actual ts
-        alignment_quality — "exact" (<15 min), "fresh" (<6 h), "stale" (≥6 h)
+        staleness_a_ms   - tick minus price_a actual ts
+        staleness_b_ms   - tick minus price_b actual ts
+        alignment_quality - "exact" (<15 min), "fresh" (<6 h), "stale" (>=6 h)
     """
     if not rows_a or not rows_b:
         return []

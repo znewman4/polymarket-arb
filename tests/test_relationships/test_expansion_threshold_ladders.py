@@ -10,16 +10,18 @@ From the brief:
 from __future__ import annotations
 
 from decimal import Decimal
-from pathlib import Path
-
-import pytest
 
 from polymarket_arb.relationships.expansion.threshold_ladders import run_threshold_ladder_expansion
-from polymarket_arb.relationships.threshold_extraction import ThresholdClaim, detect_threshold_nesting
+from polymarket_arb.relationships.threshold_extraction import (
+    ThresholdClaim,
+    detect_threshold_nesting,
+)
 from polymarket_arb.storage.base import MarketRow, MarketSemanticsRow
 from polymarket_arb.storage.parquet.market_semantics_repo import ParquetMarketSemanticsRepository
 from polymarket_arb.storage.parquet.markets_repo import ParquetMarketsRepository
-from polymarket_arb.storage.parquet.relationship_candidates_repo import ParquetRelationshipCandidatesRepository
+from polymarket_arb.storage.parquet.relationship_candidates_repo import (
+    ParquetRelationshipCandidatesRepository,
+)
 
 _TS = 1_700_000_000_000
 _JAN_2026 = 1767225600000  # approx 2026-01-01 in ms

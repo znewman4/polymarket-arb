@@ -481,9 +481,10 @@ def _suspicious_flags(row: dict[str, Any]) -> list[str]:
         flags.append("outcome_space_missing")
     if outcome_space_id.startswith("proxy_") or "same_topic" in outcome_space_id:
         flags.append("outcome_space_proxy")
-    if relationship_type in {"mutually_exclusive_category", "mutually_exclusive"}:
-        if not row.get("shared_event") and not row.get("outcome_space_id"):
-            flags.append("shared_event_missing")
+    if relationship_type in {"mutually_exclusive_category", "mutually_exclusive"} and (
+        not row.get("shared_event") and not row.get("outcome_space_id")
+    ):
+        flags.append("shared_event_missing")
     if "sports" in subtype or str(row.get("entity_type_a", "")) == "team":
         if not row.get("team_a") or not row.get("team_b"):
             flags.append("team_missing")
