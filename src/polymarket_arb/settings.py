@@ -128,6 +128,15 @@ class Settings(BaseSettings):
     nlp: NlpSettings = Field(default_factory=NlpSettings)
     orders_allowed: bool = False
 
+    # Live agent (Phase 3+).  paper_mode=True is the safe default: the agent
+    # runs the strategy + preflight + writes orders_log, but the OrderClient
+    # never submits to the network.  Flipping to live trading requires BOTH
+    # ``paper_mode=False`` AND ``orders_allowed=True`` AND a Polymarket
+    # signing key configured.
+    paper_mode: bool = True
+    agent_poll_interval_s: int = 10
+    agent_max_iterations: int | None = None  # None = run forever; tests set this
+
     ip_provider_primary: str = "https://api.ipify.org?format=json"
     ip_provider_secondary: str = "https://ifconfig.co/json"
 

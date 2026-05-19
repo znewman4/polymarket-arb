@@ -1,0 +1,37 @@
+# Image used by the recorder + agent services on a VPS.
+#
+# Builds on the repo's existing top-level Dockerfile; the only addition is a
+# small healthcheck script and a refusal to start if `paper_mode=False` is set
+# without `orders_allowed=True` (defence-in-depth — the OrderClient enforces
+# this too, but failing at container start surfaces the misconfiguration
+# immediately).
+#
+# The agent + recorder share this image; their commands differ.
+FROM python:3.11-slim AS base
+
+ENV PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1 \
+    PIP_NO_CACHE_DIR=1
+
+WORKDIR /app
+
+COPY pyproject.toml README.md ./
+COPY src ./src
+
+RUN pip install --upgrade pip && \
+    pip install -e .
+
+COPY configs ./configs
+COPY deploy/healthcheck.sh /usr/local/bin/agent-healthcheck
+RUN chmod +x /usr/local/bin/agent-healthcheck && \
+    mkdir -p /app/data/raw /app/data/normalised /app/data/account /app/data/derived /app/data/logs
+
+# `docker compose` configures the ENTRYPOINT per service.  No CMD here so the
+# compose file controls behaviour (recorder vs agent) explicitly.
+ENTRYPOINT ["python", "-m", "polymarket_arb.cli"]
+
+# Healthcheck: the agent or recorder is considered up iff `live healthcheck`
+# returns paper_mode=True and kill_switch_active=False (or paper_mode=False
+# with orders_allowed=True, which only happens after intentional live opt-in).
+HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
+  CMD /usr/local/bin/agent-healthcheck || exit 1

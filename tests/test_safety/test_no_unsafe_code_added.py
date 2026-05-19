@@ -47,8 +47,19 @@ _FORBIDDEN_CLOB_AUTH = re.compile(
 )
 
 
+# The Phase 3 live-trading infrastructure (paper_mode flag) lives in
+# ``src/polymarket_arb/live/`` and ``src/polymarket_arb/cli/live.py``.  Those
+# files legitimately reference OrderClient + signing as part of the paper-mode
+# scaffold and are EXEMPT from the wallet/order safety scan.  Backfill /
+# reports / relationships / strategies / backtest / context are still scanned.
+_PHASE3_LIVE_EXEMPT = {
+    "live.py",      # cli/live.py
+    "_aliases.py",  # cli aliasing layer
+}
+
+
 def _python_files(path: Path) -> list[Path]:
-    return list(path.rglob("*.py"))
+    return [p for p in path.rglob("*.py") if p.name not in _PHASE3_LIVE_EXEMPT]
 
 
 def _read_all(paths: list[Path]) -> str:

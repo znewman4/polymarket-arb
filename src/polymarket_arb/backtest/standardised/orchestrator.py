@@ -34,6 +34,7 @@ from .contract import (
     StandardisedRunManifest,
     StandardisedTradeRow,
 )
+from .depth_aware import apply_depth_aware_execution, build_orderbook_lookup
 from .report_pack import write_report_pack
 
 
@@ -69,6 +70,12 @@ class StandardisedBacktestConfig:
     # Ollama again.  Path to a deepseek_raw_responses.jsonl file.  When set,
     # skips the ~20-minute hypothesis-generation step.
     reuse_deepseek_responses_from: str | None = None
+    # Depth-aware execution post-pass.  When True, every trade leg is re-filled
+    # against recorded orderbook depth (within max_snapshot_age_ms of entry_ts).
+    # Legs without depth data fall back to the original flat-bps fill and are
+    # labelled execution_model_used="price_history_only_fallback".
+    enable_depth_aware_execution: bool = True
+    depth_max_snapshot_age_ms: int = 24 * 60 * 60 * 1000  # ±24h tolerance
     extra_config: dict[str, Any] = field(default_factory=dict)
 
 
@@ -386,12 +393,44 @@ def run_standardised_backtest(
         })
         _log(f"[8/8] control done — {len(ctl_trades)} legs in {time.time()-lane_t:.1f}s")
 
+    # ── Post-pass: depth-aware execution re-fill (re-prices each leg) ────────
+    if cfg.enable_depth_aware_execution:
+        depth_t = time.time()
+        _log(f"All lanes done — {len(trades)} total legs collected.  Running depth-aware execution pass…")
+        token_ids = {t.token_id for t in trades if t.token_id}
+        orderbook_lookup = build_orderbook_lookup(data_root, token_ids)
+        depth_summary = apply_depth_aware_execution(
+            trades,
+            orderbook_lookup=orderbook_lookup,
+            max_snapshot_age_ms=cfg.depth_max_snapshot_age_ms,
+        )
+        manifest.config_overrides["depth_execution_summary"] = depth_summary
+        _log(
+            f"Depth pass done in {time.time()-depth_t:.1f}s — "
+            f"filled_from_depth={depth_summary['legs_filled_from_depth']} "
+            f"fallback={depth_summary['legs_fallback_price_history_only']} "
+            f"coverage_pct={depth_summary['depth_coverage_pct']:.2f}%"
+        )
+
     # ── Post-pass: resolve every market & fill realised PnL ─────────────────
-    _log(f"All lanes done — {len(trades)} total legs collected.  Running resolution pass…")
+    _log("Running resolution pass…")
     res_t = time.time()
     raw_trade_dicts = [{"market_id": t.market_id, "token_id": t.token_id} for t in trades]
     resolution_lookup = build_resolution_lookup(data_root, raw_trade_dicts)
     _apply_resolution_to_trades(trades, resolution_lookup)
+    _log(f"Resolution pass done in {time.time()-res_t:.1f}s — {len(trades)} legs before causality gate")
+
+    # ── Causality gate: drop legs whose entry post-dates the inferred resolution ─
+    pre_gate = len(trades)
+    trades, causality_summary = _apply_causality_gate(trades)
+    n_suppressed = pre_gate - len(trades)
+    manifest.config_overrides["causality_summary"] = causality_summary
+    _log(
+        f"Causality gate: dropped {n_suppressed}/{pre_gate} legs "
+        f"(entry_ts >= inferred resolution_ts). Per-lane: "
+        + ", ".join(f"{k}={v}" for k, v in causality_summary["per_lane_suppressed"].items() if v > 0)
+    )
+
     n_resolved = sum(
         1 for t in trades if t.resolution_outcome in ("yes", "no")
     )
@@ -408,8 +447,7 @@ def run_standardised_backtest(
         "method": "infer_resolutions (price_convergence + closed_flag, ε=0.05)",
     }
     _log(
-        f"Resolution pass done in {time.time()-res_t:.1f}s — "
-        f"resolved={n_resolved} unresolved={n_unresolved} ({pct_unresolved:.1f}%)"
+        f"After causality gate: resolved={n_resolved} unresolved={n_unresolved} ({pct_unresolved:.1f}%)"
     )
 
     # ── DeepSeek funnel: where do hypotheses end up? ─────────────────────
@@ -440,6 +478,56 @@ def run_standardised_backtest(
         f"{pct_unresolved:.1f}% unresolved, total {time.time()-overall_start:.1f}s ==="
     )
     return out_dir
+
+
+def _apply_causality_gate(
+    trades: list[StandardisedTradeRow],
+) -> tuple[list[StandardisedTradeRow], dict[str, Any]]:
+    """Drop trade GROUPS whose any leg post-dates the inferred resolution.
+
+    A leg is "causality-violating" iff both ``entry_ts_ms`` and
+    ``resolution_ts_ms`` are known AND ``entry_ts_ms >= resolution_ts_ms``.
+    These trades have access to the outcome at entry time and represent
+    look-ahead leakage, not alpha.
+
+    Closed-form simulator trades and trades on unresolved markets are kept
+    (no resolution_ts to compare against).
+
+    Group-level dropping: if any leg in a ``trade_group_id`` fails the gate,
+    ALL legs in the group are dropped.  This preserves the paired-trade
+    invariant that downstream group-sizing guards depend on.
+
+    Returns ``(kept_trades, summary_dict)``.  The summary dict has keys
+    ``total_legs_before``, ``total_legs_after``, ``suppressed``,
+    ``per_lane_suppressed``, ``groups_suppressed``, and ``rule``.
+    """
+    # First pass: identify which trade_groups have any violating leg.
+    violating_groups: set[str] = set()
+    for t in trades:
+        if (
+            t.entry_ts_ms is not None
+            and t.resolution_ts_ms is not None
+            and t.resolution_ts_ms > 0
+            and t.entry_ts_ms >= t.resolution_ts_ms
+        ):
+            violating_groups.add(t.trade_group_id)
+    # Second pass: drop every leg of every violating group, count per lane.
+    per_lane: dict[str, int] = {}
+    kept: list[StandardisedTradeRow] = []
+    for t in trades:
+        if t.trade_group_id in violating_groups:
+            per_lane[t.source_lane] = per_lane.get(t.source_lane, 0) + 1
+            continue
+        kept.append(t)
+    summary = {
+        "rule": "drop_group_if any_leg.entry_ts_ms >= resolution_ts_ms",
+        "total_legs_before": len(trades),
+        "total_legs_after": len(kept),
+        "suppressed": len(trades) - len(kept),
+        "groups_suppressed": len(violating_groups),
+        "per_lane_suppressed": per_lane,
+    }
+    return kept, summary
 
 
 def _apply_resolution_to_trades(

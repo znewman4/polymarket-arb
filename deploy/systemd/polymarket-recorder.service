@@ -1,0 +1,25 @@
+[Unit]
+Description=polymarket-arb continuous orderbook recorder
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=polymarket
+Group=polymarket
+WorkingDirectory=/opt/polymarket-arb
+Environment=POLYMARKET_ARB_ENV=prod
+EnvironmentFile=/opt/polymarket-arb/.env
+# Recorder never trades; force the safe flags.
+Environment=POLYMARKET_ARB_ORDERS_ALLOWED=false
+Environment=POLYMARKET_ARB_PAPER_MODE=true
+ExecStart=/opt/polymarket-arb/.venv/bin/polymarket-arb record snapshots \
+    --limit 500 --interval 30s --duration 24h
+Restart=always
+RestartSec=10
+# StandardOutput/Error go to journald by default.
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

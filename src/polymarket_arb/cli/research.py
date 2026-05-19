@@ -787,6 +787,21 @@ def _run_expanded_universe_subcommands(
     help="Path to a deepseek_raw_responses.jsonl from a prior run.  When set, "
          "skips the ~20-minute Ollama hypothesis-generation step.",
 )
+@click.option(
+    "--enable-depth-aware/--no-depth-aware",
+    default=True,
+    show_default=True,
+    help="Re-fill each leg against recorded orderbook depth when available; "
+         "fall back to price_history_only otherwise (labelled explicitly).",
+)
+@click.option(
+    "--depth-max-snapshot-age-ms",
+    type=int,
+    default=24 * 60 * 60 * 1000,
+    show_default=True,
+    help="Max age (ms) between a leg's entry_ts and the nearest orderbook "
+         "snapshot before falling back to flat-bps slippage.",
+)
 @click.pass_context
 def standardised_backtest(
     ctx: click.Context,
@@ -804,6 +819,8 @@ def standardised_backtest(
     control_pairs: int,
     infinite_cash: bool,
     reuse_deepseek_responses_from: str | None,
+    enable_depth_aware: bool,
+    depth_max_snapshot_age_ms: int,
 ) -> None:
     """Run one standardised backtest across every lane and emit the report pack.
 
@@ -832,6 +849,8 @@ def standardised_backtest(
         control_pairs=control_pairs,
         infinite_cash=infinite_cash,
         reuse_deepseek_responses_from=reuse_deepseek_responses_from,
+        enable_depth_aware_execution=enable_depth_aware,
+        depth_max_snapshot_age_ms=depth_max_snapshot_age_ms,
     )
     out_dir = run_standardised_backtest(settings, cfg)
     click.echo(

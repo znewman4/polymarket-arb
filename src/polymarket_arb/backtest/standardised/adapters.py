@@ -522,16 +522,53 @@ def build_resolution_lookup(
             conf = 1.0 - avg_window
         else:
             continue
+        # Resolution timestamp = EARLIEST point at which the price entered the
+        # converged zone and stayed there.  This matters for the causality gate:
+        # a trade entered after this ts has access to the outcome and is leakage.
+        resolution_ts = _first_convergence_ts_ms(
+            sorted_rows, outcome=outcome, epsilon=price_convergence_epsilon,
+        )
         result[market_id] = InferredResolution(
             market_id=market_id,
             token_id_yes=yes_token,
             token_id_no=no_token,
-            resolution_ts_ms=int(sorted_rows[-1].ts_ms),
+            resolution_ts_ms=resolution_ts,
             yes_outcome=outcome,  # type: ignore[arg-type]
             confidence=float(conf),
             inference_method="price_convergence",
         )
     return result
+
+
+def _first_convergence_ts_ms(
+    sorted_rows: list,
+    *,
+    outcome: str,
+    epsilon: float,
+) -> int:
+    """Find the earliest tick where the price entered the converged zone and
+    stayed converged through the last observation.
+
+    For outcome="yes" the converged zone is [1-epsilon, 1.0].
+    For outcome="no"  the converged zone is [0.0, epsilon].
+    """
+    if not sorted_rows:
+        return 0
+    # Walk backward; the first time we encounter a NON-converged tick, the
+    # convergence began at the NEXT tick after it.  If we never find one,
+    # the price has always been converged → use the earliest tick.
+    threshold_hi = 1.0 - epsilon
+    threshold_lo = epsilon
+    for i in range(len(sorted_rows) - 1, -1, -1):
+        p = float(sorted_rows[i].price)
+        if outcome == "yes" and p < threshold_hi:
+            # Convergence started at i+1 (or last tick if i was the very end)
+            j = min(i + 1, len(sorted_rows) - 1)
+            return int(sorted_rows[j].ts_ms)
+        if outcome == "no" and p > threshold_lo:
+            j = min(i + 1, len(sorted_rows) - 1)
+            return int(sorted_rows[j].ts_ms)
+    return int(sorted_rows[0].ts_ms)
 
 
 def _attach_justification(

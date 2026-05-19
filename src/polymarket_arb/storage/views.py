@@ -223,6 +223,17 @@ VIEW_DEFINITIONS = {
         "SELECT * FROM read_parquet("
         "  '{root}/normalised/simulated_trades/dt=*/*.parquet', hive_partitioning=true)"
     ),
+    "orders_log_all": (
+        "CREATE OR REPLACE VIEW orders_log_all AS "
+        "SELECT * FROM read_parquet("
+        "  '{root}/normalised/orders_log/dt=*/*.parquet', hive_partitioning=true)"
+    ),
+    "orders_log_recent": (
+        "CREATE OR REPLACE VIEW orders_log_recent AS "
+        "SELECT * FROM read_parquet("
+        "  '{root}/normalised/orders_log/dt=*/*.parquet', hive_partitioning=true) "
+        "ORDER BY ts_ms DESC LIMIT 1000"
+    ),
     "backtest_metrics_all": (
         "CREATE OR REPLACE VIEW backtest_metrics_all AS "
         "SELECT * FROM read_parquet("

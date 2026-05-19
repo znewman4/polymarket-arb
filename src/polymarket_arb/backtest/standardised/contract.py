@@ -201,7 +201,19 @@ class StandardisedTradeRow(BaseModel):
     fees_usdc: float = 0.0
     slippage_cost_usdc: float = 0.0
     entry_cost_usdc: float = 0.0  # stake_per_leg + fees_per_leg
+    # What execution model was REQUESTED for this leg (matches preset/config).
     execution_model: str = "price_history_only"
+    # What execution model was ACTUALLY USED for this leg.  When recorded depth
+    # was unavailable for the leg's (token_id, entry_ts_ms), the depth pass
+    # falls back to price_history_only and records that here.  This makes the
+    # data-coverage gap explicit on every row.
+    execution_model_used: str = "price_history_only"
+    # 1.0 = recorded depth, 0.7 = spread model, 0.4 = price-history flat-bps,
+    # 0.1 = mark-only (see backtest.cost_model._EXECUTION_MODEL_CONFIDENCE).
+    execution_model_confidence: float | None = None
+    # If a depth lookup was attempted but missed, how far away was the nearest
+    # snapshot (ms)?  None = depth not attempted or token had no snapshots at all.
+    depth_lookup_nearest_age_ms: int | None = None
 
     # ── Edge / PnL ───────────────────────────────────────────────────────────
     gross_edge: float | None = None

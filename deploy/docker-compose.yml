@@ -1,0 +1,80 @@
+# VPS deployment: continuous orderbook recorder + paper-trading agent.
+#
+# Two services share one image and one ./data bind mount:
+#   recorder — runs ``polymarket-arb record snapshots`` indefinitely,
+#              populating data/normalised/orderbook_snapshots/ so the agent
+#              and future backtests have real depth data to read.
+#   agent    — runs ``polymarket-arb live agent`` indefinitely in paper-mode.
+#
+# Both services:
+#   - mount the kill-switch file from the host so ``touch .killswitch``
+#     halts trading without restarting the container.
+#   - load secrets from ../.env (gitignored).
+#   - restart on crash (``restart: unless-stopped``).
+#   - run the Docker healthcheck defined in Dockerfile.agent.
+#
+# Flipping to live trading requires editing .env to set BOTH
+# ``POLYMARKET_ARB_PAPER_MODE=false`` AND
+# ``POLYMARKET_ARB_ORDERS_ALLOWED=true`` AND providing
+# ``POLYMARKET_PRIVATE_KEY``.  The OrderClient still refuses to submit while
+# signing.py is a stub — see plan Phase 3.
+
+services:
+  recorder:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.agent
+    image: polymarket-arb:agent
+    container_name: polymarket-arb-recorder
+    restart: unless-stopped
+    env_file:
+      - ../.env
+    environment:
+      - POLYMARKET_ARB_ENV=${POLYMARKET_ARB_ENV:-prod}
+      # Recorder never needs the trade gate flipped — keep them safe.
+      - POLYMARKET_ARB_ORDERS_ALLOWED=false
+      - POLYMARKET_ARB_PAPER_MODE=true
+    volumes:
+      - ../data:/app/data
+      - ../configs:/app/configs:ro
+    command:
+      - record
+      - snapshots
+      - --limit
+      - "500"
+      - --interval
+      - "30s"
+      - --duration
+      - "24h"
+
+  agent:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.agent
+    image: polymarket-arb:agent
+    container_name: polymarket-arb-agent
+    restart: unless-stopped
+    depends_on:
+      - recorder
+    env_file:
+      - ../.env
+    environment:
+      - POLYMARKET_ARB_ENV=${POLYMARKET_ARB_ENV:-prod}
+      # Safe default: paper mode + orders disallowed.  Override in .env to flip.
+      - POLYMARKET_ARB_PAPER_MODE=${POLYMARKET_ARB_PAPER_MODE:-true}
+      - POLYMARKET_ARB_ORDERS_ALLOWED=${POLYMARKET_ARB_ORDERS_ALLOWED:-false}
+    volumes:
+      - ../data:/app/data
+      - ../configs:/app/configs:ro
+    # WATCHED_TOKENS is a comma-separated list defined in .env.  The agent
+    # polls each token's latest orderbook from the lake (populated by the
+    # recorder service) every poll-interval-s seconds.
+    command:
+      - live
+      - agent
+      - --watched-tokens
+      - "${POLYMARKET_ARB_WATCHED_TOKENS}"
+      - --poll-interval-s
+      - "${POLYMARKET_ARB_AGENT_POLL_INTERVAL_S:-10}"
+      - --strategy
+      - "${POLYMARKET_ARB_AGENT_STRATEGY:-noop}"

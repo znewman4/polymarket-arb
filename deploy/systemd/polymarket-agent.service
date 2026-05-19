@@ -1,0 +1,29 @@
+[Unit]
+Description=polymarket-arb paper / live trading agent loop
+After=network-online.target polymarket-recorder.service
+Wants=network-online.target
+# Don't start the agent if the recorder failed to come up; the agent needs
+# fresh orderbook snapshots from the lake.
+Requires=polymarket-recorder.service
+
+[Service]
+Type=simple
+User=polymarket
+Group=polymarket
+WorkingDirectory=/opt/polymarket-arb
+Environment=POLYMARKET_ARB_ENV=prod
+EnvironmentFile=/opt/polymarket-arb/.env
+# Defaults are safe.  Flipping to live trading requires editing /opt/polymarket-arb/.env
+# to set POLYMARKET_ARB_PAPER_MODE=false AND POLYMARKET_ARB_ORDERS_ALLOWED=true
+# AND providing POLYMARKET_PRIVATE_KEY.
+ExecStart=/opt/polymarket-arb/.venv/bin/polymarket-arb live agent \
+    --watched-tokens ${POLYMARKET_ARB_WATCHED_TOKENS} \
+    --poll-interval-s ${POLYMARKET_ARB_AGENT_POLL_INTERVAL_S} \
+    --strategy ${POLYMARKET_ARB_AGENT_STRATEGY}
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

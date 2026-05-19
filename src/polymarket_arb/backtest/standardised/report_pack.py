@@ -454,6 +454,47 @@ def _main_md(
         "Realised PnL is only available for resolved legs."
     )
 
+    causality = (manifest.config_overrides or {}).get("causality_summary") or {}
+    causality_total = int(causality.get("suppressed", 0) or 0)
+    causality_per_lane = causality.get("per_lane_suppressed") or {}
+    causality_lines: list[str] = []
+    if causality_total > 0:
+        per_lane_str = ", ".join(
+            f"{k}={v}" for k, v in causality_per_lane.items() if v
+        ) or "-"
+        causality_lines = [
+            f"**CAUSALITY GATE: {causality_total} legs suppressed** "
+            f"(entry_ts >= inferred resolution_ts).  Per-lane: {per_lane_str}.",
+            "",
+            "These trades had access to the market outcome at entry time and "
+            "would be look-ahead leakage if reported.  They are excluded from "
+            "the standardised trade log; only audit-resolved survivors are below.",
+            "",
+        ]
+
+    depth = (manifest.config_overrides or {}).get("depth_execution_summary") or {}
+    depth_lines: list[str] = []
+    if depth:
+        cov = float(depth.get("depth_coverage_pct") or 0.0)
+        filled = int(depth.get("legs_filled_from_depth") or 0)
+        fallback = int(depth.get("legs_fallback_price_history_only") or 0)
+        status = (
+            "**DEPTH-AWARE EXECUTION: FULL COVERAGE.**" if cov >= 99.0
+            else f"**DEPTH-AWARE EXECUTION: {cov:.1f}% coverage.**  "
+            f"{filled}/{filled + fallback} legs filled from recorded orderbook depth; "
+            f"the rest fell back to flat-bps slippage and are tagged "
+            f"`execution_model_used=price_history_only_fallback`."
+        )
+        depth_lines = [status, ""]
+        if cov < 50.0:
+            depth_lines.append(
+                "_Coverage is low because the historical orderbook lake is sparse — "
+                "the realism gap is explicit in the trade log, not hidden.  "
+                "Continuous orderbook recording on the VPS (Phase 4) closes this gap "
+                "going forward._"
+            )
+            depth_lines.append("")
+
     lines = [
         "# Main Standardised Backtest Report",
         "",
@@ -461,9 +502,12 @@ def _main_md(
         "",
         banner,
         "",
+        *causality_lines,
+        *depth_lines,
         f"- run_id: `{manifest.run_id}`",
         f"- output: `{manifest.output_dir}`",
         f"- total trade legs: **{len(trades)}**",
+        f"- causality-suppressed (excluded from totals): **{causality_total}**",
         f"- rulebook legs: **{rb}** | AI legs: **{ai}** | exploratory: **{exploratory}** | strict-validation: **{strict}** | controls: **{controls}** | diagnostic: **{diagnostic}**",
         f"- resolved: **{resolved}** | unresolved: **{unresolved}** ({pct_unresolved:.1f}%) | realised-PnL legs: **{realised_observed}**",
         "",

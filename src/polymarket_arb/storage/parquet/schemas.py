@@ -666,4 +666,35 @@ ALL_SCHEMAS = {
     "context_documents": CONTEXT_DOCUMENTS_SCHEMA_V1,
     "context_rules": CONTEXT_RULES_SCHEMA_V1,
     "context_relationship_decisions": CONTEXT_RELATIONSHIP_DECISIONS_SCHEMA_V1,
+    "orders_log": None,  # populated below
 }
+
+ORDERS_LOG_SCHEMA_V1 = pa.schema([
+    pa.field("intent_id", pa.string()),
+    pa.field("ts_ms", pa.int64()),
+    pa.field("strategy_id", pa.string()),
+    pa.field("token_id", pa.string()),
+    pa.field("market_id", pa.string()),
+    pa.field("side", pa.string()),
+    pa.field("requested_size", pa.string()),
+    pa.field("filled_size", pa.string()),
+    pa.field("avg_fill_price", pa.string()),  # nullable
+    pa.field("notional_usdc", pa.string()),
+    pa.field("fees_usdc", pa.string()),
+    pa.field("status", pa.string()),
+    pa.field("reason", pa.string()),
+    pa.field("paper_mode", pa.bool_()),
+    pa.field("kill_switch_active", pa.bool_()),
+    pa.field("orders_allowed", pa.bool_()),
+    pa.field("preflight_passed", pa.bool_()),
+    pa.field("preflight_token_id", pa.string()),  # nullable
+    pa.field("http_status", pa.int32()),  # nullable
+    pa.field("source_lane", pa.string()),
+    pa.field("source_relationship_id", pa.string()),
+    pa.field("source_hypothesis_id", pa.string()),
+    pa.field("schema_version", pa.int32()),
+    pa.field("ingested_ts_ms", pa.int64()),
+    pa.field("notes", pa.string()),
+    pa.field("detail_json", pa.string()),
+])
+ALL_SCHEMAS["orders_log"] = ORDERS_LOG_SCHEMA_V1
