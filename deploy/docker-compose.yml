@@ -1,9 +1,9 @@
 # VPS deployment: continuous orderbook recorder + paper-trading agent.
 #
 # Two services share one image and one ./data bind mount:
-#   recorder — runs ``polymarket-arb record snapshots`` indefinitely,
-#              populating data/normalised/orderbook_snapshots/ so the agent
-#              and future backtests have real depth data to read.
+#   recorder — continuously refreshes markets and snapshots active orderbooks,
+#              populating data/normalised/ so the agent and future backtests
+#              have fresh data to read.
 #   agent    — runs ``polymarket-arb live agent`` indefinitely in paper-mode.
 #
 # Both services:
@@ -37,15 +37,16 @@ services:
     volumes:
       - ../data:/app/data
       - ../configs:/app/configs:ro
+    entrypoint: []
     command:
-      - record
-      - snapshots
-      - --limit
-      - "500"
-      - --interval
-      - "30s"
-      - --duration
-      - "24h"
+      - /bin/sh
+      - -c
+      - |
+        while true; do
+          python -m polymarket_arb.cli fetch-markets --all
+          python -m polymarket_arb.cli snapshot-active-markets --limit 500
+          sleep 30
+        done
 
   agent:
     build:
