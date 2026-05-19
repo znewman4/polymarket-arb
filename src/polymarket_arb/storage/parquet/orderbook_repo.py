@@ -52,20 +52,34 @@ class ParquetOrderbookRepository:
         return any((self._root / "normalised" / _TABLE).glob("dt=*/*.parquet"))
 
     def latest_book(self, token_id: str) -> OrderbookSnapshot | None:
-        if not self._has_data():
-            return None
+        return self.latest_books_bulk([token_id]).get(token_id)
+
+    def latest_books_bulk(self, token_ids: list[str]) -> dict[str, OrderbookSnapshot]:
+        wanted = list(dict.fromkeys(token_ids))
+        if not wanted or not self._has_data():
+            return {}
+
+        placeholders = ", ".join("?" for _ in wanted)
+        sql = (
+            "WITH latest AS ("
+            "  SELECT *, row_number() OVER (PARTITION BY token_id "
+            "    ORDER BY timestamp_ms DESC, ingested_ts_ms DESC) AS rn"
+            f"  FROM read_parquet('{self._glob()}', hive_partitioning=true)"
+            f"  WHERE token_id IN ({placeholders})"
+            ")"
+            " SELECT * EXCLUDE rn FROM latest WHERE rn = 1"
+        )
         con = duckdb.connect()
         try:
-            cur = con.execute(
-                f"SELECT * FROM read_parquet('{self._glob()}', hive_partitioning=true) "
-                "WHERE token_id = ? ORDER BY timestamp_ms DESC, ingested_ts_ms DESC LIMIT 1",
-                [token_id],
-            )
+            cur = con.execute(sql, wanted)
             cols = [c[0] for c in cur.description]
-            row = cur.fetchone()
+            rows = cur.fetchall()
         finally:
             con.close()
-        return _row(dict(zip(cols, row, strict=False))) if row else None
+        return {
+            snap.token_id: snap
+            for snap in (_row(dict(zip(cols, row, strict=False))) for row in rows)
+        }
 
 
 def _row(d: dict) -> OrderbookSnapshot:

@@ -6,7 +6,7 @@ latest orderbook snapshots, and routes any resulting ``OrderIntent`` through
 
 The loop:
     1. Check kill switch → halt if active.
-    2. For each watched token_id, load the latest orderbook snapshot.
+    2. Bulk-load the latest orderbook snapshots for watched token_ids.
     3. Call the strategy callable with the current state → list[OrderIntent].
     4. For each intent, OrderClient.place_order() → OrdersLogRow.
     5. Sleep ``agent_poll_interval_s``.
@@ -103,13 +103,9 @@ def run_agent_loop(
             return stats
 
         ts_ms = int(now_fn() * 1000)
-        # Build the per-tick snapshot.  Missing books are fine; the strategy
-        # decides whether to fire on partial state.
-        snapshots: dict[str, OrderbookSnapshot] = {}
-        for tok in watched:
-            book = book_repo.latest_book(tok)
-            if book is not None:
-                snapshots[tok] = book
+        # Build the per-tick snapshot in one DuckDB query. Missing books are
+        # fine; the strategy decides whether to fire on partial state.
+        snapshots = book_repo.latest_books_bulk(watched)
 
         state = AgentState(ts_ms=ts_ms, watched_tokens=watched, latest_book_by_token=snapshots)
         intents = strategy(state) or []

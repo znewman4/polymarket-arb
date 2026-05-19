@@ -43,6 +43,19 @@ def _noop_strategy(_state: AgentState) -> list[OrderIntent]:
     return []
 
 
+class _BulkOnlyOrderbookRepo:
+    def __init__(self, snapshots: dict[str, OrderbookSnapshot]) -> None:
+        self.snapshots = snapshots
+        self.bulk_calls: list[list[str]] = []
+
+    def latest_books_bulk(self, token_ids: list[str]) -> dict[str, OrderbookSnapshot]:
+        self.bulk_calls.append(list(token_ids))
+        return {token_id: self.snapshots[token_id] for token_id in token_ids if token_id in self.snapshots}
+
+    def latest_book(self, _token_id: str) -> OrderbookSnapshot | None:
+        raise AssertionError("agent loop should use latest_books_bulk")
+
+
 def test_agent_loop_runs_max_iterations_and_emits_orders(settings, tmp_data_root) -> None:
     _seed_book(tmp_data_root, "tok-a")
     s = settings.model_copy(update={
@@ -114,3 +127,36 @@ def test_agent_loop_noop_strategy_writes_no_orders(settings, tmp_data_root) -> N
     assert stats.orders_placed == 0
     rows = list(ParquetOrdersLogRepository(tmp_data_root).iter_recent())
     assert len(rows) == 0
+
+
+def test_agent_loop_loads_orderbooks_in_bulk(settings, tmp_data_root) -> None:
+    s = settings.model_copy(update={
+        "paper_mode": True, "agent_poll_interval_s": 1, "agent_max_iterations": 2,
+    })
+    snap = OrderbookSnapshot(
+        token_id="tok-a", condition_id=None, market_slug=None,
+        timestamp_ms=1_700_000_000_000,
+        bids=[],
+        asks=[OrderbookLevel(price=Decimal("0.51"), size=Decimal("100"))],
+        book_hash=None, source="rest",
+        schema_version=1, ingested_ts_ms=1_700_000_000_000,
+    )
+    repo = _BulkOnlyOrderbookRepo({"tok-a": snap})
+    seen_snapshots: list[dict[str, OrderbookSnapshot]] = []
+
+    def strategy(state: AgentState) -> list[OrderIntent]:
+        seen_snapshots.append(state.latest_book_by_token)
+        return []
+
+    stats = run_agent_loop(
+        s,
+        watched_tokens=["tok-a", "tok-b", "tok-a"],
+        strategy=strategy,
+        orderbook_repo=repo,  # type: ignore[arg-type]
+        sleep_fn=lambda _seconds: None,
+        now_fn=lambda: 1_700_000_000.0,
+    )
+
+    assert stats.iterations == 2
+    assert repo.bulk_calls == [["tok-a", "tok-b"], ["tok-a", "tok-b"]]
+    assert seen_snapshots == [{"tok-a": snap}, {"tok-a": snap}]
