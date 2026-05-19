@@ -66,15 +66,14 @@ services:
     volumes:
       - ../data:/app/data
       - ../configs:/app/configs:ro
-    # WATCHED_TOKENS is a comma-separated list defined in .env.  The agent
-    # polls each token's latest orderbook from the lake (populated by the
-    # recorder service) every poll-interval-s seconds.
+    # The agent auto-populates watched tokens from eligible relationship
+    # candidates in the lake, then polls each token's latest orderbook from
+    # the recorder service every poll-interval-s seconds.
     command:
       - live
       - agent
-      - --watched-tokens
-      - "${POLYMARKET_ARB_WATCHED_TOKENS}"
       - --poll-interval-s
       - "${POLYMARKET_ARB_AGENT_POLL_INTERVAL_S:-10}"
       - --strategy
       - "${POLYMARKET_ARB_AGENT_STRATEGY:-noop}"
+      - --strategy-auto-tokens
