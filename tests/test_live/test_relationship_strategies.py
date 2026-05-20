@@ -144,11 +144,12 @@ def test_watched_tokens_required_without_auto_tokens() -> None:
         live._resolve_watched_tokens("", [], strategy_auto_tokens=False)
 
 
-def test_relationship_strategy_skips_missing_yes_books_or_incomplete_books() -> None:
-    rel = _rel()
+def test_relationship_strategy_skips_missing_yes_books_or_incomplete_books(tmp_data_root) -> None:
+    repo = ParquetRelationshipCandidatesRepository(tmp_data_root)
+    repo.append_many([_rel()])
     strategy = live._build_strategy(
         "relationship_diagnostic",
-        relationships=[rel],
+        data_root=tmp_data_root,
         run_id="live_test",
     )
 
@@ -159,11 +160,12 @@ def test_relationship_strategy_skips_missing_yes_books_or_incomplete_books() -> 
     )) == []
 
 
-def test_relationship_diagnostic_emits_two_token_mapped_intents() -> None:
-    rel = _rel(relationship_type="nested_a_implies_b")
+def test_relationship_diagnostic_emits_two_token_mapped_intents(tmp_data_root) -> None:
+    repo = ParquetRelationshipCandidatesRepository(tmp_data_root)
+    repo.append_many([_rel(relationship_type="nested_a_implies_b")])
     strategy = live._build_strategy(
         "relationship_diagnostic",
-        relationships=[rel],
+        data_root=tmp_data_root,
         run_id="live_test",
     )
 
@@ -185,8 +187,9 @@ def test_relationship_diagnostic_emits_two_token_mapped_intents() -> None:
     assert intents[1].id.endswith(":b")
 
 
-def test_relationship_aggressive_accepts_signal_diagnostic_rejects() -> None:
-    rel = _rel(relationship_type="nested_a_implies_b")
+def test_relationship_aggressive_accepts_signal_diagnostic_rejects(tmp_data_root) -> None:
+    repo = ParquetRelationshipCandidatesRepository(tmp_data_root)
+    repo.append_many([_rel(relationship_type="nested_a_implies_b")])
     state = _state(
         _book("a_yes", bid="0.53", ask="0.55"),
         _book("b_yes", bid="0.49", ask="0.51"),
@@ -194,12 +197,12 @@ def test_relationship_aggressive_accepts_signal_diagnostic_rejects() -> None:
 
     diagnostic = live._build_strategy(
         "relationship_diagnostic",
-        relationships=[rel],
+        data_root=tmp_data_root,
         run_id="live_test_diag",
     )
     aggressive = live._build_strategy(
         "relationship_aggressive",
-        relationships=[rel],
+        data_root=tmp_data_root,
         run_id="live_test_agg",
     )
 

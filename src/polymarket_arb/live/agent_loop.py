@@ -79,6 +79,7 @@ def run_agent_loop(
     data_root: Path | None = None,
     sleep_fn: Callable[[float], None] = time.sleep,
     now_fn: Callable[[], float] = time.time,
+    watched_tokens_fn: Callable[[], list[str]] | None = None,
 ) -> AgentLoopStats:
     """Run the agent loop until kill switch or ``agent_max_iterations`` is hit.
 
@@ -113,6 +114,8 @@ def run_agent_loop(
                 return stats
 
             ts_ms = int(now_fn() * 1000)
+            if watched_tokens_fn is not None:
+                watched = list(dict.fromkeys(watched_tokens_fn()))
             # Build the per-tick snapshot in one DuckDB query. Missing books are
             # fine; the strategy decides whether to fire on partial state.
             snapshots = book_repo.latest_books_bulk(watched)

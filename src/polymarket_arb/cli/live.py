@@ -10,7 +10,7 @@ from __future__ import annotations
 
 import json
 import time
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from dataclasses import dataclass
 from decimal import Decimal
 from pathlib import Path
@@ -127,6 +127,8 @@ def live_agent(
     if poll_interval_s is not None:
         settings = settings.model_copy(update={"agent_poll_interval_s": poll_interval_s})
 
+    # Load relationships once at startup to resolve initial watched tokens and
+    # to fail fast if the lake is empty.
     relationships = (
         _load_live_relationships(settings.data_root)
         if strategy_auto_tokens or _is_relationship_strategy(strategy)
@@ -139,14 +141,22 @@ def live_agent(
     )
     strategy_fn = _build_strategy(
         strategy,
-        relationships=relationships,
+        data_root=settings.data_root,
         run_id=_new_live_run_id(strategy),
+    )
+    # For relationship strategies with auto-tokens, refresh watched token list
+    # each tick so newly generated relationship candidates are picked up.
+    watched_tokens_fn = (
+        _make_watched_tokens_fn(settings.data_root, _parse_watched_tokens(watched_tokens_str))
+        if (strategy_auto_tokens and _is_relationship_strategy(strategy))
+        else None
     )
 
     stats = run_agent_loop(
         settings,
         watched_tokens=tokens,
         strategy=strategy_fn,
+        watched_tokens_fn=watched_tokens_fn,
     )
     click.echo(
         json.dumps(
@@ -226,22 +236,33 @@ def _dedupe(tokens: Iterable[str]) -> list[str]:
 def _build_strategy(
     strategy_id: str,
     *,
-    relationships: list[RelationshipCandidateRow],
+    data_root: Path,
     run_id: str,
 ) -> StrategyFn:
     entry = _STRATEGIES[strategy_id]
     if not isinstance(entry, _RelationshipStrategyConfig):
         return entry
-    return _make_relationship_strategy(entry, relationships=relationships, run_id=run_id)
+    return _make_relationship_strategy(entry, data_root=data_root, run_id=run_id)
+
+
+def _make_watched_tokens_fn(
+    data_root: Path,
+    manual_tokens: list[str],
+) -> Callable[[], list[str]]:
+    def fn() -> list[str]:
+        rels = _load_live_relationships(data_root)
+        return _dedupe([*manual_tokens, *_relationship_token_ids(rels)])
+    return fn
 
 
 def _make_relationship_strategy(
     config: _RelationshipStrategyConfig,
     *,
-    relationships: list[RelationshipCandidateRow],
+    data_root: Path,
     run_id: str,
 ) -> StrategyFn:
     def strategy(state: AgentState) -> list[OrderIntent]:
+        relationships = _load_live_relationships(data_root)
         intents: list[OrderIntent] = []
         for rel in relationships:
             point = _aligned_point_from_state(rel, state)
