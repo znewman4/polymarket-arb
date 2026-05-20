@@ -17,7 +17,7 @@ WORKDIR /app
 
 # Copy only dependency files first — this layer caches until pyproject.toml changes
 COPY pyproject.toml README.md ./
-RUN pip install --upgrade pip && pip install -e . --no-build-isolation
+RUN pip install --upgrade pip && pip install hatchling && pip install -e .
 
 # Now copy application code — changes here don't bust the pip cache
 COPY src ./src
