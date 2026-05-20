@@ -1,11 +1,5 @@
 # Image used by the recorder + agent services on a VPS.
 #
-# Builds on the repo's existing top-level Dockerfile; the only addition is a
-# small healthcheck script and a refusal to start if `paper_mode=False` is set
-# without `orders_allowed=True` (defence-in-depth — the OrderClient enforces
-# this too, but failing at container start surfaces the misconfiguration
-# immediately).
-#
 # The agent + recorder share this image; their commands differ.
 FROM python:3.11-slim AS base
 
@@ -15,15 +9,14 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-# Copy only dependency files first — this layer caches until pyproject.toml changes
 COPY pyproject.toml README.md ./
-RUN pip install --upgrade pip && pip install hatchling && pip install -e .
-
-# Now copy application code — changes here don't bust the pip cache
 COPY src ./src
 COPY configs ./configs
 COPY deploy/healthcheck.sh /usr/local/bin/agent-healthcheck
-RUN chmod +x /usr/local/bin/agent-healthcheck && \
+
+RUN pip install --upgrade pip && \
+    pip install -e . && \
+    chmod +x /usr/local/bin/agent-healthcheck && \
     mkdir -p /app/data/raw /app/data/normalised /app/data/account /app/data/derived /app/data/logs
 
 # The agent service uses this Python CLI entrypoint. The recorder service
