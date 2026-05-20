@@ -43,8 +43,8 @@ services:
       - -c
       - |
         while true; do
-          python -m polymarket_arb.cli fetch-markets --all
-          python -m polymarket_arb.cli snapshot-active-markets --limit 500
+          python -m polymarket_arb.cli fetch-markets --all --max-pages 50
+          python -m polymarket_arb.cli snapshot-active-markets --limit 2000
           sleep 30
         done
 

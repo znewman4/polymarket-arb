@@ -23,10 +23,12 @@ class ParquetOrderbookRepository:
         *,
         compression: str = "zstd",
         row_group_size: int = 50_000,
+        duckdb_connection: duckdb.DuckDBPyConnection | None = None,
     ) -> None:
         self._root = data_root
         self._compression = compression
         self._row_group_size = row_group_size
+        self._duckdb_connection = duckdb_connection
 
     def append_snapshot(self, snap: OrderbookSnapshot) -> None:
         self.append_snapshots([snap])
@@ -69,13 +71,14 @@ class ParquetOrderbookRepository:
             ")"
             " SELECT * EXCLUDE rn FROM latest WHERE rn = 1"
         )
-        con = duckdb.connect()
+        con = self._duckdb_connection or duckdb.connect()
         try:
             cur = con.execute(sql, wanted)
             cols = [c[0] for c in cur.description]
             rows = cur.fetchall()
         finally:
-            con.close()
+            if self._duckdb_connection is None:
+                con.close()
         return {
             snap.token_id: snap
             for snap in (_row(dict(zip(cols, row, strict=False))) for row in rows)
