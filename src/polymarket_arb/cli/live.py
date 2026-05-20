@@ -26,6 +26,7 @@ from ..storage.base import (
     RelationshipCandidateRow,
     StrategyCandidateRow,
 )
+from ..storage.parquet.markets_repo import ParquetMarketsRepository
 from ..storage.parquet.relationship_candidates_repo import ParquetRelationshipCandidatesRepository
 from ..strategies.nesting_contradiction import AlignedPricePoint, evaluate_relationship_at_tick
 
@@ -184,11 +185,22 @@ def _is_relationship_strategy(strategy_id: str) -> bool:
     return isinstance(_STRATEGIES[strategy_id], _RelationshipStrategyConfig)
 
 
+def _load_active_token_ids(data_root: Path) -> frozenset[str]:
+    repo = ParquetMarketsRepository(data_root)
+    token_ids: set[str] = set()
+    for market in repo.iter_active_markets():
+        token_ids.update(market.clob_token_ids)
+    return frozenset(token_ids)
+
+
 def _load_live_relationships(data_root: Path) -> list[RelationshipCandidateRow]:
+    active_tokens = _load_active_token_ids(data_root)
     repo = ParquetRelationshipCandidatesRepository(data_root)
     return [
         rel for rel in repo.iter_latest()
         if rel.validation_status in _ELIGIBLE_RELATIONSHIP_STATUSES
+        and rel.token_id_a_yes in active_tokens
+        and rel.token_id_b_yes in active_tokens
     ]
 
 

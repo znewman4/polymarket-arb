@@ -10,7 +10,8 @@ import pytest
 
 from polymarket_arb.cli import live
 from polymarket_arb.live.agent_loop import AgentState
-from polymarket_arb.storage.base import OrderbookLevel, OrderbookSnapshot, RelationshipCandidateRow
+from polymarket_arb.storage.base import MarketRow, OrderbookLevel, OrderbookSnapshot, RelationshipCandidateRow
+from polymarket_arb.storage.parquet.markets_repo import ParquetMarketsRepository
 from polymarket_arb.storage.parquet.relationship_candidates_repo import (
     ParquetRelationshipCandidatesRepository,
 )
@@ -84,6 +85,38 @@ def _book(
     )
 
 
+def _seed_active_markets(data_root, *token_ids: str) -> None:
+    """Write one active market per token_id into the markets lake."""
+    repo = ParquetMarketsRepository(data_root)
+    repo.upsert_markets([
+        MarketRow(
+            id=f"market_{tid}",
+            condition_id=f"cond_{tid}",
+            slug=f"slug-{tid}",
+            question=f"Q {tid}?",
+            description=None,
+            end_date_ms=None,
+            start_date_ms=None,
+            closed_at_ms=None,
+            resolved_at_ms=None,
+            active=True,
+            closed=False,
+            archived=False,
+            outcomes=["Yes", "No"],
+            gamma_outcome_prices_snapshot=[Decimal("0.5"), Decimal("0.5")],
+            clob_token_ids=[tid],
+            volume=None,
+            liquidity=None,
+            event_id=None,
+            neg_risk=False,
+            text_hash=f"hash_{tid}",
+            schema_version=1,
+            ingested_ts_ms=_TS,
+        )
+        for tid in token_ids
+    ])
+
+
 def _state(*books: OrderbookSnapshot, ts_ms: int = _TS) -> AgentState:
     return AgentState(
         ts_ms=ts_ms,
@@ -101,6 +134,7 @@ def test_relationship_strategy_registry_exposes_expected_names() -> None:
 
 
 def test_load_live_relationships_filters_to_accepted_and_manual_review(tmp_data_root) -> None:
+    _seed_active_markets(tmp_data_root, "a_yes", "b_yes")
     repo = ParquetRelationshipCandidatesRepository(tmp_data_root)
     repo.append_many([
         _rel("rel_accepted", validation_status="accepted"),
@@ -145,6 +179,7 @@ def test_watched_tokens_required_without_auto_tokens() -> None:
 
 
 def test_relationship_strategy_skips_missing_yes_books_or_incomplete_books(tmp_data_root) -> None:
+    _seed_active_markets(tmp_data_root, "a_yes", "b_yes")
     repo = ParquetRelationshipCandidatesRepository(tmp_data_root)
     repo.append_many([_rel()])
     strategy = live._build_strategy(
@@ -161,6 +196,7 @@ def test_relationship_strategy_skips_missing_yes_books_or_incomplete_books(tmp_d
 
 
 def test_relationship_diagnostic_emits_two_token_mapped_intents(tmp_data_root) -> None:
+    _seed_active_markets(tmp_data_root, "a_yes", "b_yes")
     repo = ParquetRelationshipCandidatesRepository(tmp_data_root)
     repo.append_many([_rel(relationship_type="nested_a_implies_b")])
     strategy = live._build_strategy(
@@ -188,6 +224,7 @@ def test_relationship_diagnostic_emits_two_token_mapped_intents(tmp_data_root) -
 
 
 def test_relationship_aggressive_accepts_signal_diagnostic_rejects(tmp_data_root) -> None:
+    _seed_active_markets(tmp_data_root, "a_yes", "b_yes")
     repo = ParquetRelationshipCandidatesRepository(tmp_data_root)
     repo.append_many([_rel(relationship_type="nested_a_implies_b")])
     state = _state(
