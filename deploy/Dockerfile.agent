@@ -15,16 +15,12 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
+# Copy only dependency files first — this layer caches until pyproject.toml changes
 COPY pyproject.toml README.md ./
+RUN pip install --upgrade pip && pip install -e . --no-build-isolation
+
+# Now copy application code — changes here don't bust the pip cache
 COPY src ./src
-
-# The recorder service clears this image's Python entrypoint and runs a shell
-# loop; python:3.11-slim provides /bin/sh, and this check makes that contract
-# explicit if the base image changes later.
-RUN test -x /bin/sh && \
-    pip install --upgrade pip && \
-    pip install -e .
-
 COPY configs ./configs
 COPY deploy/healthcheck.sh /usr/local/bin/agent-healthcheck
 RUN chmod +x /usr/local/bin/agent-healthcheck && \
