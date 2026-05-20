@@ -108,6 +108,10 @@ POLYMARKET_ARB_AGENT_POLL_INTERVAL_S=10
 
 ```
 Edit locally in VS Code
+
+
+Always run python -m pytest tests/ -q and python -m ruff check src/ tests/ locally before committing. Fix all failures before pushing. Never push a broken build.
+
   → git push to main
   → SSM terminal on EC2:
       cd ~/polymarket-arb && git pull && sudo docker compose -f deploy/docker-compose.yml --env-file ~/polymarket-arb/.env up -d --build
