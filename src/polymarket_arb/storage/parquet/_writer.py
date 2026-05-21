@@ -25,16 +25,23 @@ def normalised_table_dir(data_root: Path, table: str, ts: datetime) -> Path:
     return data_root / "normalised" / table / f"dt={ts.strftime('%Y-%m-%d')}"
 
 
+_COMPACT_THRESHOLD = 100
+_COMPACT_BATCH = 50  # well under OS fd limit (~1024)
+
+
 def _maybe_compact(dir_: Path, compression: str) -> None:
-    """Merge all part-files in dir_ into one if count exceeds threshold."""
+    """Merge one batch of part-files per call. Called after every write,
+    so repeated writes progressively drain the backlog."""
     files = sorted(dir_.glob("*.parquet"))
     if len(files) <= _COMPACT_THRESHOLD:
         return
 
+    # Take one batch only — avoids opening thousands of fds at once.
+    batch = files[:_COMPACT_BATCH]
     uid = uuid.uuid4().hex[:8]
     tmp = dir_ / f"compacted-{uid}.parquet.tmp"
     out = dir_ / f"compacted-{uid}.parquet"
-    quoted = ", ".join(f"'{f}'" for f in files)
+    quoted = ", ".join(f"'{f}'" for f in batch)
 
     con = duckdb.connect()
     try:
@@ -49,7 +56,7 @@ def _maybe_compact(dir_: Path, compression: str) -> None:
 
     con.close()
     os.replace(tmp, out)
-    for f in files:
+    for f in batch:
         with contextlib.suppress(FileNotFoundError):
             f.unlink()
 
