@@ -45,6 +45,7 @@ class ParquetOrderbookRepository:
             rows,
             compression=self._compression,
             row_group_size=self._row_group_size,
+            compact=True,
         )
         return len(rows)
 

@@ -29,6 +29,7 @@ def test_compaction_triggered_at_threshold(tmp_data_root):
             RISK_SNAPSHOTS_SCHEMA_V1,
             [{**_VALID_ROW, "event_id": f"e{i}"}],
             ts=ts,
+            compact=True,
         )
     partition_dir = tmp_data_root / "normalised" / "risk_snapshots" / "dt=2026-01-01"
     files = list(partition_dir.glob("*.parquet"))

@@ -70,6 +70,7 @@ def write_table_part(
     compression: str = "zstd",
     row_group_size: int = 50_000,
     ts: datetime | None = None,
+    compact: bool = False,
 ) -> Path:
     """Append ``rows`` as a single parquet part-file. Returns the path."""
 
@@ -92,5 +93,6 @@ def write_table_part(
 
     pq.write_table(arrow, str(tmp), compression=compression, row_group_size=row_group_size)
     os.replace(tmp, path)
-    _maybe_compact(dir_, compression)
+    if compact:
+        _maybe_compact(dir_, compression)
     return path
