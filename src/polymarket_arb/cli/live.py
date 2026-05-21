@@ -261,9 +261,16 @@ def _make_watched_tokens_fn(
     data_root: Path,
     manual_tokens: list[str],
 ) -> Callable[[], list[str]]:
+    _cache: list[str] = []
+    _tick: list[int] = [0]  # mutable counter in closure
+
     def fn() -> list[str]:
-        rels = _load_live_relationships(data_root)
-        return _dedupe([*manual_tokens, *_relationship_token_ids(rels)])
+        if _tick[0] % 60 == 0:
+            rels = _load_live_relationships(data_root)
+            _cache.clear()
+            _cache.extend(_dedupe([*manual_tokens, *_relationship_token_ids(rels)]))
+        _tick[0] += 1
+        return list(_cache)
     return fn
 
 
