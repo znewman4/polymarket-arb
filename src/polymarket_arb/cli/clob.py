@@ -15,6 +15,7 @@ from ..storage.parquet.best_quotes_repo import ParquetBestQuotesRepository
 from ..storage.parquet.markets_repo import ParquetMarketsRepository
 from ..storage.parquet.orderbook_repo import ParquetOrderbookRepository
 from ..storage.parquet.raw_writer import RawWriter
+from ..storage.parquet.relationship_candidates_repo import ParquetRelationshipCandidatesRepository
 
 
 @click.group()
@@ -86,6 +87,39 @@ def snapshot_active_markets(ctx: click.Context, limit: int) -> None:
     click.echo(
         f"✓ wrote {summary['books']} orderbooks and {summary['quotes']} best quotes "
         f"from {summary['markets']} markets"
+    )
+
+
+@clob.command(name="snapshot-candidate-tokens")
+@click.option("--limit", type=int, default=3000, help="Max tokens to snapshot per run.")
+@click.pass_context
+def snapshot_candidate_tokens(ctx: click.Context, limit: int) -> None:
+    """Snapshot orderbooks for all tokens referenced in relationship_candidates lake.
+
+    Prioritises the tokens the agent actually watches rather than whatever
+    markets happen to be first in the active-markets list.
+    """
+    settings: Settings = ctx.obj["settings"]
+    repo = ParquetRelationshipCandidatesRepository(settings.data_root)
+
+    token_ids: list[str] = []
+    seen: set[str] = set()
+    for rel in repo.iter_latest():
+        if rel.validation_status not in ("accepted", "needs_manual_review"):
+            continue
+        for tid in (rel.token_id_a_yes, rel.token_id_a_no, rel.token_id_b_yes, rel.token_id_b_no):
+            if tid and tid not in seen:
+                seen.add(tid)
+                token_ids.append(tid)
+
+    token_ids = token_ids[:limit]
+    if not token_ids:
+        click.echo("No candidate tokens found — is the relationship_candidates lake populated?")
+        return
+
+    summary = asyncio.run(_run_fetch_tokens(settings, token_ids, write_books=True))
+    click.echo(
+        f"✓ wrote {summary['books']} orderbooks for {len(token_ids)} candidate tokens"
     )
 
 
