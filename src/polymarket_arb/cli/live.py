@@ -267,16 +267,25 @@ def _make_watched_tokens_fn(
     return fn
 
 
+_RELATIONSHIP_RELOAD_INTERVAL = 60
+
+
 def _make_relationship_strategy(
     config: _RelationshipStrategyConfig,
     *,
     data_root: Path,
     run_id: str,
 ) -> StrategyFn:
+    cached_relationships: list[RelationshipCandidateRow] = []
+    tick_count = 0
+
     def strategy(state: AgentState) -> list[OrderIntent]:
-        relationships = _load_live_relationships(data_root)
+        nonlocal cached_relationships, tick_count
+        if tick_count % _RELATIONSHIP_RELOAD_INTERVAL == 0:
+            cached_relationships = _load_live_relationships(data_root)
+        tick_count += 1
         intents: list[OrderIntent] = []
-        for rel in relationships:
+        for rel in cached_relationships:
             point = _aligned_point_from_state(rel, state)
             if point is None:
                 continue
