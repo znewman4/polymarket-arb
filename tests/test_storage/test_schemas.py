@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 import pytest
 
 from polymarket_arb.storage.exceptions import SchemaMismatchError
-from polymarket_arb.storage.parquet._writer import _COMPACT_THRESHOLD, write_table_part
+from polymarket_arb.storage.parquet._writer import _COMPACT_BATCH, _COMPACT_THRESHOLD, write_table_part
 from polymarket_arb.storage.parquet.schemas import RISK_SNAPSHOTS_SCHEMA_V1
 
 _VALID_ROW = {
@@ -32,9 +32,10 @@ def test_compaction_triggered_at_threshold(tmp_data_root):
         )
     partition_dir = tmp_data_root / "normalised" / "risk_snapshots" / "dt=2026-01-01"
     files = list(partition_dir.glob("*.parquet"))
-    # After compaction there should be exactly one file, named compacted-*
-    assert len(files) == 1
-    assert files[0].name.startswith("compacted-")
+    compacted = [f for f in files if f.name.startswith("compacted-")]
+    # One batch of _COMPACT_BATCH parts merged into one compacted file; the rest remain
+    assert len(compacted) == 1
+    assert len(files) == _COMPACT_THRESHOLD + 1 - _COMPACT_BATCH + 1
 
 
 def test_no_compaction_below_threshold(tmp_data_root):

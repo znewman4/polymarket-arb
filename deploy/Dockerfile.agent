@@ -6,18 +6,18 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-# Step 1: install dependencies — only reruns when pyproject.toml changes
+# Layer 1: install dependencies only — reruns only when pyproject.toml changes
 COPY pyproject.toml README.md ./
 RUN pip install --upgrade pip && \
     pip install hatchling && \
-    pip install -e . --no-deps && \
     pip install $(python -c "import tomllib; d=tomllib.load(open('pyproject.toml','rb')); print(' '.join(d['project']['dependencies']))")
 
-# Step 2: copy code — changes here don't bust the pip cache
+# Layer 2: copy code, then register the package — reruns on src/ changes but deps layer stays cached
 COPY src ./src
 COPY configs ./configs
 COPY deploy/healthcheck.sh /usr/local/bin/agent-healthcheck
-RUN chmod +x /usr/local/bin/agent-healthcheck && \
+RUN pip install -e . --no-deps && \
+    chmod +x /usr/local/bin/agent-healthcheck && \
     mkdir -p /app/data/raw /app/data/normalised /app/data/account /app/data/derived /app/data/logs
 
 ENTRYPOINT ["python", "-m", "polymarket_arb.cli"]
