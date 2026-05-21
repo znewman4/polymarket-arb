@@ -1,9 +1,12 @@
 from __future__ import annotations
 
+from datetime import datetime, timezone
 from decimal import Decimal
 
 from polymarket_arb.storage.base import OrderbookLevel, OrderbookSnapshot
+from polymarket_arb.storage.parquet._writer import write_table_part
 from polymarket_arb.storage.parquet.orderbook_repo import ParquetOrderbookRepository
+from polymarket_arb.storage.parquet.schemas import ORDERBOOK_SNAPSHOTS_SCHEMA_V1
 
 
 def _book(
@@ -56,3 +59,20 @@ def test_latest_books_bulk_empty_inputs_return_empty(tmp_data_root):
     repo = ParquetOrderbookRepository(tmp_data_root, row_group_size=4)
     assert repo.latest_books_bulk([]) == {}
     assert repo.latest_books_bulk(["missing"]) == {}
+
+
+def test_latest_books_bulk_ignores_old_partitions(tmp_data_root):
+    """Data written to yesterday's partition must not appear in latest_books_bulk."""
+    from dataclasses import asdict
+
+    yesterday = datetime(2000, 1, 1, tzinfo=timezone.utc)
+    snap = _book("stale_tok", timestamp_ms=99)
+    write_table_part(
+        tmp_data_root,
+        "orderbook_snapshots",
+        ORDERBOOK_SNAPSHOTS_SCHEMA_V1,
+        [asdict(snap)],
+        ts=yesterday,
+    )
+    repo = ParquetOrderbookRepository(tmp_data_root)
+    assert repo.latest_books_bulk(["stale_tok"]) == {}

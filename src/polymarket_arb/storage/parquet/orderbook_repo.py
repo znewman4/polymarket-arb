@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from collections.abc import Iterable
 from dataclasses import asdict
+from datetime import datetime, timezone
 from decimal import Decimal
 from pathlib import Path
 
@@ -47,11 +48,15 @@ class ParquetOrderbookRepository:
         )
         return len(rows)
 
+    def _today_partition_dir(self) -> Path:
+        today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+        return self._root / "normalised" / _TABLE / f"dt={today}"
+
     def _glob(self) -> str:
-        return str(self._root / "normalised" / _TABLE / "dt=*" / "*.parquet")
+        return str(self._today_partition_dir() / "*.parquet")
 
     def _has_data(self) -> bool:
-        return any((self._root / "normalised" / _TABLE).glob("dt=*/*.parquet"))
+        return any(self._today_partition_dir().glob("*.parquet"))
 
     def latest_book(self, token_id: str) -> OrderbookSnapshot | None:
         return self.latest_books_bulk([token_id]).get(token_id)

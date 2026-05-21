@@ -6,19 +6,52 @@ Append-only: existing files are never edited.
 
 from __future__ import annotations
 
+import contextlib
 import os
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 
+import duckdb
 import pyarrow as pa
 import pyarrow.parquet as pq
 
 from ..exceptions import SchemaMismatchError
 
+_COMPACT_THRESHOLD = 100
+
 
 def normalised_table_dir(data_root: Path, table: str, ts: datetime) -> Path:
     return data_root / "normalised" / table / f"dt={ts.strftime('%Y-%m-%d')}"
+
+
+def _maybe_compact(dir_: Path, compression: str) -> None:
+    """Merge all part-files in dir_ into one if count exceeds threshold."""
+    files = sorted(dir_.glob("*.parquet"))
+    if len(files) <= _COMPACT_THRESHOLD:
+        return
+
+    uid = uuid.uuid4().hex[:8]
+    tmp = dir_ / f"compacted-{uid}.parquet.tmp"
+    out = dir_ / f"compacted-{uid}.parquet"
+    quoted = ", ".join(f"'{f}'" for f in files)
+
+    con = duckdb.connect()
+    try:
+        con.execute(
+            f"COPY (SELECT * FROM read_parquet([{quoted}])) "
+            f"TO '{tmp}' (FORMAT PARQUET, COMPRESSION '{compression}')"
+        )
+    except Exception:
+        tmp.unlink(missing_ok=True)
+        con.close()
+        raise
+
+    con.close()
+    os.replace(tmp, out)
+    for f in files:
+        with contextlib.suppress(FileNotFoundError):
+            f.unlink()
 
 
 def write_table_part(
@@ -52,4 +85,5 @@ def write_table_part(
 
     pq.write_table(arrow, str(tmp), compression=compression, row_group_size=row_group_size)
     os.replace(tmp, path)
+    _maybe_compact(dir_, compression)
     return path
