@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import sys
 
 import click
@@ -131,6 +132,9 @@ async def _run_snapshot_active(settings: Settings, *, limit: int, depth: bool) -
     return summary
 
 
+_BATCH_SIZE = 50  # CLOB /books accepts up to ~100; 50 is safe
+
+
 async def _run_fetch_tokens(
     settings: Settings,
     token_ids: list[str],
@@ -144,13 +148,26 @@ async def _run_fetch_tokens(
     quotes_written = 0
     async with AsyncHttpClient(settings.http) as http:
         client = ClobClient(clob_host=settings.clob_host, http=http, raw_writer=raw_writer)
-        for token_id in token_ids:
-            payload = await client.fetch_book(token_id)
-            book = parse_orderbook(payload, token_id_hint=token_id)
-            quote = best_quote_from_book(book)
-            if write_books:
-                orderbooks.append_snapshot(book)
-                books_written += 1
-            quotes.append(quote)
-            quotes_written += 1
+        for i in range(0, len(token_ids), _BATCH_SIZE):
+            batch = token_ids[i : i + _BATCH_SIZE]
+            try:
+                payloads = await client.fetch_books(batch)
+                if not isinstance(payloads, list):
+                    payloads = []
+            except Exception:
+                payloads = []
+                for tid in batch:
+                    with contextlib.suppress(Exception):
+                        payloads.append(await client.fetch_book(tid))
+            for payload in payloads:
+                try:
+                    book = parse_orderbook(payload)
+                    quote = best_quote_from_book(book)
+                    if write_books:
+                        orderbooks.append_snapshot(book)
+                        books_written += 1
+                    quotes.append(quote)
+                    quotes_written += 1
+                except Exception:
+                    pass
     return {"books": books_written, "quotes": quotes_written}
