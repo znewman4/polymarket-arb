@@ -35,6 +35,7 @@ ALIASES: list[tuple[click.Group, str, str]] = [
     (clob.clob, "fetch-quotes", "fetch-quotes"),
     (clob.clob, "fetch-orderbook", "fetch-orderbook"),
     (clob.clob, "snapshot-active-markets", "snapshot-active-markets"),
+    (clob.clob, "snapshot-candidate-tokens", "snapshot-candidate-tokens"),
     # Phase 4 — Score
     (score.score, "score-markets", "score-markets"),
     (score.score, "show-score", "show-score"),
