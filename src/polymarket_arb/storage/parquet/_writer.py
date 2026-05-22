@@ -18,6 +18,7 @@ import pyarrow.parquet as pq
 
 from ..exceptions import SchemaMismatchError
 
+
 def normalised_table_dir(data_root: Path, table: str, ts: datetime) -> Path:
     return data_root / "normalised" / table / f"dt={ts.strftime('%Y-%m-%d')}"
 
