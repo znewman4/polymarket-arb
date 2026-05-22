@@ -18,9 +18,6 @@ import pyarrow.parquet as pq
 
 from ..exceptions import SchemaMismatchError
 
-_COMPACT_THRESHOLD = 100
-
-
 def normalised_table_dir(data_root: Path, table: str, ts: datetime) -> Path:
     return data_root / "normalised" / table / f"dt={ts.strftime('%Y-%m-%d')}"
 
@@ -51,10 +48,10 @@ def _maybe_compact(dir_: Path, compression: str) -> None:
         )
     except Exception:
         tmp.unlink(missing_ok=True)
-        con.close()
         raise
+    finally:
+        con.close()
 
-    con.close()
     os.replace(tmp, out)
     for f in batch:
         with contextlib.suppress(FileNotFoundError):
