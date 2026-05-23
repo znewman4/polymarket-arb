@@ -26,7 +26,7 @@ from ..storage.base import (
     RelationshipCandidateRow,
     StrategyCandidateRow,
 )
-from ..storage.parquet.markets_repo import ParquetMarketsRepository
+from ..storage.parquet.orderbook_repo import ParquetOrderbookRepository
 from ..storage.parquet.relationship_candidates_repo import ParquetRelationshipCandidatesRepository
 from ..strategies.nesting_contradiction import AlignedPricePoint, evaluate_relationship_at_tick
 
@@ -185,22 +185,26 @@ def _is_relationship_strategy(strategy_id: str) -> bool:
     return isinstance(_STRATEGIES[strategy_id], _RelationshipStrategyConfig)
 
 
-def _load_active_token_ids(data_root: Path) -> frozenset[str]:
-    repo = ParquetMarketsRepository(data_root)
-    token_ids: set[str] = set()
-    for market in repo.iter_active_markets():
-        token_ids.update(market.clob_token_ids)
-    return frozenset(token_ids)
-
-
 def _load_live_relationships(data_root: Path) -> list[RelationshipCandidateRow]:
-    active_tokens = _load_active_token_ids(data_root)
     repo = ParquetRelationshipCandidatesRepository(data_root)
-    return [
+    candidates = [
         rel for rel in repo.iter_latest()
         if rel.validation_status in _ELIGIBLE_RELATIONSHIP_STATUSES
-        and rel.token_id_a_yes in active_tokens
-        and rel.token_id_b_yes in active_tokens
+    ]
+    if not candidates:
+        return []
+    all_tokens = list({
+        t for rel in candidates
+        for t in (rel.token_id_a_yes, rel.token_id_b_yes)
+        if t
+    })
+    book_repo = ParquetOrderbookRepository(data_root)
+    books = book_repo.latest_books_bulk(all_tokens)
+    tokens_with_books = {t for t, b in books.items() if b is not None}
+    return [
+        rel for rel in candidates
+        if rel.token_id_a_yes in tokens_with_books
+        and rel.token_id_b_yes in tokens_with_books
     ]
 
 
