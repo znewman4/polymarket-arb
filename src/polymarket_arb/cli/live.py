@@ -371,6 +371,7 @@ def _order_intents_from_candidate(
             side="buy",
             price=price_a,
             size=_RELATIONSHIP_ORDER_SIZE,
+            limit_price=None,
         ),
         OrderIntent(
             id=f"{candidate.candidate_id}:b",
@@ -379,6 +380,7 @@ def _order_intents_from_candidate(
             side="buy",
             price=price_b,
             size=_RELATIONSHIP_ORDER_SIZE,
+            limit_price=None,
         ),
     ]
 

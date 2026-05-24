@@ -300,7 +300,7 @@ class OrderClient:
             )
 
         filled, notional, fees, partial, reason = simulate_buy_from_orderbook(
-            book, intent.size, limit_price=intent.price, fee_bps=Decimal("0"),
+            book, intent.size, limit_price=intent.limit_price, fee_bps=Decimal("0"),
         )
         avg = (notional / filled) if filled > 0 else None
         if filled == 0:

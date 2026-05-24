@@ -78,6 +78,7 @@ class OrderIntent:
     side: str  # "buy" | "sell"
     price: Decimal
     size: Decimal
+    limit_price: Decimal | None = None
     quote_age_ms: int | None = None
     spread_pct: Decimal | None = None
     available_balance_usdc: Decimal | None = None
