@@ -79,7 +79,13 @@ class ParquetOrderbookRepository:
         )
         con = self._duckdb_connection or duckdb.connect()
         try:
-            cur = con.execute(sql)
+            try:
+                cur = con.execute(sql)
+            except duckdb.IOException as exc:
+                if "No such file" not in str(exc):
+                    raise
+                import time; time.sleep(0.5)
+                cur = con.execute(sql)
             cols = [c[0] for c in cur.description]
             rows = cur.fetchall()
         finally:
