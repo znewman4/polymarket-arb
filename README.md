@@ -1,130 +1,167 @@
 # polymarket-arb
 
-Local-first Polymarket semantic research platform.
+Fully automated Polymarket arbitrage bot running in **paper-trading mode** on AWS EC2 (eu-west-1). The bot ingests live orderbook data, detects pricing inefficiencies across related markets (nesting, contradiction, inverse, sports-progression), and paper-trades signals via an authenticated order client. A Limitless × Polymarket cross-market arb scanner runs in parallel. A read-only Flask dashboard is served over an SSM port-forward.
 
-This repo ingests public market data, formalises market wording into validated
-semantics, applies deterministic YAML rulebooks, stores append-only Parquet
-tables, and produces research-only scores. **No live trading. No private-key
-logic. No wallets. No order placement of any kind.**
+Live trading infrastructure is complete but gated: the signing path is a stub and two env flags (`POLYMARKET_ARB_PAPER_MODE=false` + `POLYMARKET_ARB_ORDERS_ALLOWED=true`) must both be flipped explicitly.
+
+---
 
 ## Quickstart
 
 ```bash
 make install
 make test
-make healthcheck
+polymarket-arb live healthcheck
 ```
 
-`healthcheck` runs offline checks (settings load, kill-switch off, data dirs
-writable, storage round-trip) followed by a network probe of the public Gamma
-and CLOB read endpoints. Public read probes may pass from the UK; trading/order
-placement remains disabled and outside this repo's implemented scope.
+To start the local dashboard against the dev lake:
+
+```bash
+polymarket-arb dashboard serve --port 5000
+# open http://localhost:5000
+```
+
+---
 
 ## Implemented Phase Map
 
 ```text
-Phase 0   safety/storage/repo foundation
-Phase 1   Gamma market/event ingestion
-Phase 1.5 local NLP semantic extraction with Ollama/DeepSeek or mock clients
+Phase 0   safety / storage / parquet-lake foundation
+Phase 1   Gamma market + event ingestion
+Phase 1.5 local NLP semantic extraction (Ollama/DeepSeek or mock)
 Phase 1.6 deterministic YAML rulebook scoring
 Phase 2   single-market implication extraction
-Phase 3   public read-only CLOB orderbook/quote ingestion
+Phase 3   public read-only CLOB orderbook ingestion
 Phase 4   weighted research-only fusion scoring
 Phase 4.5 data inspection, audit, review exports, REST recording
-Phase 5   offline backtest/replay foundation
+Phase 5   offline standardised backtest framework (8-lane, depth-aware, causality-gated)
+Phase 5.5 relationship miner upgrade — mutually_exclusive_category, temporal subtypes
+Phase 6   live order infrastructure — OrderClient, agent_loop, paper_mode, orders_log
+Phase 7   VPS deployment — Docker Compose (recorder + agent), systemd, healthcheck
+Phase 8   Limitless × Polymarket cross-market arb scanner
+Phase 9   Relationship-miner Docker service (6-hour validate loop)
+Phase 10  Read-only Flask dashboard — overview / orders / signals / markets / health
 ```
 
-## Current Research Status
+---
 
-This project is research-only. The current context-aware audit state is:
+## Services (Docker Compose)
 
-- Manual context rules: 7 approved rules, with invalidating rules still
-  analysis-only.
-- Relationship coverage: all 5,214 relationship pairs have both price
-  histories; no stale coverage rows remain in the latest audit.
-- NBA Finals -> Conference rows are normalized as sports-progression nesting:
-  `P(championship) <= P(conference)`.
-- Latest reviewed low-confidence context-aware run:
-  `reviewed_context_low_conf`.
-- Latest reviewed result: 2 simulated non-diagnostic trade pairs, +$1,375.26
-  simulated PnL, $0.00 drawdown, $5.00 slippage.
-- Latest null baseline: 0 trades, $0.00 PnL.
-- Latest slim sensitivity: 24 cells, 7 positive cells.
-- Final credibility label: `data_insufficient`, because fewer than 30 reviewed
-  non-diagnostic trade pairs executed.
-- Diagnostic comparison remains `diagnostic_only_not_credible` and must not be
-  used as credible positive evidence.
+Five services run on the EC2 instance, all sharing the same `/app/data` parquet lake:
 
-Latest local reports:
+| Service | Role |
+|---------|------|
+| `recorder` | Continuously snapshots live orderbooks + refreshes markets (30s loop) |
+| `agent` | Paper-trades relationship signals via `live agent --strategy-auto-tokens` |
+| `limitless-arb` | Paper-trades Limitless × Polymarket arb gaps every 5 minutes |
+| `relationship-miner` | Scores and promotes relationship candidates every 6 hours |
+| `dashboard` | Flask read-only UI at container port 5000, accessed via SSM port-forward |
 
-```text
-reports/master_audit/latest/index.html
-reports/master_audit/latest/master_audit.csv
-reports/master_audit/latest/all_source_rows.csv
-reports/master_audit/latest/nba_finals_conference_audit.csv
-reports/context_strategy_backtests/reviewed_context_low_conf/index.html
+```bash
+# Deploy / update all services
+cd ~/polymarket-arb && git pull
+sudo docker compose -f deploy/docker-compose.yml --env-file ~/polymarket-arb/.env up -d --build
 ```
 
-Next required research work is to increase reviewed deterministic sample size
-without promoting non-deterministic pairs. Good candidates are more sports
-progression, EPL exact-finish -> top-N, complete balance-of-power spaces, and
-threshold nesting. Pairs such as Champions League vs domestic league winners or
-endorsement markets should stay research-only unless their market terms prove a
-deterministic relationship.
+See [deploy/README.md](deploy/README.md) for full EC2 setup, kill switch, and SSM dashboard access.
+
+---
+
+## Dashboard
+
+A read-only Flask dashboard gives a live view of the parquet lake. Access it via SSM port-forwarding — no host port is published.
+
+```bash
+# From your laptop
+aws ssm start-session \
+  --target i-0a6672c60a510b3bf \
+  --document-name AWS-StartPortForwardingSession \
+  --parameters '{"portNumber":["5000"],"localPortNumber":["5000"]}' \
+  --region eu-west-1
+# open http://localhost:5000
+```
+
+Pages: `/` overview, `/orders` filterable orders log + CSV export, `/signals` no-fill analysis + edge histogram + Limitless gaps, `/markets` lake coverage + relationship type breakdown, `/health` JSON probe.
+
+---
+
+## Trade Gate
+
+`POLYMARKET_ARB_ORDERS_ALLOWED` defaults to `false`. `POLYMARKET_ARB_PAPER_MODE` defaults to `true`. All order attempts pass through `OrderClient`, which enforces both flags before any network socket is opened.
+
+The signing path (`src/polymarket_arb/live/signing.py`) is a stub that always raises — live orders cannot be submitted even if both flags are flipped, until EIP-712 signing is implemented.
+
+See [docs/trade_gate.md](docs/trade_gate.md) for the full threat model.
+
+---
 
 ## CLI
 
-Canonical commands use subgroups; flat aliases are also registered for the
-same callbacks.
-
 ```bash
-polymarket-arb gamma fetch-markets
-polymarket-arb gamma list-markets --active --limit 10
-polymarket-arb nlp extract-market-semantics --limit 1 --provider mock
-polymarket-arb nlp score-semantics --limit 5
-polymarket-arb nlp extract-implications --limit 5
-polymarket-arb clob fetch-quotes --limit 20
-polymarket-arb score score-markets --limit 20
+# Market ingestion
+polymarket-arb gamma fetch-markets --all
+polymarket-arb record snapshot-active-markets --limit 500
+
+# Live agent (paper mode)
+polymarket-arb live agent --strategy relationship_diagnostic --strategy-auto-tokens
+polymarket-arb live healthcheck
+
+# Limitless arb
+polymarket-arb limitless scan-arb --execute
+
+# Relationship pipeline
+polymarket-arb relationships validate
+
+# Backtest
+polymarket-arb research standardised-backtest
+
+# Dashboard
+polymarket-arb dashboard serve --port 5000
+
+# Inspection
 polymarket-arb inspect counts
-polymarket-arb record quotes --limit 5 --interval 10s --duration 30s
-polymarket-arb backtest run --strategy score-threshold --threshold 0.8
+polymarket-arb inspect orders-log --limit 50
 ```
+
+---
 
 ## Repo Map
 
 ```
-configs/           dev.yaml, approved_strategies.yaml, semantic_rules/*.yaml
-data/              raw/ normalised/ account/ derived/ logs/ debug/  (gitignored)
-docs/              architecture, connectivity, storage, trade_gate, live_trading_checklist
+configs/                dev.yaml, approved_strategies.yaml, semantic_rules/
+data/                   raw/ normalised/ account/ derived/ logs/ debug/  (gitignored)
+deploy/                 Dockerfile.agent, docker-compose.yml, README.md, healthcheck.sh
+docs/                   trade_gate, connectivity, storage, live_trading_checklist
 src/polymarket_arb/
-    cli/               Click command groups + flat aliases
-    settings.py        Pydantic-settings - yaml + .env loader
-    logging_setup.py   Loguru config (JSON to file, pretty to console)
-    compliance/        geo_check (egress IP + country) + trade_gate
-    http/              async httpx wrapper w/ retry + token-bucket rate limit
-    ingest/            Gamma + public CLOB read-only ingestion
-    nlp/               Ollama/mock extraction, schemas, prompts, embeddings
-    semantics/         YAML rulebook loading + deterministic scorers
-    inspect/           local lake inspection, audit, CSV review exports
-    record/            public REST recording loops + run manifests
-    backtest/          offline replay, simulated fills, metrics
-    fusion/            research-only weighted scoring
-    storage/           DTOs, parquet repos, DuckDB views
-    risk/              preflight gate + 10 checks
-    monitoring/        kill_switch
-tests/             mirror of src/ — pytest + respx + tmp_path fixtures
+    cli/                Click subgroups: gamma, clob, live, limitless, dashboard,
+                        record, backtest, research, relationships, inspect, …
+    settings.py         Pydantic-settings — yaml + env var loader (POLYMARKET_ARB_*)
+    compliance/         geo_check + trade_gate (orders_allowed flag)
+    live/               agent_loop, order_client, models, signing stub
+    strategies/         evaluate_relationship_at_tick (nesting/contradiction logic)
+    limitless/          cross-market arb scanner (Limitless × Polymarket)
+    dashboard/          Flask app factory, DuckDBQueryService, routes, Jinja templates
+    backtest/           standardised 8-lane orchestrator, depth-aware fills
+    ingest/             Gamma + CLOB read-only ingestion
+    nlp/                Ollama/mock extraction, schemas, prompts, embeddings
+    semantics/          YAML rulebook loading + deterministic scorers
+    inspect/            local lake inspection, audit, CSV review exports
+    record/             REST recording loops + run manifests
+    storage/            DTOs, parquet repos, DuckDB views
+    risk/               PreflightGate (10 checks before every order)
+    monitoring/         kill_switch (file-based: touch data/.killswitch)
+tests/                  mirror of src/ — 821 tests, pytest + respx + tmp_path
 ```
 
-## Trade gate (read this before flipping any flag)
+---
 
-`POLYMARKET_ARB_ORDERS_ALLOWED` defaults to `false`. This repository currently
-has no order client and no authenticated trading path. **Do not edit the
-default in code.** If execution is ever added in a later project, it must remain
-behind the preflight gate and a separate signed deploy config.
+## Current State (2026-05-24)
 
-See [docs/trade_gate.md](docs/trade_gate.md) for the threat model and
-[docs/connectivity.md](docs/connectivity.md) for the VPS/UK/VPN runbook.
-See [docs/manual_smoke.md](docs/manual_smoke.md) for the tiny real-data
-validation sequence, [docs/data_inspection.md](docs/data_inspection.md) for
-local audits, [docs/recording.md](docs/recording.md) for REST recording, and
-[docs/backtesting.md](docs/backtesting.md) for offline replay.
+- EC2 running: all 5 services healthy
+- Orderbook coverage: ~93 markets (recorder growing the lake daily)
+- Relationship candidates: 2,990 pairs synced from local S3
+- Signals: not yet firing — waiting for overlap between relationships and live orderbooks
+- Orders log: empty — will populate once coverage reaches relationship pairs
+- Dashboard: live, accessible via SSM port-forward
+
+The `/markets` dashboard page shows coverage progress in real time.

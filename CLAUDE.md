@@ -17,9 +17,12 @@ Operator is UK-based. Bot runs on AWS EC2 in Ireland (non-blocked jurisdiction).
 - **Key storage:** AWS Secrets Manager (`polygon` secret = private key, `polymarket/api_credentials` = CLOB API creds)
 
 ### Docker Services (deploy/docker-compose.yml)
-Two services share `/app/data` bind mount:
-- **recorder** — runs continuous loop: `fetch-markets --all` → `snapshot-active-markets --limit 2000` → sleep 30s. Populates `data/normalised/orderbook_snapshots/` and `data/normalised/markets/`
+Five services share `/app/data` bind mount:
+- **recorder** — continuous loop: `fetch-markets --all` → `snapshot-candidate-tokens --limit 3000` → `snapshot-active-markets --limit 500` → sleep 30s. Populates `data/normalised/orderbook_snapshots/` and `data/normalised/markets/`
 - **agent** — runs `live agent --strategy relationship_diagnostic --strategy-auto-tokens`. Polls orderbook lake every 10s, evaluates relationship signals, writes to `data/normalised/orders_log/`
+- **limitless-arb** — runs `limitless scan-arb --execute` every 5 minutes, paper-trading Limitless × Polymarket cross-market arbitrage
+- **relationship-miner** — runs `relationships validate` every 6 hours, scoring and promoting relationship candidates in the lake
+- **dashboard** — Flask read-only UI on container port 5000, reached via SSM port-forward (`polymarket-arb dashboard serve`)
 
 ### Key Settings (prod)
 ```
@@ -40,11 +43,23 @@ POLYMARKET_ARB_AGENT_POLL_INTERVAL_S=10
 - `src/polymarket_arb/live/signing.py` — EIP-712 stub (always raises — live trading not yet implemented)
 - `src/polymarket_arb/cli/live.py` — CLI: `live agent`, `live healthcheck`. Contains _STRATEGIES dict with noop, relationship_diagnostic, relationship_aggressive
 
+### Dashboard
+- `src/polymarket_arb/dashboard/app.py` — `create_app(settings)` Flask factory
+- `src/polymarket_arb/dashboard/queries.py` — `DuckDBQueryService`: all read queries (overview, orders, signals, markets, health) via DuckDB against the parquet lake
+- `src/polymarket_arb/dashboard/routes.py` — Flask blueprint: `/` `/orders` `/orders.csv` `/signals` `/markets` `/health`
+- `src/polymarket_arb/dashboard/templates/` — Jinja2 dark-theme templates, Chart.js via CDN
+- `src/polymarket_arb/cli/dashboard.py` — CLI: `dashboard serve --host --port`
+- Access: `aws ssm start-session --document-name AWS-StartPortForwardingSession --parameters '{"portNumber":["5000"],"localPortNumber":["5000"]}'`
+
 ### Strategy Signal Logic
 - `src/polymarket_arb/strategies/nesting_contradiction.py` — `evaluate_relationship_at_tick()`: takes RelationshipCandidateRow + AlignedPricePoint, returns StrategyCandidateRow or None
 - Strategy thresholds:
   - `relationship_diagnostic`: min_gross_edge=0.05, fee_bps=0, slippage_bps=50, min_net_edge=0.02
   - `relationship_aggressive`: min_gross_edge=0.03, fee_bps=0, slippage_bps=50, min_net_edge=0.01
+
+### Limitless Arb
+- `src/polymarket_arb/limitless/` — cross-market arb scanner between Limitless and Polymarket
+- `src/polymarket_arb/cli/limitless.py` — CLI: `limitless scan-arb --execute --stake-usdc --tolerance --threshold --min-net-edge`
 
 ### Backtest Framework
 - `src/polymarket_arb/backtest/standardised/` — 8-lane standardised backtest orchestrator
@@ -55,9 +70,9 @@ POLYMARKET_ARB_AGENT_POLL_INTERVAL_S=10
 - `data/normalised/` — parquet lake, hive-partitioned by `dt=YYYY-MM-DD`
   - `orderbook_snapshots/` — populated by recorder
   - `relationship_candidates/` — synced from local machine via S3 (bucket: `polymarket-arb-data-znewman`)
-  - `orders_log/` — written by agent on every place_order call
+  - `orders_log/` — written by agent + limitless-arb on every place_order call
   - `markets/`, `best_quotes/`, `events/`
-- `src/polymarket_arb/storage/parquet/orderbook_repo.py` — `latest_books_bulk()` for batch token lookup (fixes "too many open files")
+- `src/polymarket_arb/storage/parquet/orderbook_repo.py` — `latest_books_bulk()` for batch token lookup
 
 ### Risk / Safety
 - `src/polymarket_arb/monitoring/kill_switch.py` — file-based: `touch data/.killswitch` halts agent within one tick
@@ -66,7 +81,7 @@ POLYMARKET_ARB_AGENT_POLL_INTERVAL_S=10
 
 ---
 
-## Four Implementation Phases (All Complete)
+## Implementation Phases
 
 | Phase | What | Status |
 |-------|------|--------|
@@ -74,24 +89,26 @@ POLYMARKET_ARB_AGENT_POLL_INTERVAL_S=10
 | 2 | Depth-aware execution — re-fills against recorded orderbook depth, falls back to flat-bps | ✅ |
 | 3 | Live order infrastructure — OrderClient, agent_loop, orders_log, paper_mode flag | ✅ |
 | 4 | VPS deployment — Docker Compose, systemd units, healthcheck, deploy/README.md | ✅ |
+| 5 | Limitless × Polymarket cross-market arb scanner | ✅ |
+| 6 | Dashboard — read-only Flask UI over the parquet lake, SSM port-forward | ✅ |
 
 ---
 
-## Current Status (as of 2026-05-20)
+## Current Status (as of 2026-05-24)
 
 | Item | Status |
 |------|--------|
 | EC2 running, SSM accessible | ✅ |
 | Elastic IP verified Irish, not blocked | ✅ |
-| Docker recorder + agent running | ✅ |
+| Docker: recorder + agent + limitless-arb + relationship-miner + dashboard | ✅ |
 | Relationship candidates lake (2,990 token pairs) | ✅ Synced from local via S3 |
 | Orderbook snapshots being recorded | ✅ ~186/cycle, 93 markets |
 | Agent watching 2,990 tokens | ✅ |
+| Dashboard live at SSM port 5000 | ✅ |
 | Signals firing | ❌ No overlap yet between relationships and live orderbooks |
 | Orders in orders_log | ❌ Empty — waiting for coverage |
-| Dashboard / UI | ❌ Not built yet |
 
-**Root cause of no signals:** The relationship candidates reference ~1,500 market pairs built up over months of local data collection. The EC2 orderbook lake only has 93 markets so far. As the recorder runs continuously and coverage grows, signals should start appearing.
+**Root cause of no signals:** The relationship candidates reference ~1,500 market pairs built up over months of local data collection. The EC2 orderbook lake only has 93 markets so far. As the recorder runs continuously and coverage grows, signals should start appearing. Use the `/markets` dashboard page to track coverage progress.
 
 ---
 
@@ -99,7 +116,6 @@ POLYMARKET_ARB_AGENT_POLL_INTERVAL_S=10
 
 - **Strategy standardisation** — relationship promotion from `needs_manual_review → accepted`. Deferred until ≥3 weeks of standardised backtest logs accumulate.
 - **Live trading** — `signing.py` is a stub that always raises. Requires EIP-712 implementation + explicit opt-in (`paper_mode=False` AND `orders_allowed=True` AND private key configured).
-- **Dashboard UI** — Flask app served via SSM tunnel (no open ports). Not yet built.
 - **Depth-aware backtest realism** — currently 0% orderbook coverage in backtest. Will improve as EC2 lake grows.
 
 ---
@@ -108,7 +124,6 @@ POLYMARKET_ARB_AGENT_POLL_INTERVAL_S=10
 
 ```
 Edit locally in VS Code
-
 
 Always run python -m pytest tests/ -q and python -m ruff check src/ tests/ locally before committing. Fix all failures before pushing. Never push a broken build.
 
@@ -121,7 +136,7 @@ Always run python -m pytest tests/ -q and python -m ruff check src/ tests/ local
 
 ### Useful EC2 Commands
 ```bash
-# Check both services
+# Check all services
 sudo docker compose -f ~/polymarket-arb/deploy/docker-compose.yml --env-file ~/polymarket-arb/.env ps
 
 # Agent logs
@@ -129,6 +144,12 @@ sudo docker compose -f ~/polymarket-arb/deploy/docker-compose.yml --env-file ~/p
 
 # Recorder logs
 sudo docker compose -f ~/polymarket-arb/deploy/docker-compose.yml --env-file ~/polymarket-arb/.env logs --tail=20 recorder
+
+# Limitless arb logs
+sudo docker compose -f ~/polymarket-arb/deploy/docker-compose.yml --env-file ~/polymarket-arb/.env logs --tail=20 limitless-arb
+
+# Dashboard logs
+sudo docker compose -f ~/polymarket-arb/deploy/docker-compose.yml --env-file ~/polymarket-arb/.env logs --tail=20 dashboard
 
 # Check orders_log
 sudo docker exec polymarket-arb-agent python3 -c "
@@ -145,6 +166,14 @@ rm ~/polymarket-arb/data/.killswitch      # resume
 
 # Healthcheck
 sudo docker exec polymarket-arb-agent /usr/local/bin/agent-healthcheck
+
+# Dashboard: open SSM port-forward from laptop
+aws ssm start-session \
+  --target i-0a6672c60a510b3bf \
+  --document-name AWS-StartPortForwardingSession \
+  --parameters '{"portNumber":["5000"],"localPortNumber":["5000"]}' \
+  --region eu-west-1
+# Then open http://localhost:5000
 
 # Sync relationship candidates from S3 (if needed)
 aws s3 cp s3://polymarket-arb-data-znewman/relationship_candidates/ ~/polymarket-arb/data/normalised/relationship_candidates/ --recursive --region eu-west-1
