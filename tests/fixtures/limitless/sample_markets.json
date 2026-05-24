@@ -1,0 +1,60 @@
+[
+  {
+    "id": 1001,
+    "slug": "btc-above-65000-sep1",
+    "title": "Will BTC be above $65,000 on Sep 1?",
+    "address": "0xAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA1",
+    "conditionId": "0x1111111111111111111111111111111111111111111111111111111111111111",
+    "prices": [42.8, 57.2],
+    "marketType": "single",
+    "tradeType": "amm",
+    "status": "FUNDED",
+    "expired": false
+  },
+  {
+    "id": 1002,
+    "slug": "eth-above-3000-oct1",
+    "title": "Will ETH be above $3,000 on Oct 1?",
+    "address": "0xAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA2",
+    "conditionId": "0x2222222222222222222222222222222222222222222222222222222222222222",
+    "prices": [55.0, 45.0],
+    "marketType": "single",
+    "tradeType": "clob",
+    "status": "FUNDED",
+    "expired": false
+  },
+  {
+    "id": 1003,
+    "slug": "nba-finals-celtics",
+    "title": "Will the Celtics win the NBA Finals?",
+    "address": "0xAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA3",
+    "conditionId": "0x3333333333333333333333333333333333333333333333333333333333333333",
+    "prices": [0.0, 100.0],
+    "marketType": "single",
+    "tradeType": "amm",
+    "status": "FUNDED",
+    "expired": false
+  },
+  {
+    "id": 1004,
+    "slug": "multi-outcome-election",
+    "title": "Who wins the 2025 election?",
+    "address": "0xAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA4",
+    "prices": [33.0, 33.0, 34.0],
+    "marketType": "group",
+    "tradeType": "amm",
+    "status": "FUNDED",
+    "expired": false
+  },
+  {
+    "id": 1005,
+    "slug": "bad-prices-no-sum",
+    "title": "Bad prices market",
+    "address": "0xAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA5",
+    "prices": [40.0, 40.0],
+    "marketType": "single",
+    "tradeType": "amm",
+    "status": "FUNDED",
+    "expired": false
+  }
+]

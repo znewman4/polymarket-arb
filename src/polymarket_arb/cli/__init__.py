@@ -24,6 +24,7 @@ from . import (
     healthcheck,
     ingest,
     inspect,
+    limitless,
     live,
     nlp,
     pipeline,
@@ -68,6 +69,7 @@ cli.add_command(pipeline.pipeline_cmd)
 cli.add_command(diagnostic.diagnostic_cmd)
 cli.add_command(research.research_cmd)
 cli.add_command(live.live_cmd)
+cli.add_command(limitless.limitless_cmd)
 
 
 # Flat aliases for compatibility with the user's spec; same callbacks.

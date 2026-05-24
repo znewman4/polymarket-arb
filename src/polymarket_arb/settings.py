@@ -121,6 +121,8 @@ class Settings(BaseSettings):
     env: str = "dev"
     gamma_host: str = "https://gamma-api.polymarket.com"
     clob_host: str = "https://clob.polymarket.com"
+    limitless_host: str = "https://api.limitless.exchange"
+    limitless_paper_mode: bool = True
     http: HttpSettings = Field(default_factory=HttpSettings)
     compliance: ComplianceSettings = Field(default_factory=ComplianceSettings)
     storage: StorageSettings = Field(default_factory=StorageSettings)

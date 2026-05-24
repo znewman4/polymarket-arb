@@ -16,8 +16,9 @@ http:
   backoff_max_s: 4.0
   rate_limits:
     # Conservative defaults. Tighten/loosen with logs in Phase 1.
-    "gamma-api.polymarket.com": { capacity: 5, refill_per_s: 5 }
-    "clob.polymarket.com":      { capacity: 10, refill_per_s: 10 }
+    "gamma-api.polymarket.com":  { capacity: 5, refill_per_s: 5 }
+    "clob.polymarket.com":       { capacity: 10, refill_per_s: 10 }
+    "api.limitless.exchange":    { capacity: 20, refill_per_s: 5 }
     # Egress IP providers
     "api.ipify.org":            { capacity: 1, refill_per_s: 0.2 }
     "ifconfig.co":              { capacity: 1, refill_per_s: 0.2 }
