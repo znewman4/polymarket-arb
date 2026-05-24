@@ -10,9 +10,9 @@
 #                           and logging both legs to data/normalised/orders_log/.
 #   relationship-miner    — runs ``polymarket-arb relationships validate`` every 6 hours,
 #                           scoring and promoting relationship candidates in the lake.
-#   dashboard             — Flask read-only dashboard over the parquet lake, exposed on
-#                           container port 5000.  Reach it via SSM port-forwarding from a
-#                           laptop — no host port is published (see deploy/README.md).
+#   dashboard             — Flask read-only dashboard over the parquet lake, published on
+#                           host port 5000.  Reach it via SSM port-forwarding from a
+#                           laptop (see deploy/README.md).
 #
 # Both services:
 #   - mount the kill-switch file from the host so ``touch .killswitch``
@@ -137,15 +137,14 @@ services:
       - ../data:/app/data
       - ../configs:/app/configs:ro
     # 0.0.0.0 inside the container so SSM port-forward can reach it.
-    # No host port is published — access is via SSM tunnel only.
+    ports:
+      - "5000:5000"
     command:
       - dashboard
       - serve
       - --host
       - "0.0.0.0"
       - --port
-      - "5000"
-    expose:
       - "5000"
 
   relationship-miner:
