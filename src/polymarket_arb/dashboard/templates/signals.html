@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}Signals — polymarket-arb{% endblock %}
+{% block content %}
+<h1>Signal analysis</h1>
+
+<div class="panel" style="margin-bottom:16px">
+  <h2>Why aren't signals filling? (today)</h2>
+  {% if no_fill %}
+  <table>
+    <thead><tr><th>Status</th><th>Market</th><th>ID</th><th style="text-align:right">Count</th></tr></thead>
+    <tbody>
+      {% for r in no_fill %}
+      <tr>
+        <td><span class="pill warn">{{ r.status }}</span></td>
+        <td>{{ r.question or '—' }}</td>
+        <td class="mono">{{ r.market_id }}</td>
+        <td style="text-align:right">{{ r.n }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+    <div class="empty">No unfilled signals today.</div>
+  {% endif %}
+</div>
+
+<div class="panel" style="margin-bottom:16px">
+  <h2>Edge distribution — relationship_aggressive (notional buckets, today)</h2>
+  {% if edge_dist %}
+    <canvas id="edgeDist" height="120"></canvas>
+  {% else %}
+    <div class="empty">No relationship_aggressive signals today.</div>
+  {% endif %}
+</div>
+
+<div class="panel">
+  <h2>Limitless arb open gaps (today)</h2>
+  {% if limitless_gaps %}
+  <table>
+    <thead><tr><th>Timestamp</th><th>Market</th><th style="text-align:right">arb_gap</th><th style="text-align:right">similarity</th><th>Notes</th></tr></thead>
+    <tbody>
+      {% for r in limitless_gaps %}
+      <tr>
+        <td class="mono">{{ r.ts_ms }}</td>
+        <td class="mono">{{ r.market_id }}</td>
+        <td style="text-align:right" class="mono">{{ '%.4f' % r.arb_gap if r.arb_gap is not none else '—' }}</td>
+        <td style="text-align:right" class="mono">{{ '%.3f' % r.similarity if r.similarity is not none else '—' }}</td>
+        <td>{{ r.notes }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+    <div class="empty">No limitless arb gaps logged today.</div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+  Chart.defaults.color = '#8b949e';
+  Chart.defaults.borderColor = '#30363d';
+  {% if edge_dist %}
+  new Chart(document.getElementById('edgeDist'), {
+    type: 'bar',
+    data: {
+      labels: {{ edge_dist | map(attribute='bucket') | list | tojson }},
+      datasets: [{
+        label: 'Signals',
+        data: {{ edge_dist | map(attribute='n') | list | tojson }},
+        backgroundColor: '#d29922',
+      }]
+    },
+    options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+  });
+  {% endif %}
+</script>
+{% endblock %}

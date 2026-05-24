@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+{% block title %}Markets — polymarket-arb{% endblock %}
+{% block content %}
+<h1>Market coverage</h1>
+
+<div class="cards">
+  <div class="card">
+    <div class="label">Total markets in lake</div>
+    <div class="value">{{ coverage.total_markets }}</div>
+  </div>
+  <div class="card">
+    <div class="label">Active markets</div>
+    <div class="value">{{ coverage.active_markets }}</div>
+  </div>
+  <div class="card">
+    <div class="label">Markets with live book today</div>
+    <div class="value">{{ coverage.markets_with_book_today }}</div>
+  </div>
+</div>
+
+<div class="grid-2">
+  <div class="panel">
+    <h2>Relationship candidates by type</h2>
+    {% if by_type %}
+      <canvas id="byType" height="200"></canvas>
+    {% else %}
+      <div class="empty">No relationship candidates ingested yet.</div>
+    {% endif %}
+  </div>
+
+  <div class="panel">
+    <h2>Markets with most relationship pairs</h2>
+    {% if top_pairs %}
+    <table>
+      <thead><tr><th>Market ID</th><th style="text-align:right">Pairs</th></tr></thead>
+      <tbody>
+        {% for r in top_pairs %}
+        <tr><td class="mono">{{ r.market_id }}</td><td style="text-align:right">{{ r.n }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+    {% else %}
+      <div class="empty">No relationship pairs found.</div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+  Chart.defaults.color = '#8b949e';
+  Chart.defaults.borderColor = '#30363d';
+  {% if by_type %}
+  new Chart(document.getElementById('byType'), {
+    type: 'pie',
+    data: {
+      labels: {{ by_type | map(attribute='relationship_type') | list | tojson }},
+      datasets: [{
+        data: {{ by_type | map(attribute='n') | list | tojson }},
+        backgroundColor: ['#58a6ff','#3fb950','#d29922','#f85149','#a371f7','#ec6cb9','#79c0ff','#56d364'],
+      }]
+    },
+    options: { plugins: { legend: { position: 'bottom' } } }
+  });
+  {% endif %}
+</script>
+{% endblock %}

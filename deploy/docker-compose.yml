@@ -1,6 +1,6 @@
 # VPS deployment: continuous orderbook recorder + paper-trading agent.
 #
-# Four services share one image and one ./data bind mount:
+# Five services share one image and one ./data bind mount:
 #   recorder              — continuously refreshes markets and snapshots active orderbooks,
 #                           populating data/normalised/ so the agent and future backtests
 #                           have fresh data to read.
@@ -10,6 +10,9 @@
 #                           and logging both legs to data/normalised/orders_log/.
 #   relationship-miner    — runs ``polymarket-arb relationships validate`` every 6 hours,
 #                           scoring and promoting relationship candidates in the lake.
+#   dashboard             — Flask read-only dashboard over the parquet lake, exposed on
+#                           container port 5000.  Reach it via SSM port-forwarding from a
+#                           laptop — no host port is published (see deploy/README.md).
 #
 # Both services:
 #   - mount the kill-switch file from the host so ``touch .killswitch``
@@ -118,6 +121,32 @@ services:
             --min-net-edge "${POLYMARKET_ARB_LIM_MIN_NET_EDGE:-0.02}"
           sleep 300
         done
+
+  dashboard:
+    image: polymarket-arb:agent
+    container_name: polymarket-arb-dashboard
+    restart: unless-stopped
+    env_file:
+      - ../.env
+    environment:
+      - POLYMARKET_ARB_ENV=${POLYMARKET_ARB_ENV:-prod}
+      # Dashboard is read-only — never needs the trade gates.
+      - POLYMARKET_ARB_ORDERS_ALLOWED=false
+      - POLYMARKET_ARB_PAPER_MODE=true
+    volumes:
+      - ../data:/app/data
+      - ../configs:/app/configs:ro
+    # 0.0.0.0 inside the container so SSM port-forward can reach it.
+    # No host port is published — access is via SSM tunnel only.
+    command:
+      - dashboard
+      - serve
+      - --host
+      - "0.0.0.0"
+      - --port
+      - "5000"
+    expose:
+      - "5000"
 
   relationship-miner:
     image: polymarket-arb:agent

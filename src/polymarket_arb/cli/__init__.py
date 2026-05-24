@@ -19,6 +19,7 @@ from . import (
     backtest,
     clob,
     context,
+    dashboard,
     diagnostic,
     gamma,
     healthcheck,
@@ -70,6 +71,7 @@ cli.add_command(diagnostic.diagnostic_cmd)
 cli.add_command(research.research_cmd)
 cli.add_command(live.live_cmd)
 cli.add_command(limitless.limitless_cmd)
+cli.add_command(dashboard.dashboard_cmd)
 
 
 # Flat aliases for compatibility with the user's spec; same callbacks.

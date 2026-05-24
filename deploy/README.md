@@ -131,6 +131,46 @@ systemctl restart polymarket-agent
 
 ---
 
+## Option C: Dashboard (read-only Flask UI)
+
+The `dashboard` service in `docker-compose.yml` exposes a read-only Flask UI on
+container port `5000`.  It is **not** published on the host — access is
+exclusively over an AWS SSM port-forwarding session, so no inbound port has to
+be opened on the VPS.
+
+The dashboard reads the same `data/normalised/` parquet lake the other services
+write to.  It never writes orders, never reads secrets, and never touches the
+trade gate.
+
+### Bring it up on EC2
+
+```bash
+cd ~/polymarket-arb && git pull
+sudo docker compose -f deploy/docker-compose.yml --env-file ~/polymarket-arb/.env up -d --build dashboard
+sudo docker compose -f deploy/docker-compose.yml --env-file ~/polymarket-arb/.env ps dashboard
+```
+
+### Connect from your laptop
+
+```bash
+aws ssm start-session \
+  --target i-0a6672c60a510b3bf \
+  --document-name AWS-StartPortForwardingSession \
+  --parameters '{"portNumber":["5000"],"localPortNumber":["5000"]}' \
+  --region eu-west-1
+```
+
+Then open `http://localhost:5000` in a browser.  Pages: `/` overview,
+`/orders` filterable orders log, `/signals` why-not-filling analysis,
+`/markets` lake coverage, `/health` JSON probe (also used as a smoke-test
+target).  CSV export of the orders log is available at `/orders.csv` with the
+same query-string filters as `/orders`.
+
+The dashboard runs in paper-mode by definition (it ignores the trade gate) and
+the SSM tunnel is the access boundary — no auth layer is built in.
+
+---
+
 ## Security checklist
 
 - `.env` is **gitignored** — secrets never reach the repo.

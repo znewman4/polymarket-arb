@@ -16,6 +16,7 @@ dependencies = [
   "pydantic-settings>=2.2,<3.0",
   "loguru>=0.7,<1.0",
   "click>=8.1,<9.0",
+  "flask>=3.0,<4.0",
   "pyarrow>=15.0",
   "pandas>=2.2",
   "duckdb>=1.0",

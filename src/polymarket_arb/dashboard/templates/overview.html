@@ -1,0 +1,110 @@
+{% extends "base.html" %}
+{% block title %}Overview — polymarket-arb{% endblock %}
+{% block content %}
+<h1>Overview <span class="pill neutral">{{ health.today_utc }}</span></h1>
+
+<div class="cards">
+  <div class="card">
+    <div class="label">Signals today</div>
+    <div class="value">{{ counters.total }}</div>
+  </div>
+  <div class="card">
+    <div class="label">Filled today</div>
+    <div class="value">{{ counters.filled }}</div>
+  </div>
+  <div class="card">
+    <div class="label">Fill rate</div>
+    <div class="value">{{ counters.fill_rate_pct }}%</div>
+  </div>
+  <div class="card">
+    <div class="label">Orderbook snapshots today</div>
+    <div class="value">{{ health.orderbook_snapshots_today }}</div>
+  </div>
+  <div class="card">
+    <div class="label">Recorder</div>
+    <div class="value">
+      {% if health.services.recorder %}<span class="pill good">FRESH</span>{% else %}<span class="pill bad">STALE</span>{% endif %}
+    </div>
+    <div class="sub mono">{{ health.recorder_last_cycle_ts_ms or '—' }}</div>
+  </div>
+  <div class="card">
+    <div class="label">Agent</div>
+    <div class="value">
+      {% if health.services.agent %}<span class="pill good">FRESH</span>{% else %}<span class="pill warn">IDLE</span>{% endif %}
+    </div>
+    <div class="sub mono">{{ health.agent_last_tick_ts_ms or '—' }}</div>
+  </div>
+</div>
+
+<div class="grid-2">
+  <div class="panel">
+    <h2>Signals by strategy</h2>
+    {% if by_strategy %}
+      <canvas id="byStrategy" height="160"></canvas>
+    {% else %}
+      <div class="empty">No signals yet today.</div>
+    {% endif %}
+  </div>
+  <div class="panel">
+    <h2>Signals per hour (last 24h)</h2>
+    <canvas id="perHour" height="160"></canvas>
+  </div>
+</div>
+
+<div class="panel">
+  <h2>Top markets by signal count today</h2>
+  {% if top_markets %}
+  <table>
+    <thead><tr><th>Market</th><th>ID</th><th style="text-align:right">Signals</th></tr></thead>
+    <tbody>
+      {% for m in top_markets %}
+      <tr>
+        <td>{{ m.question or '—' }}</td>
+        <td class="mono">{{ m.market_id }}</td>
+        <td style="text-align:right">{{ m.signals }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+    <div class="empty">No signals yet today.</div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<script>
+  Chart.defaults.color = '#8b949e';
+  Chart.defaults.borderColor = '#30363d';
+  {% if by_strategy %}
+  new Chart(document.getElementById('byStrategy'), {
+    type: 'bar',
+    data: {
+      labels: {{ by_strategy | map(attribute='strategy_id') | list | tojson }},
+      datasets: [{
+        label: 'Signals',
+        data: {{ by_strategy | map(attribute='n') | list | tojson }},
+        backgroundColor: '#58a6ff',
+      }]
+    },
+    options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+  });
+  {% endif %}
+  new Chart(document.getElementById('perHour'), {
+    type: 'line',
+    data: {
+      labels: {{ per_hour | map(attribute='hour_bucket') | list | tojson }},
+      datasets: [{
+        label: 'Signals',
+        data: {{ per_hour | map(attribute='n') | list | tojson }},
+        borderColor: '#3fb950',
+        backgroundColor: 'rgba(63,185,80,0.15)',
+        tension: 0.25,
+        fill: true,
+      }]
+    },
+    options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+  });
+</script>
+{% endblock %}

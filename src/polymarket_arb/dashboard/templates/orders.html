@@ -1,0 +1,76 @@
+{% extends "base.html" %}
+{% block title %}Orders — polymarket-arb{% endblock %}
+{% block content %}
+<h1>Orders log</h1>
+
+<form class="filters" method="get" action="/orders">
+  <div>
+    <label>Strategy</label>
+    <input type="text" name="strategy_id" value="{{ filters.strategy_id }}" placeholder="e.g. relationship_aggressive">
+  </div>
+  <div>
+    <label>Status</label>
+    <select name="status">
+      <option value="">(any)</option>
+      {% for s in ['paper_filled','paper_no_fill','paper_no_book','paper_partial','rejected_kill_switch','rejected_preflight','rejected_orders_disallowed'] %}
+        <option value="{{ s }}" {% if filters.status == s %}selected{% endif %}>{{ s }}</option>
+      {% endfor %}
+    </select>
+  </div>
+  <div>
+    <label>From (YYYY-MM-DD)</label>
+    <input type="text" name="date_from" value="{{ filters.date_from }}">
+  </div>
+  <div>
+    <label>To (YYYY-MM-DD)</label>
+    <input type="text" name="date_to" value="{{ filters.date_to }}">
+  </div>
+  <button class="btn" type="submit">Filter</button>
+  <a class="btn secondary" href="/orders.csv?strategy_id={{ filters.strategy_id }}&status={{ filters.status }}&date_from={{ filters.date_from }}&date_to={{ filters.date_to }}">Export CSV</a>
+</form>
+
+<div class="panel">
+  {% if data.rows %}
+  <table>
+    <thead>
+      <tr>
+        <th>Timestamp (UTC)</th>
+        <th>Strategy</th>
+        <th>Market</th>
+        <th>Side</th>
+        <th>Status</th>
+        <th style="text-align:right">Notional (USDC)</th>
+        <th>Notes</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in data.rows %}
+      <tr>
+        <td class="mono">{{ r.ts_ms }}</td>
+        <td>{{ r.strategy_id }}</td>
+        <td>{{ r.question or r.market_id }}</td>
+        <td>{{ r.side }}</td>
+        <td>
+          {% set s = r.status %}
+          <span class="pill {% if s == 'paper_filled' %}good{% elif s.startswith('rejected') %}bad{% else %}neutral{% endif %}">{{ s }}</span>
+        </td>
+        <td style="text-align:right" class="mono">{{ r.notional_usdc }}</td>
+        <td>{{ r.notes }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <div class="pagination">
+    <span>Showing page {{ data.page }} of {{ data.pages }} — {{ data.total }} total rows</span>
+    {% if data.page > 1 %}
+      <a class="btn secondary" href="?strategy_id={{ filters.strategy_id }}&status={{ filters.status }}&date_from={{ filters.date_from }}&date_to={{ filters.date_to }}&page={{ data.page - 1 }}">← Prev</a>
+    {% endif %}
+    {% if data.page < data.pages %}
+      <a class="btn secondary" href="?strategy_id={{ filters.strategy_id }}&status={{ filters.status }}&date_from={{ filters.date_from }}&date_to={{ filters.date_to }}&page={{ data.page + 1 }}">Next →</a>
+    {% endif %}
+  </div>
+  {% else %}
+    <div class="empty">No orders match these filters.</div>
+  {% endif %}
+</div>
+{% endblock %}
