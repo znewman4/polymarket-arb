@@ -1,13 +1,15 @@
 # VPS deployment: continuous orderbook recorder + paper-trading agent.
 #
-# Three services share one image and one ./data bind mount:
-#   recorder      — continuously refreshes markets and snapshots active orderbooks,
-#                   populating data/normalised/ so the agent and future backtests
-#                   have fresh data to read.
-#   agent         — runs ``polymarket-arb live agent`` indefinitely in paper-mode.
-#   limitless-arb — runs ``polymarket-arb limitless scan-arb --execute`` every 5
-#                   minutes, paper-trading the Limitless x Polymarket arb strategy
-#                   and logging both legs to data/normalised/orders_log/.
+# Four services share one image and one ./data bind mount:
+#   recorder              — continuously refreshes markets and snapshots active orderbooks,
+#                           populating data/normalised/ so the agent and future backtests
+#                           have fresh data to read.
+#   agent                 — runs ``polymarket-arb live agent`` indefinitely in paper-mode.
+#   limitless-arb         — runs ``polymarket-arb limitless scan-arb --execute`` every 5
+#                           minutes, paper-trading the Limitless x Polymarket arb strategy
+#                           and logging both legs to data/normalised/orders_log/.
+#   relationship-miner    — runs ``polymarket-arb relationships validate`` every 6 hours,
+#                           scoring and promoting relationship candidates in the lake.
 #
 # Both services:
 #   - mount the kill-switch file from the host so ``touch .killswitch``
@@ -115,4 +117,27 @@ services:
             --threshold "${POLYMARKET_ARB_LIM_THRESHOLD:-0.82}" \
             --min-net-edge "${POLYMARKET_ARB_LIM_MIN_NET_EDGE:-0.02}"
           sleep 300
+        done
+
+  relationship-miner:
+    image: polymarket-arb:agent
+    container_name: polymarket-arb-relationship-miner
+    restart: unless-stopped
+    env_file:
+      - ../.env
+    environment:
+      - POLYMARKET_ARB_ENV=${POLYMARKET_ARB_ENV:-prod}
+      - POLYMARKET_ARB_ORDERS_ALLOWED=false
+      - POLYMARKET_ARB_PAPER_MODE=true
+    volumes:
+      - ../data:/app/data
+      - ../configs:/app/configs:ro
+    entrypoint: []
+    command:
+      - /bin/sh
+      - -c
+      - |
+        while true; do
+          python -m polymarket_arb.cli relationships validate
+          sleep 21600
         done
