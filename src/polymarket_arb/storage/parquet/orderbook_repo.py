@@ -67,19 +67,19 @@ class ParquetOrderbookRepository:
         if not wanted or not self._has_data():
             return {}
 
-        placeholders = ", ".join("?" for _ in wanted)
         sql = (
-            "WITH latest AS ("
-            "  SELECT *, row_number() OVER (PARTITION BY token_id "
-            "    ORDER BY timestamp_ms DESC, ingested_ts_ms DESC) AS rn"
-            f"  FROM read_parquet('{self._glob()}', hive_partitioning=true)"
-            f"  WHERE token_id IN ({placeholders})"
-            ")"
+            "WITH wanted AS (SELECT unnest([" + ", ".join(f"'{tid}'" for tid in wanted) + "]) AS token_id),"
+            " latest AS ("
+            "  SELECT p.*, row_number() OVER (PARTITION BY p.token_id"
+            "    ORDER BY p.timestamp_ms DESC, p.ingested_ts_ms DESC) AS rn"
+            f"  FROM read_parquet('{self._glob()}', hive_partitioning=true) p"
+            "  INNER JOIN wanted w ON p.token_id = w.token_id"
+            " )"
             " SELECT * EXCLUDE rn FROM latest WHERE rn = 1"
         )
         con = self._duckdb_connection or duckdb.connect()
         try:
-            cur = con.execute(sql, wanted)
+            cur = con.execute(sql)
             cols = [c[0] for c in cur.description]
             rows = cur.fetchall()
         finally:
