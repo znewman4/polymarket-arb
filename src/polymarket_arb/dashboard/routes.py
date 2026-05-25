@@ -27,12 +27,22 @@ def _qs() -> DuckDBQueryService:
     return current_app.extensions["dashboard_db"]
 
 
+_LOADING_PAGE = (
+    "<html><head><meta http-equiv='refresh' content='10'></head>"
+    "<body>Loading dashboard, please wait...</body></html>"
+)
+
+
 @bp.route("/")
 def overview() -> str:
     cache = _cache()
+    counters = cache.get("overview_counters")
+    if counters is None:
+        # Cache still warming — auto-refresh every 10s
+        return _LOADING_PAGE, 202
     return render_template(
         "overview.html",
-        counters=cache.get("overview_counters", {"total": 0, "filled": 0, "fill_rate_pct": 0.0, "by_status": {}}),
+        counters=counters,
         by_strategy=cache.get("signals_by_strategy", []),
         per_hour=cache.get("signals_per_hour_last_24h", []),
         top_markets=cache.get("top_markets_by_signal", []),

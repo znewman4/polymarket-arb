@@ -16,7 +16,6 @@ from .queries import DuckDBQueryService
 _log = logging.getLogger(__name__)
 
 _REFRESH_INTERVAL_S = 300
-_FIRST_LOAD_TIMEOUT_S = 60
 
 
 class DashboardCache:
@@ -26,13 +25,10 @@ class DashboardCache:
         self._qs = qs
         self._data: dict[str, Any] = {}
         self._lock = threading.Lock()
-        self._ready = threading.Event()
 
         t = threading.Thread(target=self._run, daemon=True, name="dashboard-cache-refresh")
         t.start()
-
-        if not self._ready.wait(timeout=_FIRST_LOAD_TIMEOUT_S):
-            _log.warning("DashboardCache: first load timed out after %ds", _FIRST_LOAD_TIMEOUT_S)
+        # Don't block — Flask starts immediately, cache warms in background
 
     def get(self, key: str, default: Any = None) -> Any:
         with self._lock:
@@ -69,7 +65,6 @@ class DashboardCache:
 
     def _run(self) -> None:
         self._refresh()
-        self._ready.set()
         while True:
             time.sleep(_REFRESH_INTERVAL_S)
             self._refresh()
