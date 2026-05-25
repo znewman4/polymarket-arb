@@ -11,11 +11,16 @@ import csv
 import io
 from datetime import datetime, timezone
 
-from flask import Blueprint, Response, current_app, jsonify, render_template, request
+from flask import Blueprint, Response, current_app, render_template, request
 
+from .cache import DashboardCache
 from .queries import DuckDBQueryService
 
 bp = Blueprint("dashboard", __name__)
+
+
+def _cache() -> DashboardCache:
+    return current_app.extensions["dashboard_cache"]
 
 
 def _qs() -> DuckDBQueryService:
@@ -24,19 +29,14 @@ def _qs() -> DuckDBQueryService:
 
 @bp.route("/")
 def overview() -> str:
-    qs = _qs()
-    counters = qs.overview_counters()
-    by_strategy = qs.signals_by_strategy()
-    per_hour = qs.signals_per_hour_last_24h()
-    top_markets = qs.top_markets_by_signal(limit=10)
-    health = qs.health_snapshot()
+    cache = _cache()
     return render_template(
         "overview.html",
-        counters=counters,
-        by_strategy=by_strategy,
-        per_hour=per_hour,
-        top_markets=top_markets,
-        health=health,
+        counters=cache.get("overview_counters", {"total": 0, "filled": 0, "fill_rate_pct": 0.0, "by_status": {}}),
+        by_strategy=cache.get("signals_by_strategy", []),
+        per_hour=cache.get("signals_per_hour_last_24h", []),
+        top_markets=cache.get("top_markets_by_signal", []),
+        health=cache.get("health_snapshot", {}),
         auto_refresh_seconds=30,
         active_page="overview",
     )
@@ -112,28 +112,28 @@ def orders_csv() -> Response:
 
 @bp.route("/signals")
 def signals() -> str:
-    qs = _qs()
+    cache = _cache()
     return render_template(
         "signals.html",
-        no_fill=qs.no_fill_breakdown(),
-        edge_dist=qs.edge_distribution(),
-        limitless_gaps=qs.limitless_open_gaps(),
+        no_fill=cache.get("no_fill_breakdown", []),
+        edge_dist=cache.get("edge_distribution", []),
+        limitless_gaps=cache.get("limitless_open_gaps", []),
         active_page="signals",
     )
 
 
 @bp.route("/markets")
 def markets() -> str:
-    qs = _qs()
+    cache = _cache()
     return render_template(
         "markets.html",
-        coverage=qs.market_coverage(),
-        by_type=qs.relationship_type_breakdown(),
-        top_pairs=qs.markets_with_most_relationships(),
+        coverage=cache.get("market_coverage", {"total_markets": 0, "active_markets": 0, "markets_with_book_today": 0}),
+        by_type=cache.get("relationship_type_breakdown", []),
+        top_pairs=cache.get("markets_with_most_relationships", []),
         active_page="markets",
     )
 
 
 @bp.route("/health")
 def health() -> Response:
-    return jsonify(_qs().health_snapshot())
+    return Response("ok", status=200, mimetype="text/plain")

@@ -11,7 +11,6 @@ Covers:
 
 from __future__ import annotations
 
-import json
 from datetime import datetime, timezone
 from decimal import Decimal
 from pathlib import Path
@@ -56,22 +55,10 @@ def test_routes_200_on_empty_lake(client, path: str) -> None:
     assert resp.status_code == 200, resp.data
 
 
-def test_health_returns_valid_json(client) -> None:
+def test_health_returns_ok(client) -> None:
     resp = client.get("/health")
     assert resp.status_code == 200
-    payload = json.loads(resp.data)
-    expected_keys = {
-        "today_utc",
-        "recorder_last_cycle_ts_ms",
-        "agent_last_tick_ts_ms",
-        "orderbook_snapshots_today",
-        "orders_log_writable",
-        "services",
-    }
-    assert expected_keys.issubset(payload.keys())
-    assert payload["orders_log_writable"] is True  # tmp_data_root is writable
-    assert payload["recorder_last_cycle_ts_ms"] is None
-    assert payload["agent_last_tick_ts_ms"] is None
+    assert resp.data == b"ok"
 
 
 def test_orders_csv_has_correct_headers(client) -> None:
@@ -162,7 +149,7 @@ def _orderbook_snapshot(token_id: str) -> OrderbookSnapshot:
 
 
 def test_seeded_lake_renders_counters_and_joins(
-    client, tmp_data_root: Path
+    client, app, tmp_data_root: Path
 ) -> None:
     orders_repo = ParquetOrdersLogRepository(tmp_data_root)
     markets_repo = ParquetMarketsRepository(tmp_data_root)
@@ -178,6 +165,9 @@ def test_seeded_lake_renders_counters_and_joins(
     )
     markets_repo.upsert_markets([_market_row("m1", "Will Foo happen?")])
     book_repo.append_snapshot(_orderbook_snapshot("t1"))
+
+    # Force the cache to reload now that the lake is seeded.
+    app.extensions["dashboard_cache"].refresh()
 
     # /  — counters
     resp = client.get("/")
