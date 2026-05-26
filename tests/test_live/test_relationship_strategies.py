@@ -189,18 +189,11 @@ def test_relationship_diagnostic_emits_two_token_mapped_intents(tmp_data_root) -
     assert [intent.token_id for intent in intents] == ["a_no", "b_yes"]
     assert [intent.market_id for intent in intents] == ["rel_001_market_a", "rel_001_market_b"]
     assert [intent.side for intent in intents] == ["buy", "buy"]
-    assert [intent.detail for intent in intents] == [
-        {
-            "gross_edge": "0.30",
-            "relationship_id": "rel_001",
-            "relationship_type": "nested_a_implies_b",
-        },
-        {
-            "gross_edge": "0.30",
-            "relationship_id": "rel_001",
-            "relationship_type": "nested_a_implies_b",
-        },
-    ]
+    for detail in [intent.detail for intent in intents]:
+        assert detail["gross_edge"] == "0.30"
+        assert detail["relationship_id"] == "rel_001"
+        assert detail["relationship_type"] == "nested_a_implies_b"
+        assert "priority_score" in detail
     assert [intent.size for intent in intents] == [Decimal("50"), Decimal("50")]
     assert [intent.price for intent in intents] == [Decimal("0.30"), Decimal("0.40")]
     assert [intent.strategy_id for intent in intents] == [

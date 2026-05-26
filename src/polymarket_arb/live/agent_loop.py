@@ -132,7 +132,8 @@ def run_agent_loop(
                     source_relationship_id=intent.detail.get("relationship_id", ""),
                     notes=(
                         f"gross_edge={intent.detail.get('gross_edge', '')} "
-                        f"rel_type={intent.detail.get('relationship_type', '')}"
+                        f"rel_type={intent.detail.get('relationship_type', '')} "
+                        f"priority_score={intent.detail.get('priority_score', '')}"
                     ),
                 )
                 _record_result(stats, result)

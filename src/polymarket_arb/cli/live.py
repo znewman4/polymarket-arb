@@ -32,6 +32,7 @@ from ..strategies.nesting_contradiction import AlignedPricePoint, evaluate_relat
 
 _ELIGIBLE_RELATIONSHIP_STATUSES = frozenset({"accepted", "needs_manual_review"})
 _RELATIONSHIP_ORDER_SIZE = Decimal("50")
+_COOLDOWN_MS = 300_000  # 5 minutes between trades on the same pair
 
 
 @dataclass(frozen=True)
@@ -41,6 +42,8 @@ class _RelationshipStrategyConfig:
     min_net_edge: float
     fee_bps: Decimal = Decimal("0")
     slippage_bps: Decimal = Decimal("50")
+    max_pairs_per_tick: int = 5
+    min_liquidity_usdc: Decimal = Decimal("10")
 
 
 def _noop_strategy(_state: AgentState) -> list[OrderIntent]:
@@ -55,11 +58,13 @@ _STRATEGIES: dict[str, StrategyFn | _RelationshipStrategyConfig] = {
         strategy_id="relationship_diagnostic",
         min_gross_edge=0.05,
         min_net_edge=0.02,
+        max_pairs_per_tick=3,
     ),
     "relationship_aggressive": _RelationshipStrategyConfig(
         strategy_id="relationship_aggressive",
         min_gross_edge=0.03,
         min_net_edge=0.01,
+        max_pairs_per_tick=5,
     ),
 }
 
@@ -281,6 +286,61 @@ def _make_watched_tokens_fn(
 _RELATIONSHIP_RELOAD_INTERVAL = 60
 
 
+def _score_candidate(
+    candidate: StrategyCandidateRow,
+    rel: RelationshipCandidateRow,
+    point: AlignedPricePoint,
+) -> float:
+    """Composite priority score. Higher = execute first.
+
+    Components (each 0-1, weighted):
+    - gross_edge (40%): direct profit signal
+    - final_confidence (30%): relationship reliability
+    - liquidity (20%): mid-price proximity to 0.5 as a depth proxy
+    - freshness (10%): penalise stale prices
+    """
+    edge_score = float(min(candidate.gross_edge, Decimal("1.0")))
+
+    confidence_score = float(rel.final_confidence)
+
+    max_staleness_ms = 30_000
+    staleness = max(point.staleness_a_ms, point.staleness_b_ms)
+    freshness_score = max(0.0, 1.0 - staleness / max_staleness_ms)
+
+    mid_a = float(point.price_a)
+    mid_b = float(point.price_b)
+    liquidity_score = 1.0 - abs(mid_a - 0.5) * 0.5 - abs(mid_b - 0.5) * 0.5
+    liquidity_score = max(0.0, liquidity_score)
+
+    return (
+        0.40 * edge_score
+        + 0.30 * confidence_score
+        + 0.20 * liquidity_score
+        + 0.10 * freshness_score
+    )
+
+
+def _check_liquidity(
+    rel: RelationshipCandidateRow,
+    state: AgentState,
+    min_usdc: Decimal,
+) -> bool:
+    """Return True if both legs have sufficient ask-side liquidity."""
+    for token_id in (rel.token_id_a_yes, rel.token_id_b_yes):
+        if not token_id:
+            return False
+        book = state.latest_book_by_token.get(token_id)
+        if book is None:
+            return False
+        best_ask_depth = sum(
+            level.price * level.size
+            for level in book.asks[:3]
+        )
+        if best_ask_depth < min_usdc:
+            return False
+    return True
+
+
 def _make_relationship_strategy(
     config: _RelationshipStrategyConfig,
     *,
@@ -289,14 +349,25 @@ def _make_relationship_strategy(
 ) -> StrategyFn:
     cached_relationships: list[RelationshipCandidateRow] = []
     tick_count = 0
+    last_traded: dict[str, int] = {}  # relationship_id -> ts_ms
 
     def strategy(state: AgentState) -> list[OrderIntent]:
         nonlocal cached_relationships, tick_count
         if tick_count % _RELATIONSHIP_RELOAD_INTERVAL == 0:
             cached_relationships = _load_live_relationships(data_root)
         tick_count += 1
-        intents: list[OrderIntent] = []
+
+        scored: list[tuple[float, list[OrderIntent], str]] = []
         for rel in cached_relationships:
+            # Cooldown: skip if same pair traded within the window
+            last_ts = last_traded.get(rel.relationship_id, 0)
+            if state.ts_ms - last_ts < _COOLDOWN_MS:
+                continue
+
+            # Liquidity guard: skip if either leg has insufficient depth
+            if not _check_liquidity(rel, state, config.min_liquidity_usdc):
+                continue
+
             point = _aligned_point_from_state(rel, state)
             if point is None:
                 continue
@@ -311,9 +382,38 @@ def _make_relationship_strategy(
             )
             if candidate is None or not candidate.accepted_for_simulation:
                 continue
-            leg_intents = _order_intents_from_candidate(config.strategy_id, rel, point, candidate)
-            if leg_intents is not None:
-                intents.extend(leg_intents)
+            score = _score_candidate(candidate, rel, point)
+            leg_intents = _order_intents_from_candidate(
+                config.strategy_id, rel, point, candidate, score=score,
+            )
+            if leg_intents is None:
+                continue
+            scored.append((score, leg_intents, rel.relationship_id))
+
+        # Sort by score descending, then deduplicate by market_id and cap at
+        # max_pairs_per_tick pairs (= max_pairs_per_tick * 2 legs).
+        scored.sort(key=lambda x: x[0], reverse=True)
+        max_pairs = config.max_pairs_per_tick
+
+        seen_markets: set[str] = set()
+        selected: list[tuple[float, list[OrderIntent], str]] = []
+        for score, leg_intents, rel_id in scored[:max_pairs * 3]:
+            market_ids = {i.market_id for i in leg_intents}
+            if market_ids & seen_markets:
+                continue
+            seen_markets.update(market_ids)
+            selected.append((score, leg_intents, rel_id))
+            if len(selected) >= max_pairs:
+                break
+
+        # Update cooldown tracker for pairs we're about to trade
+        for _, _, rel_id in selected:
+            if rel_id:
+                last_traded[rel_id] = state.ts_ms
+
+        intents: list[OrderIntent] = []
+        for _, leg_intents, _ in selected:
+            intents.extend(leg_intents)
         return intents
 
     return strategy
@@ -358,11 +458,19 @@ def _order_intents_from_candidate(
     rel: RelationshipCandidateRow,
     point: AlignedPricePoint,
     candidate: StrategyCandidateRow,
+    *,
+    score: float = 0.0,
 ) -> list[OrderIntent] | None:
     price_a = _price_for_token(candidate.token_id_a, rel, point)
     price_b = _price_for_token(candidate.token_id_b, rel, point)
     if price_a is None or price_b is None:
         return None
+    detail = {
+        "gross_edge": str(candidate.gross_edge),
+        "relationship_id": rel.relationship_id,
+        "relationship_type": rel.relationship_type,
+        "priority_score": str(round(score, 4)),
+    }
     return [
         OrderIntent(
             id=f"{candidate.candidate_id}:a",
@@ -373,11 +481,7 @@ def _order_intents_from_candidate(
             price=price_a,
             size=_RELATIONSHIP_ORDER_SIZE,
             limit_price=None,
-            detail={
-                "gross_edge": str(candidate.gross_edge),
-                "relationship_id": rel.relationship_id,
-                "relationship_type": rel.relationship_type,
-            },
+            detail=detail,
         ),
         OrderIntent(
             id=f"{candidate.candidate_id}:b",
@@ -388,11 +492,7 @@ def _order_intents_from_candidate(
             price=price_b,
             size=_RELATIONSHIP_ORDER_SIZE,
             limit_price=None,
-            detail={
-                "gross_edge": str(candidate.gross_edge),
-                "relationship_id": rel.relationship_id,
-                "relationship_type": rel.relationship_type,
-            },
+            detail=detail,
         ),
     ]
 

@@ -89,6 +89,7 @@ services:
       # Safe default: paper mode + orders disallowed.  Override in .env to flip.
       - POLYMARKET_ARB_PAPER_MODE=${POLYMARKET_ARB_PAPER_MODE:-true}
       - POLYMARKET_ARB_ORDERS_ALLOWED=${POLYMARKET_ARB_ORDERS_ALLOWED:-false}
+      - POLYMARKET_ARB_AGENT_MAX_PAIRS_PER_TICK=${POLYMARKET_ARB_AGENT_MAX_PAIRS_PER_TICK:-5}
     volumes:
       - ../data:/app/data
       - ../configs:/app/configs:ro

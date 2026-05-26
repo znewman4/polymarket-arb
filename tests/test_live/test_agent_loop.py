@@ -89,7 +89,8 @@ def test_agent_loop_runs_max_iterations_and_emits_orders(settings, tmp_data_root
     assert all(r.status == "paper_filled" for r in rows)
     assert all(r.market_id == "market-a" for r in rows)
     assert all(r.source_relationship_id == "rel-a" for r in rows)
-    assert all(r.notes == "gross_edge=0.05 rel_type=nested_a_implies_b" for r in rows)
+    assert all("gross_edge=0.05" in r.notes for r in rows)
+    assert all("rel_type=nested_a_implies_b" in r.notes for r in rows)
 
 
 def test_agent_loop_halts_when_kill_switch_set(settings, tmp_data_root) -> None:
