@@ -27,6 +27,7 @@ dependencies = [
   "jinja2>=3.1,<4.0",
   "rapidfuzz>=3.0",
   "rich>=13.0",
+  "py-clob-client>=0.34",
 ]
 
 [project.optional-dependencies]
