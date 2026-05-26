@@ -34,6 +34,11 @@
     </div>
     <div class="sub mono">{{ health.agent_last_tick_ts_ms or '—' }}</div>
   </div>
+  <div class="card">
+    <div class="label">Sharpe ratio (annualised)</div>
+    <div class="value">{{ sharpe.sharpe if sharpe.sharpe is not none else '—' }}</div>
+    <div class="sub">{{ sharpe.days_of_data }} day{{ '' if sharpe.days_of_data == 1 else 's' }} of data</div>
+  </div>
 </div>
 
 <div class="grid-2">
@@ -49,6 +54,15 @@
     <h2>Signals per hour (last 24h)</h2>
     <canvas id="perHour" height="160"></canvas>
   </div>
+</div>
+
+<div class="panel">
+  <h2>Cumulative paper PnL (USDC)</h2>
+  {% if pnl %}
+    <canvas id="pnlChart" height="160"></canvas>
+  {% else %}
+    <div class="empty">No filled trades yet.</div>
+  {% endif %}
 </div>
 
 <div class="panel">
@@ -106,5 +120,22 @@
     },
     options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
   });
+  {% if pnl %}
+  new Chart(document.getElementById('pnlChart'), {
+    type: 'line',
+    data: {
+      labels: {{ pnl | map(attribute='hour_bucket') | list | tojson }},
+      datasets: [{
+        label: 'Cumulative PnL',
+        data: {{ pnl | map(attribute='cumulative_pnl') | list | tojson }},
+        borderColor: '#3fb950',
+        backgroundColor: 'rgba(63,185,80,0.15)',
+        tension: 0.25,
+        fill: true,
+      }]
+    },
+    options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
+  });
+  {% endif %}
 </script>
 {% endblock %}

@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from datetime import datetime, timezone
+
 from flask import Flask
 
 from ..settings import Settings
@@ -16,6 +18,15 @@ def create_app(settings: Settings) -> Flask:
     app.extensions["dashboard_db"] = qs
     app.extensions["dashboard_cache"] = DashboardCache(qs)
     app.register_blueprint(dashboard_bp)
+
+    @app.template_filter("datetimeformat")
+    def _datetimeformat(value: int | None) -> str:
+        if value is None:
+            return "—"
+        return datetime.fromtimestamp(int(value), tz=timezone.utc).strftime(
+            "%Y-%m-%d %H:%M:%S"
+        )
+
     return app
 
 

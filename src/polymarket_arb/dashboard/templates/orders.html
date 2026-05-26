@@ -6,7 +6,12 @@
 <form class="filters" method="get" action="/orders">
   <div>
     <label>Strategy</label>
-    <input type="text" name="strategy_id" value="{{ filters.strategy_id }}" placeholder="e.g. relationship_aggressive">
+    <select name="strategy_id">
+      <option value="">(any)</option>
+      {% for s in ['relationship_diagnostic','relationship_aggressive','limitless_arb','noop'] %}
+        <option value="{{ s }}" {% if filters.strategy_id == s %}selected{% endif %}>{{ s }}</option>
+      {% endfor %}
+    </select>
   </div>
   <div>
     <label>Status</label>
@@ -46,19 +51,31 @@
     <tbody>
       {% for r in data.rows %}
       <tr>
-        <td class="mono">{{ r.ts_ms }}</td>
+        <td class="mono">{{ (r.ts_ms // 1000) | int | datetimeformat }}</td>
         <td>{{ r.strategy_id }}</td>
         <td>{{ r.question or r.market_id }}</td>
         <td>{{ r.side }}</td>
         <td>
           {% set s = r.status %}
-          <span class="pill {% if s == 'paper_filled' %}good{% elif s.startswith('rejected') %}bad{% else %}neutral{% endif %}">{{ s }}</span>
+          {% if s == 'paper_filled' %}{% set cls = 'good' %}
+          {% elif s == 'paper_partial' %}{% set cls = 'info' %}
+          {% elif s in ('paper_no_fill', 'paper_no_book') %}{% set cls = 'warn' %}
+          {% elif s.startswith('rejected') %}{% set cls = 'bad' %}
+          {% else %}{% set cls = 'neutral' %}{% endif %}
+          <span class="pill {{ cls }}">{{ s }}</span>
         </td>
         <td style="text-align:right" class="mono">{{ r.notional_usdc }}</td>
         <td>{{ r.notes }}</td>
       </tr>
       {% endfor %}
     </tbody>
+    <tfoot>
+      <tr>
+        <td colspan="5" style="text-align:right; font-weight:600; color: var(--fg-dim);">Total notional (filtered)</td>
+        <td style="text-align:right" class="mono">{{ "%.2f"|format(data.total_notional or 0) }}</td>
+        <td></td>
+      </tr>
+    </tfoot>
   </table>
   <div class="pagination">
     <span>Showing page {{ data.page }} of {{ data.pages }} — {{ data.total }} total rows</span>

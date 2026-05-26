@@ -27,6 +27,7 @@ from . import (
     inspect,
     limitless,
     live,
+    maintenance,
     nlp,
     pipeline,
     record,
@@ -72,6 +73,7 @@ cli.add_command(research.research_cmd)
 cli.add_command(live.live_cmd)
 cli.add_command(limitless.limitless_cmd)
 cli.add_command(dashboard.dashboard_cmd)
+cli.add_command(maintenance.maintenance_cmd)
 
 
 # Flat aliases for compatibility with the user's spec; same callbacks.

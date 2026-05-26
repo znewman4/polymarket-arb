@@ -13,6 +13,7 @@ new day, not an error.
 
 from __future__ import annotations
 
+import math
 import threading
 import uuid
 from datetime import date, datetime, timedelta, timezone
@@ -149,7 +150,7 @@ class DuckDBQueryService:
         if self._has_data("markets"):
             markets_join = (
                 f"LEFT JOIN (SELECT id, ANY_VALUE(question) AS question FROM "
-                f"read_parquet('{self._glob('markets')}', hive_partitioning=true) "
+                f"read_parquet({self._glob_recent('markets', days=7)}, hive_partitioning=true) "
                 "GROUP BY id) m ON m.id = o.market_id"
             )
             select_q = "ANY_VALUE(m.question) AS question, "
@@ -164,6 +165,71 @@ class DuckDBQueryService:
             [today, int(limit)],
         )
 
+    def sharpe_ratio_stats(self) -> dict[str, Any]:
+        """Annualised Sharpe of daily paper notional. None when <3 days of data.
+
+        Note: ``notional_usdc`` is trade size, not realised P&L — see plan caveat.
+        """
+        empty = {
+            "sharpe": None,
+            "mean_daily_pnl": 0.0,
+            "std_daily_pnl": 0.0,
+            "days_of_data": 0,
+        }
+        if not self._has_data("orders_log"):
+            return empty
+        rows = self._fetchall(
+            "SELECT dt, SUM(CAST(notional_usdc AS DOUBLE)) AS daily "
+            f"FROM read_parquet({self._glob_recent('orders_log', days=30)}, "
+            "hive_partitioning=true) "
+            "WHERE status = 'paper_filled' AND notional_usdc <> '' "
+            "GROUP BY dt ORDER BY dt"
+        )
+        daily = [float(d or 0.0) for _, d in rows]
+        n = len(daily)
+        if n < 3:
+            return {**empty, "days_of_data": n}
+        mean = sum(daily) / n
+        var = sum((x - mean) ** 2 for x in daily) / (n - 1)
+        std = math.sqrt(var)
+        if std == 0:
+            return {
+                "sharpe": None,
+                "mean_daily_pnl": round(mean, 4),
+                "std_daily_pnl": 0.0,
+                "days_of_data": n,
+            }
+        sharpe = (mean / std) * math.sqrt(365)
+        return {
+            "sharpe": round(sharpe, 2),
+            "mean_daily_pnl": round(mean, 4),
+            "std_daily_pnl": round(std, 4),
+            "days_of_data": n,
+        }
+
+    def cumulative_pnl_by_hour(self) -> list[dict]:
+        """Hourly running sum of filled paper notional over the last 7 days.
+
+        Note: ``notional_usdc`` is trade size, not realised P&L. Real P&L would
+        require fill price vs markout — see plan caveat.
+        """
+        if not self._has_data("orders_log"):
+            return []
+        rows = self._fetchall(
+            "SELECT strftime(to_timestamp(ts_ms/1000), '%Y-%m-%d %H:00') AS hour_bucket, "
+            "SUM(CAST(notional_usdc AS DOUBLE)) AS hour_total "
+            f"FROM read_parquet({self._glob_recent('orders_log', days=7)}, "
+            "hive_partitioning=true) "
+            "WHERE status = 'paper_filled' AND notional_usdc <> '' "
+            "GROUP BY hour_bucket ORDER BY hour_bucket"
+        )
+        out: list[dict] = []
+        running = 0.0
+        for hour_bucket, hour_total in rows:
+            running += float(hour_total or 0.0)
+            out.append({"hour_bucket": hour_bucket, "cumulative_pnl": round(running, 4)})
+        return out
+
     # ─── orders ──────────────────────────────────────────────────────────────
 
     def orders_page(
@@ -177,14 +243,24 @@ class DuckDBQueryService:
         per_page: int = 50,
     ) -> dict[str, Any]:
         if not self._has_data("orders_log"):
-            return {"rows": [], "total": 0, "page": page, "per_page": per_page, "pages": 0}
+            return {
+                "rows": [],
+                "total": 0,
+                "page": page,
+                "per_page": per_page,
+                "pages": 0,
+                "total_notional": 0.0,
+            }
         where_sql, params = self._orders_filter(strategy_id, status, date_from, date_to)
         total_row = self._fetchall(
-            f"SELECT COUNT(*) FROM read_parquet('{self._glob('orders_log')}', "
+            "SELECT COUNT(*), COALESCE(SUM(CASE WHEN notional_usdc <> '' "
+            "THEN CAST(notional_usdc AS DOUBLE) ELSE 0 END), 0) "
+            f"FROM read_parquet('{self._glob('orders_log')}', "
             f"hive_partitioning=true) o {where_sql}",
             params,
         )
         total = int(total_row[0][0]) if total_row else 0
+        total_notional = float(total_row[0][1]) if total_row else 0.0
         markets_join, question_select = self._markets_join()
         offset = max(0, (page - 1) * per_page)
         rows = self._fetchall_dict(
@@ -203,6 +279,7 @@ class DuckDBQueryService:
             "page": page,
             "per_page": per_page,
             "pages": pages,
+            "total_notional": round(total_notional, 2),
         }
 
     def iter_orders_for_csv(
@@ -242,6 +319,99 @@ class DuckDBQueryService:
                     return
                 yield cols, [list(r) for r in batch]
 
+    def tradebook_page(
+        self,
+        *,
+        page: int = 1,
+        per_page: int = 50,
+    ) -> dict[str, Any]:
+        """Paginated view of filled paper trades over the last 30 days."""
+        empty_summary = {"trades": 0, "total_pnl": 0.0, "avg_size": 0.0, "best": 0.0}
+        if not self._has_data("orders_log"):
+            return {
+                "rows": [],
+                "total": 0,
+                "page": page,
+                "per_page": per_page,
+                "pages": 0,
+                "summary": empty_summary,
+            }
+        glob = self._glob_recent("orders_log", days=30)
+        total_row = self._fetchall(
+            "SELECT COUNT(*), "
+            "COALESCE(SUM(CAST(notional_usdc AS DOUBLE)), 0), "
+            "COALESCE(AVG(CAST(notional_usdc AS DOUBLE)), 0), "
+            "COALESCE(MAX(CAST(notional_usdc AS DOUBLE)), 0) "
+            f"FROM read_parquet({glob}, hive_partitioning=true) "
+            "WHERE status = 'paper_filled' AND notional_usdc <> ''"
+        )
+        total = int(total_row[0][0] or 0) if total_row else 0
+        total_pnl = float(total_row[0][1] or 0.0) if total_row else 0.0
+        avg_size = float(total_row[0][2] or 0.0) if total_row else 0.0
+        best = float(total_row[0][3] or 0.0) if total_row else 0.0
+        markets_join, question_select = self._markets_join()
+        offset = max(0, (page - 1) * per_page)
+        rows = self._fetchall_dict(
+            "SELECT * FROM ("
+            f"  SELECT o.ts_ms, o.strategy_id, o.market_id, {question_select} o.side, "
+            "  o.notional_usdc, o.notes, "
+            "  SUM(CAST(o.notional_usdc AS DOUBLE)) OVER ("
+            "    ORDER BY o.ts_ms ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW"
+            "  ) AS running_pnl "
+            f"  FROM read_parquet({glob}, hive_partitioning=true) o "
+            f"  {markets_join} "
+            "  WHERE o.status = 'paper_filled' AND o.notional_usdc <> '' "
+            ") ORDER BY ts_ms DESC LIMIT ? OFFSET ?",
+            [int(per_page), int(offset)],
+        )
+        pages = (total + per_page - 1) // per_page if per_page else 0
+        return {
+            "rows": rows,
+            "total": total,
+            "page": page,
+            "per_page": per_page,
+            "pages": pages,
+            "summary": {
+                "trades": total,
+                "total_pnl": round(total_pnl, 2),
+                "avg_size": round(avg_size, 2),
+                "best": round(best, 2),
+            },
+        }
+
+    def iter_tradebook_for_csv(self, *, chunk_size: int = 1000):
+        """Yield (cols, rows_chunk) of filled paper trades for streamed CSV export."""
+        cols_static = [
+            "ts_ms", "strategy_id", "market_id", "question", "side",
+            "notional_usdc", "notes", "running_pnl",
+        ]
+        if not self._has_data("orders_log"):
+            yield cols_static, []
+            return
+        glob = self._glob_recent("orders_log", days=30)
+        markets_join, question_select = self._markets_join()
+        sql = (
+            "SELECT * FROM ("
+            f"  SELECT o.ts_ms, o.strategy_id, o.market_id, {question_select} o.side, "
+            "  o.notional_usdc, o.notes, "
+            "  SUM(CAST(o.notional_usdc AS DOUBLE)) OVER ("
+            "    ORDER BY o.ts_ms ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW"
+            "  ) AS running_pnl "
+            f"  FROM read_parquet({glob}, hive_partitioning=true) o "
+            f"  {markets_join} "
+            "  WHERE o.status = 'paper_filled' AND o.notional_usdc <> '' "
+            ") ORDER BY ts_ms DESC"
+        )
+        with self._lock:
+            cur = self._con.execute(sql)
+            cols = [c[0] for c in cur.description]
+            yield cols, []
+            while True:
+                batch = cur.fetchmany(chunk_size)
+                if not batch:
+                    return
+                yield cols, [list(r) for r in batch]
+
     def _orders_filter(
         self,
         strategy_id: str | None,
@@ -271,7 +441,7 @@ class DuckDBQueryService:
             return "", "NULL AS question, "
         join_sql = (
             f"LEFT JOIN (SELECT id, ANY_VALUE(question) AS question FROM "
-            f"read_parquet('{self._glob('markets')}', hive_partitioning=true) "
+            f"read_parquet({self._glob_recent('markets', days=7)}, hive_partitioning=true) "
             "GROUP BY id) m ON m.id = o.market_id"
         )
         return join_sql, "m.question AS question, "
@@ -338,7 +508,7 @@ class DuckDBQueryService:
             row = self._fetchall(
                 "SELECT COUNT(DISTINCT id), "
                 "COUNT(DISTINCT CASE WHEN active AND NOT closed THEN id END) "
-                f"FROM read_parquet('{self._glob('markets')}', hive_partitioning=true)"
+                f"FROM read_parquet({self._glob_recent('markets', days=30)}, hive_partitioning=true)"
             )
             if row:
                 out["total_markets"] = int(row[0][0])

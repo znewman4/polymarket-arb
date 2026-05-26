@@ -57,6 +57,7 @@ services:
           find /app/data/normalised -name "*.parquet" -mtime +3 -delete
           find /app/data/raw -name "*.json" -mtime +1 -delete
           sleep 300
+          python -m polymarket_arb.cli maintenance compact-lake --older-than-days 1
         done
     logging:
       driver: "json-file"

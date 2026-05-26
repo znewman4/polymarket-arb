@@ -37,6 +37,9 @@ def app(settings: Settings, tmp_data_root: Path):
     s = _settings_with_root(settings, tmp_data_root)
     flask_app = create_app(s)
     flask_app.config.update({"TESTING": True})
+    # Force a synchronous cache refresh so the overview route doesn't return 202
+    # racing the daemon refresh thread on an empty lake.
+    flask_app.extensions["dashboard_cache"].refresh()
     yield flask_app
     flask_app.extensions["dashboard_db"].close()
 

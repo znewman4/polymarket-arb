@@ -47,6 +47,8 @@ def overview() -> str:
         per_hour=cache.get("signals_per_hour_last_24h", []),
         top_markets=cache.get("top_markets_by_signal", []),
         health=cache.get("health_snapshot", {}),
+        pnl=cache.get("cumulative_pnl", []),
+        sharpe=cache.get("sharpe_stats", {"sharpe": None, "days_of_data": 0}),
         auto_refresh_seconds=30,
         active_page="overview",
     )
@@ -116,6 +118,44 @@ def orders_csv() -> Response:
         mimetype="text/csv",
         headers={
             "Content-Disposition": f'attachment; filename="orders_{today}.csv"',
+        },
+    )
+
+
+@bp.route("/trades")
+def trades() -> str:
+    qs = _qs()
+    try:
+        page = max(1, int(request.args.get("page", "1")))
+    except ValueError:
+        page = 1
+    data = qs.tradebook_page(page=page, per_page=50)
+    return render_template("tradebook.html", data=data, active_page="trades")
+
+
+@bp.route("/trades.csv")
+def trades_csv() -> Response:
+    qs = _qs()
+
+    def generate():
+        header_written = False
+        for cols, rows in qs.iter_tradebook_for_csv():
+            if not header_written:
+                buf = io.StringIO()
+                csv.writer(buf).writerow(cols)
+                yield buf.getvalue()
+                header_written = True
+            if rows:
+                buf = io.StringIO()
+                csv.writer(buf).writerows(rows)
+                yield buf.getvalue()
+
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    return Response(
+        generate(),
+        mimetype="text/csv",
+        headers={
+            "Content-Disposition": f'attachment; filename="trades_{today}.csv"',
         },
     )
 

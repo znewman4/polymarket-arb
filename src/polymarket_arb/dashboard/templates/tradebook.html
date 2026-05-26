@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}Tradebook — polymarket-arb{% endblock %}
+{% block content %}
+<h1>Tradebook</h1>
+
+<div class="cards">
+  <div class="card">
+    <div class="label">Total trades</div>
+    <div class="value">{{ data.summary.trades }}</div>
+  </div>
+  <div class="card">
+    <div class="label">Total PnL (USDC)</div>
+    <div class="value">{{ "%.2f"|format(data.summary.total_pnl) }}</div>
+  </div>
+  <div class="card">
+    <div class="label">Avg trade size</div>
+    <div class="value">{{ "%.2f"|format(data.summary.avg_size) }}</div>
+  </div>
+  <div class="card">
+    <div class="label">Best single trade</div>
+    <div class="value">{{ "%.2f"|format(data.summary.best) }}</div>
+  </div>
+</div>
+
+<div style="margin-bottom: 12px;">
+  <a class="btn secondary" href="/trades.csv">Export CSV</a>
+</div>
+
+<div class="panel">
+  {% if data.rows %}
+  <table>
+    <thead>
+      <tr>
+        <th>Timestamp (UTC)</th>
+        <th>Strategy</th>
+        <th>Market</th>
+        <th>Side</th>
+        <th style="text-align:right">Notional</th>
+        <th style="text-align:right">Running PnL</th>
+        <th>Notes</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for r in data.rows %}
+      <tr>
+        <td class="mono">{{ (r.ts_ms // 1000) | int | datetimeformat }}</td>
+        <td>{{ r.strategy_id }}</td>
+        <td>{{ r.question or r.market_id }}</td>
+        <td>{{ r.side }}</td>
+        <td style="text-align:right" class="mono">{{ r.notional_usdc }}</td>
+        <td style="text-align:right" class="mono">{{ "%.2f"|format(r.running_pnl or 0) }}</td>
+        <td>{{ r.notes }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  <div class="pagination">
+    <span>Showing page {{ data.page }} of {{ data.pages }} — {{ data.total }} total trades</span>
+    {% if data.page > 1 %}
+      <a class="btn secondary" href="?page={{ data.page - 1 }}">← Prev</a>
+    {% endif %}
+    {% if data.page < data.pages %}
+      <a class="btn secondary" href="?page={{ data.page + 1 }}">Next →</a>
+    {% endif %}
+  </div>
+  {% else %}
+    <div class="empty">No filled paper trades yet.</div>
+  {% endif %}
+</div>
+{% endblock %}

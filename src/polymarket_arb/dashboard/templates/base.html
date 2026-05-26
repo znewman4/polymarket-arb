@@ -65,6 +65,7 @@
     .pill.good { background: rgba(63,185,80,0.15); color: var(--good); }
     .pill.bad { background: rgba(248,81,73,0.15); color: var(--bad); }
     .pill.warn { background: rgba(210,153,34,0.15); color: var(--warn); }
+    .pill.info { background: rgba(88,166,255,0.15); color: var(--accent); }
     .pill.neutral { background: var(--bg-card-2); color: var(--fg-dim); }
     form.filters { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; align-items: end; }
     form.filters label { font-size: 12px; color: var(--fg-dim); display: block; }
@@ -84,6 +85,7 @@
     <nav>
       <a href="/" class="{{ 'active' if active_page == 'overview' else '' }}">Overview</a>
       <a href="/orders" class="{{ 'active' if active_page == 'orders' else '' }}">Orders</a>
+      <a href="/trades" class="{{ 'active' if active_page == 'trades' else '' }}">Tradebook</a>
       <a href="/signals" class="{{ 'active' if active_page == 'signals' else '' }}">Signals</a>
       <a href="/markets" class="{{ 'active' if active_page == 'markets' else '' }}">Markets</a>
       <a href="/health">Health (JSON)</a>
