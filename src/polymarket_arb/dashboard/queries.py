@@ -279,6 +279,93 @@ class DuckDBQueryService:
             "trade_count": trade_count,
         }
 
+    # ─── live monitor ────────────────────────────────────────────────────────
+
+    def live_monitor_data(self) -> dict:
+        """Real-time trading activity for the live monitor page.
+
+        Scopes entirely to today's orders_log partition for speed.
+        Returns counts and recent rows for both paper and live orders.
+        """
+        empty = {
+            "live_submitted_today": 0,
+            "live_failed_today": 0,
+            "paper_filled_today": 0,
+            "rejected_today": 0,
+            "total_live_notional_today": 0.0,
+            "strategies_active": [],
+            "recent_live_orders": [],
+            "recent_all_orders": [],
+            "last_order_ts_ms": None,
+        }
+        if not self._has_data("orders_log"):
+            return empty
+
+        today_glob = self._glob_recent("orders_log", days=1)
+
+        counts = self._fetchall(
+            f"SELECT status, COUNT(*) as cnt, "
+            f"SUM(CASE WHEN notional_usdc <> '' THEN "
+            f"TRY_CAST(notional_usdc AS DOUBLE) ELSE 0 END) as total_notional "
+            f"FROM read_parquet({today_glob}, hive_partitioning=true) "
+            f"GROUP BY status"
+        )
+
+        live_submitted = 0
+        live_failed = 0
+        paper_filled = 0
+        rejected = 0
+        total_live_notional = 0.0
+
+        for status, cnt, notional in counts:
+            if status == "live_submitted":
+                live_submitted = int(cnt)
+                total_live_notional += float(notional or 0)
+            elif status == "live_failed":
+                live_failed = int(cnt)
+            elif status == "paper_filled":
+                paper_filled = int(cnt)
+            elif str(status).startswith("rejected"):
+                rejected += int(cnt)
+
+        strategies = self._fetchall(
+            f"SELECT DISTINCT strategy_id FROM read_parquet({today_glob}, "
+            f"hive_partitioning=true) WHERE strategy_id <> '' ORDER BY strategy_id"
+        )
+        strategies_active = [s[0] for s in strategies]
+
+        recent_live = self._fetchall_dict(
+            f"SELECT ts_ms, strategy_id, market_id, token_id, side, "
+            f"notional_usdc, status, notes, reason "
+            f"FROM read_parquet({today_glob}, hive_partitioning=true) "
+            f"WHERE status IN ('live_submitted', 'live_failed') "
+            f"ORDER BY ts_ms DESC LIMIT 20"
+        )
+
+        recent_all = self._fetchall_dict(
+            f"SELECT ts_ms, strategy_id, market_id, side, "
+            f"notional_usdc, status, notes "
+            f"FROM read_parquet({today_glob}, hive_partitioning=true) "
+            f"ORDER BY ts_ms DESC LIMIT 20"
+        )
+
+        last_ts = self._fetchall(
+            f"SELECT MAX(ts_ms) FROM read_parquet({today_glob}, hive_partitioning=true)"
+        )
+        last_order_ts_ms = int(last_ts[0][0]) if last_ts and last_ts[0][0] else None
+
+        return {
+            "live_submitted_today": live_submitted,
+            "live_failed_today": live_failed,
+            "paper_filled_today": paper_filled,
+            "rejected_today": rejected,
+            "total_live_notional_today": round(total_live_notional, 2),
+            "strategies_active": strategies_active,
+            "recent_live_orders": recent_live,
+            "recent_all_orders": recent_all,
+            "last_order_ts_ms": last_order_ts_ms,
+        }
+
     # ─── orders ──────────────────────────────────────────────────────────────
 
     def orders_page(

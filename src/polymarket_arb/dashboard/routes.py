@@ -187,6 +187,18 @@ def positions() -> str:
     )
 
 
+@bp.route("/live")
+def live_monitor() -> str:
+    qs = _qs()
+    data = qs.live_monitor_data()
+    return render_template(
+        "live_monitor.html",
+        data=data,
+        active_page="live",
+        auto_refresh_seconds=10,
+    )
+
+
 @bp.route("/signals")
 def signals() -> str:
     cache = _cache()

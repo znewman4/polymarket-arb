@@ -153,14 +153,87 @@ def test_live_mode_with_orders_disallowed_rejects(settings, tmp_data_root) -> No
     assert rows[0].status == "rejected_orders_disallowed"
 
 
-def test_live_mode_with_orders_allowed_falls_through_signing_stub(settings, tmp_data_root) -> None:
-    """paper_mode=False AND orders_allowed=True → signing stub raises →
-    rejected_live_signing_not_ready (so we never actually submit)."""
+def test_live_mode_with_orders_allowed_and_no_credentials_rejected(
+    settings, tmp_data_root
+) -> None:
+    """paper_mode=False AND orders_allowed=True but no credentials →
+    rejected_credentials_missing (no network attempt)."""
     s = settings.model_copy(update={"paper_mode": False, "orders_allowed": True})
-    client = OrderClient(s, signing_key_hex=None)
+    client = OrderClient(s)
     result = client.place_order(_intent())
-    assert result.status == "rejected_live_signing_not_ready"
+    assert result.status == "rejected_credentials_missing"
     assert result.submitted is False
+    rows = list(ParquetOrdersLogRepository(tmp_data_root).iter_recent())
+    assert rows[0].status == "rejected_credentials_missing"
+
+
+def test_live_mode_submits_when_credentials_configured(
+    settings, tmp_data_root, monkeypatch
+) -> None:
+    """With credentials present and CLOB client mocked, status → live_submitted."""
+    s = settings.model_copy(update={
+        "paper_mode": False,
+        "orders_allowed": True,
+        "polymarket_private_key": "0xkey",
+        "polymarket_api_key": "k",
+        "polymarket_api_secret": "s",
+        "polymarket_api_passphrase": "p",
+    })
+
+    monkeypatch.setattr(
+        "polymarket_arb.live.order_client.build_clob_client",
+        lambda **kw: object(),
+    )
+    monkeypatch.setattr(
+        "polymarket_arb.live.order_client.sign_and_build_order",
+        lambda *a, **kw: {"signed": True},
+    )
+    monkeypatch.setattr(
+        "polymarket_arb.live.order_client.post_order",
+        lambda client, signed: {"orderID": "abc123"},
+    )
+    client = OrderClient(s)
+    result = client.place_order(_intent(size=10.0, price=0.5))
+    assert result.status == "live_submitted"
+    assert result.submitted is True
+    assert result.http_status == 200
+    assert result.filled_size == Decimal("10")
+    assert result.notional_usdc == Decimal("5.0")
+
+
+def test_live_mode_failed_when_post_order_raises(
+    settings, tmp_data_root, monkeypatch
+) -> None:
+    """Exception inside the live path → live_failed, no re-raise."""
+    s = settings.model_copy(update={
+        "paper_mode": False,
+        "orders_allowed": True,
+        "polymarket_private_key": "0xkey",
+        "polymarket_api_key": "k",
+        "polymarket_api_secret": "s",
+        "polymarket_api_passphrase": "p",
+    })
+
+    def _boom(*a, **kw):
+        raise RuntimeError("CLOB unreachable")
+
+    monkeypatch.setattr(
+        "polymarket_arb.live.order_client.build_clob_client",
+        lambda **kw: object(),
+    )
+    monkeypatch.setattr(
+        "polymarket_arb.live.order_client.sign_and_build_order",
+        lambda *a, **kw: {"signed": True},
+    )
+    monkeypatch.setattr(
+        "polymarket_arb.live.order_client.post_order",
+        _boom,
+    )
+    client = OrderClient(s)
+    result = client.place_order(_intent())
+    assert result.status == "live_failed"
+    assert result.submitted is False
+    assert "CLOB unreachable" in result.reason
 
 
 def test_unsupported_side_rejected(settings, tmp_data_root) -> None:

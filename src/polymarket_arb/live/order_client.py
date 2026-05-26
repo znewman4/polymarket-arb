@@ -6,9 +6,9 @@ against the latest recorded orderbook snapshot via
 opened, no signing key is loaded.  Every call writes one row to ``orders_log``
 so the agent's behaviour is fully auditable.
 
-When ``paper_mode=False`` AND ``orders_allowed=True`` AND a private key is
-configured, the client would route through ``signing.sign_order_intent`` and
-submit to the CLOB API — but that path is a deferred stub today.
+When ``paper_mode=False`` AND ``orders_allowed=True`` AND Polymarket credentials
+are configured, the client routes through ``signing.sign_and_build_order`` +
+``signing.post_order`` to submit to the CLOB API.
 
 Safety order (every place_order checks these BEFORE doing anything else):
     1. kill switch — file or SIGUSR1
@@ -37,7 +37,12 @@ from ..storage.parquet.orderbook_repo import ParquetOrderbookRepository
 from ..storage.parquet.orders_log_repo import ParquetOrdersLogRepository
 from ..storage.parquet.positions_repo import ParquetPositionsRepository
 from .models import OrderResult, OrdersLogRow, PositionRow
-from .signing import SigningNotConfigured, SigningStubError, sign_order_intent
+from .signing import (
+    SigningNotConfigured,
+    build_clob_client,
+    post_order,
+    sign_and_build_order,
+)
 
 if TYPE_CHECKING:
     from ..settings import Settings
@@ -59,13 +64,11 @@ class OrderClient:
         orderbook_repo: ParquetOrderbookRepository | None = None,
         orders_log_repo: ParquetOrdersLogRepository | None = None,
         positions_repo: ParquetPositionsRepository | None = None,
-        signing_key_hex: str | None = None,
     ) -> None:
         self._settings = settings
         self._orderbook_repo = orderbook_repo or ParquetOrderbookRepository(settings.data_root)
         self._orders_log_repo = orders_log_repo or ParquetOrdersLogRepository(settings.data_root)
         self._positions_repo = positions_repo or ParquetPositionsRepository(settings.data_root)
-        self._signing_key_hex = signing_key_hex
 
     def place_order(
         self,
@@ -197,13 +200,8 @@ class OrderClient:
                 detail={},
             )
 
-        # ── Live: signing path (deferred stub) ───────────────────────────────
-        # We get here ONLY if paper_mode=False AND orders_allowed=True.
-        # The signing stub raises by design — flipping to live trading is the
-        # next phase and requires explicit opt-in.
-        try:
-            sign_order_intent(intent, self._signing_key_hex)
-        except (SigningNotConfigured, SigningStubError) as exc:
+        # ── Live: build client, sign, submit ────────────────────────────────
+        if not self._settings.polymarket_credentials_configured:
             return self._record_and_return(
                 intent=intent,
                 ts=ts,
@@ -217,7 +215,83 @@ class OrderClient:
                 orders_allowed=orders_allowed,
                 preflight_passed=preflight_passed,
                 preflight_token_id=preflight_token_id,
-                status="rejected_live_signing_not_ready",
+                status="rejected_credentials_missing",
+                reason="polymarket credentials not configured in settings",
+                filled_size=Decimal("0"),
+                avg_fill_price=None,
+                notional=Decimal("0"),
+                fees=Decimal("0"),
+                submitted=False,
+                http_status=None,
+                notes=notes,
+                detail={},
+            )
+
+        try:
+            clob_client = build_clob_client(
+                private_key_hex=self._settings.polymarket_private_key,
+                api_key=self._settings.polymarket_api_key,
+                api_secret=self._settings.polymarket_api_secret,
+                api_passphrase=self._settings.polymarket_api_passphrase,
+                chain_id=self._settings.polymarket_chain_id,
+                host=self._settings.polymarket_clob_host,
+            )
+            signed_order = sign_and_build_order(
+                clob_client,
+                token_id=intent.token_id,
+                price=intent.price,
+                size=intent.size,
+                side=intent.side,
+            )
+            resp = post_order(clob_client, signed_order)
+            order_id = resp.get("orderID") or resp.get("order_id") or resp.get("id", "")
+            http_status_code = 200 if order_id else 400
+            status = "live_submitted" if order_id else "live_failed"
+            reason = "" if order_id else f"CLOB response: {resp}"
+            from loguru import logger
+            logger.info(
+                "live order submitted: token_id={} order_id={} status={}",
+                intent.token_id, order_id, status,
+            )
+            return self._record_and_return(
+                intent=intent,
+                ts=ts,
+                strategy_id=strategy_id,
+                market_id=market_id,
+                source_lane=source_lane,
+                source_relationship_id=source_relationship_id,
+                source_hypothesis_id=source_hypothesis_id,
+                paper_mode=False,
+                kill_switch_active=False,
+                orders_allowed=orders_allowed,
+                preflight_passed=preflight_passed,
+                preflight_token_id=preflight_token_id,
+                status=status,
+                reason=reason,
+                filled_size=intent.size if status == "live_submitted" else Decimal("0"),
+                avg_fill_price=intent.price if status == "live_submitted" else None,
+                notional=intent.size * intent.price if status == "live_submitted" else Decimal("0"),
+                fees=Decimal("0"),
+                submitted=status == "live_submitted",
+                http_status=http_status_code,
+                notes=notes,
+                detail={"clob_response": resp, "order_id": order_id},
+            )
+        except SigningNotConfigured as exc:
+            return self._record_and_return(
+                intent=intent,
+                ts=ts,
+                strategy_id=strategy_id,
+                market_id=market_id,
+                source_lane=source_lane,
+                source_relationship_id=source_relationship_id,
+                source_hypothesis_id=source_hypothesis_id,
+                paper_mode=False,
+                kill_switch_active=False,
+                orders_allowed=orders_allowed,
+                preflight_passed=preflight_passed,
+                preflight_token_id=preflight_token_id,
+                status="rejected_credentials_missing",
                 reason=str(exc),
                 filled_size=Decimal("0"),
                 avg_fill_price=None,
@@ -226,10 +300,35 @@ class OrderClient:
                 submitted=False,
                 http_status=None,
                 notes=notes,
-                detail={"signing_error": type(exc).__name__},
+                detail={},
             )
-        # Unreachable in this phase — signing always raises.
-        raise RuntimeError("live submit path reached without a signed intent; this should be unreachable.")
+        except Exception as exc:
+            from loguru import logger
+            logger.exception("live order submission failed for intent_id={}", intent.id)
+            return self._record_and_return(
+                intent=intent,
+                ts=ts,
+                strategy_id=strategy_id,
+                market_id=market_id,
+                source_lane=source_lane,
+                source_relationship_id=source_relationship_id,
+                source_hypothesis_id=source_hypothesis_id,
+                paper_mode=False,
+                kill_switch_active=False,
+                orders_allowed=orders_allowed,
+                preflight_passed=preflight_passed,
+                preflight_token_id=preflight_token_id,
+                status="live_failed",
+                reason=str(exc),
+                filled_size=Decimal("0"),
+                avg_fill_price=None,
+                notional=Decimal("0"),
+                fees=Decimal("0"),
+                submitted=False,
+                http_status=None,
+                notes=notes,
+                detail={"error_type": type(exc).__name__},
+            )
 
     # ── paper-mode fill ───────────────────────────────────────────────────
 

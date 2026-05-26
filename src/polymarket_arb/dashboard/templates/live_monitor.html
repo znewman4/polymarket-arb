@@ -1,0 +1,150 @@
+{% extends "base.html" %}
+{% block title %}Live Monitor — polymarket-arb{% endblock %}
+{% block content %}
+<style>
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+  .pulse { width:10px; height:10px; border-radius:50%;
+           background:var(--good); animation:pulse 2s infinite;
+           display:inline-block; margin-right:8px; }
+  .pulse.inactive { background:var(--fg-dim); animation:none; }
+</style>
+
+<h1>
+  {% if data.live_submitted_today > 0 %}
+    <span class="pulse"></span>
+  {% else %}
+    <span class="pulse inactive"></span>
+  {% endif %}
+  Live Monitor
+  <span class="pill info">{{ data.last_order_ts_ms and (data.last_order_ts_ms // 1000) | int | datetimeformat or "" }}{% if not data.last_order_ts_ms %}{% endif %}</span>
+</h1>
+
+<div class="cards">
+  <div class="card">
+    <div class="label">Live Orders Today</div>
+    <div class="value" style="color: {{ 'var(--good)' if data.live_submitted_today > 0 else 'var(--fg)' }}">{{ data.live_submitted_today }}</div>
+  </div>
+  <div class="card">
+    <div class="label">Live Failed</div>
+    <div class="value" style="color: {{ 'var(--bad)' if data.live_failed_today > 0 else 'var(--fg)' }}">{{ data.live_failed_today }}</div>
+  </div>
+  <div class="card">
+    <div class="label">Paper Filled</div>
+    <div class="value">{{ data.paper_filled_today }}</div>
+  </div>
+  <div class="card">
+    <div class="label">Rejected</div>
+    <div class="value" style="color: {{ 'var(--warn)' if data.rejected_today > 0 else 'var(--fg)' }}">{{ data.rejected_today }}</div>
+  </div>
+  <div class="card">
+    <div class="label">Live Notional (USDC)</div>
+    <div class="value mono">{{ "%.2f"|format(data.total_live_notional_today) }}</div>
+  </div>
+</div>
+
+<div class="panel" style="margin-bottom: 16px;">
+  <h2>Active Strategies</h2>
+  {% if data.strategies_active %}
+    {% for s in data.strategies_active %}<span class="pill info" style="margin-right:6px;">{{ s }}</span>{% endfor %}
+  {% else %}
+    <span class="empty">None active today</span>
+  {% endif %}
+  <div class="sub" style="margin-top:8px; color: var(--fg-dim); font-size: 12px;">
+    Last order:
+    {% if data.last_order_ts_ms %}
+      {{ (data.last_order_ts_ms // 1000) | int | datetimeformat }} UTC
+    {% else %}
+      No orders yet today
+    {% endif %}
+  </div>
+</div>
+
+<div class="grid-2">
+  <div class="panel">
+    <h2>Recent Live Orders (last 20)</h2>
+    {% if data.recent_live_orders %}
+      <table>
+        <thead>
+          <tr>
+            <th>Time</th>
+            <th>Strategy</th>
+            <th>Market</th>
+            <th>Side</th>
+            <th style="text-align:right">Notional</th>
+            <th>Status</th>
+            <th>Notes</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in data.recent_live_orders %}
+          <tr>
+            <td class="mono">{{ (r.ts_ms // 1000) | int | datetimeformat }}</td>
+            <td>{{ r.strategy_id }}</td>
+            <td>{{ r.market_id }}</td>
+            <td>{{ r.side }}</td>
+            <td style="text-align:right" class="mono">{{ r.notional_usdc }}</td>
+            <td>
+              {% if r.status == 'live_submitted' %}
+                <span class="pill good">{{ r.status }}</span>
+              {% else %}
+                <span class="pill bad">{{ r.status }}</span>
+              {% endif %}
+            </td>
+            <td>{{ r.notes }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <div class="empty">No live orders today. Bot is in paper mode or no arb found.</div>
+    {% endif %}
+  </div>
+
+  <div class="panel">
+    <h2>Recent All Orders (last 20)</h2>
+    {% if data.recent_all_orders %}
+      <table>
+        <thead>
+          <tr>
+            <th>Time</th>
+            <th>Strategy</th>
+            <th>Market</th>
+            <th>Side</th>
+            <th style="text-align:right">Notional</th>
+            <th>Status</th>
+            <th>Notes</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in data.recent_all_orders %}
+          <tr>
+            <td class="mono">{{ (r.ts_ms // 1000) | int | datetimeformat }}</td>
+            <td>{{ r.strategy_id }}</td>
+            <td>{{ r.market_id }}</td>
+            <td>{{ r.side }}</td>
+            <td style="text-align:right" class="mono">{{ r.notional_usdc }}</td>
+            <td>
+              {% set s = r.status %}
+              {% if s == 'paper_filled' or s == 'live_submitted' %}{% set cls = 'good' %}
+              {% elif s == 'paper_partial' %}{% set cls = 'info' %}
+              {% elif s in ('paper_no_fill', 'paper_no_book') %}{% set cls = 'warn' %}
+              {% elif s.startswith('rejected') or s == 'live_failed' %}{% set cls = 'bad' %}
+              {% else %}{% set cls = 'neutral' %}{% endif %}
+              <span class="pill {{ cls }}">{{ s }}</span>
+            </td>
+            <td>{{ r.notes }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    {% else %}
+      <div class="empty">No orders today.</div>
+    {% endif %}
+  </div>
+</div>
+
+<div class="panel" style="margin-top: 16px; color: var(--fg-dim); font-size: 12px;">
+  Page refreshes every 10 seconds. Kill switch:
+  <code>touch ~/polymarket-arb/data/.killswitch</code>
+</div>
+{% endblock %}

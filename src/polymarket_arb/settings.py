@@ -139,6 +139,18 @@ class Settings(BaseSettings):
     agent_poll_interval_s: int = 10
     agent_max_iterations: int | None = None  # None = run forever; tests set this
 
+    # Polymarket CLOB live-trading credentials.
+    # All four are required for live trading (paper_mode=False).
+    # Load from AWS Secrets Manager via the CLI; never commit to git.
+    polymarket_private_key: str = ""
+    polymarket_api_key: str = ""
+    polymarket_api_secret: str = ""
+    polymarket_api_passphrase: str = ""
+
+    # Polymarket CLOB host (override for testnet if needed)
+    polymarket_clob_host: str = "https://clob.polymarket.com"
+    polymarket_chain_id: int = 137  # Polygon mainnet
+
     ip_provider_primary: str = "https://api.ipify.org?format=json"
     ip_provider_secondary: str = "https://ifconfig.co/json"
 
@@ -168,6 +180,16 @@ class Settings(BaseSettings):
     @property
     def killswitch_path(self) -> Path:
         return self.data_root / ".killswitch"
+
+    @property
+    def polymarket_credentials_configured(self) -> bool:
+        """True only when all four live-trading credentials are non-empty."""
+        return all([
+            self.polymarket_private_key,
+            self.polymarket_api_key,
+            self.polymarket_api_secret,
+            self.polymarket_api_passphrase,
+        ])
 
     @property
     def nlp_thinking_debug_dir(self) -> Path:

@@ -53,7 +53,7 @@ def client(app):
 # ─── Empty lake: every route renders ──────────────────────────────────────────
 
 
-@pytest.mark.parametrize("path", ["/", "/orders", "/positions", "/signals", "/markets", "/health"])
+@pytest.mark.parametrize("path", ["/", "/orders", "/positions", "/live", "/signals", "/markets", "/health"])
 def test_routes_200_on_empty_lake(client, path: str) -> None:
     resp = client.get(path)
     assert resp.status_code == 200, resp.data
@@ -306,3 +306,49 @@ def test_overview_and_tradebook_label_filled_notional_as_deployed_capital(
     assert "Total Notional (USDC)" in tradebook
     assert "Cumulative Notional (USDC)" in tradebook
     assert "Running PnL" not in tradebook
+
+
+def test_live_monitor_page_renders_today_activity(
+    client, app, tmp_data_root: Path
+) -> None:
+    ParquetOrdersLogRepository(tmp_data_root).append_many([
+        _orders_log_row(
+            intent_id="i-live",
+            strategy_id="relationship_aggressive",
+            status="live_submitted",
+            notional_usdc="25",
+        ),
+        _orders_log_row(
+            intent_id="i-paper",
+            strategy_id="limitless_arb",
+            status="paper_filled",
+            notional_usdc="40",
+        ),
+        _orders_log_row(
+            intent_id="i-rejected",
+            strategy_id="relationship_aggressive",
+            status="rejected_kill_switch",
+        ),
+    ])
+
+    data = app.extensions["dashboard_db"].live_monitor_data()
+    assert data["live_submitted_today"] == 1
+    assert data["paper_filled_today"] == 1
+    assert data["rejected_today"] == 1
+    assert data["total_live_notional_today"] == pytest.approx(25.0)
+    assert set(data["strategies_active"]) == {
+        "relationship_aggressive",
+        "limitless_arb",
+    }
+    assert len(data["recent_live_orders"]) == 1
+    assert data["recent_live_orders"][0]["status"] == "live_submitted"
+    assert len(data["recent_all_orders"]) == 3
+
+    body = client.get("/live").data.decode()
+    assert "Live Monitor" in body
+    assert "Live Orders Today" in body
+    assert "Live Notional (USDC)" in body
+    assert "relationship_aggressive" in body
+    assert "limitless_arb" in body
+    assert "live_submitted" in body
+    assert "touch ~/polymarket-arb/data/.killswitch" in body

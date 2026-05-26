@@ -1,45 +1,78 @@
-"""Polymarket CLOB API L2 order signing (EIP-712).
-
-**THIS IS A STUB.**  The signing path is invoked only when the OrderClient is
-asked to place a LIVE order (``paper_mode=False`` AND ``orders_allowed=True``
-AND a private key is configured).  In paper mode the OrderClient never calls
-into this module — the strategy is exercised end-to-end without any wallet,
-signing key, or network contact.
-
-When we're ready to flip to live, this module will gain the EIP-712 typed-data
-hashing + secp256k1 signing required by the Polymarket CLOB API.  Until then
-the stub raises so any code path that accidentally invokes signing in paper
-mode fails loud.
-"""
+"""Polymarket CLOB API L2 order signing using py-clob-client."""
 
 from __future__ import annotations
 
+from decimal import Decimal
+from typing import Any
+
+from loguru import logger
+from py_clob_client.client import ClobClient
+from py_clob_client.clob_types import ApiCreds, OrderArgs
+from py_clob_client.order_builder.constants import BUY
+
 
 class SigningNotConfigured(RuntimeError):
-    """Raised when a live order tries to sign without a configured key."""
+    """Raised when live order attempted without credentials."""
 
 
-class SigningStubError(NotImplementedError):
-    """Raised when the stub is invoked — signals that live trading is not yet
-    implemented and the OrderClient should not have routed here."""
-
-
-def sign_order_intent(intent, private_key_hex: str | None) -> dict:
-    """Stub for EIP-712 signing.  Always raises in the current phase.
-
-    Args:
-        intent: An ``OrderIntent`` from ``polymarket_arb.risk.models``.
-        private_key_hex: The signer's private key.  If None / empty the
-            function raises ``SigningNotConfigured`` instead of the stub error
-            so the caller's safety check fires before any network attempt.
-    """
-    if not private_key_hex:
-        raise SigningNotConfigured(
-            "POLYMARKET_PRIVATE_KEY is unset; cannot sign a live order.  "
-            "Flip back to paper_mode=True or configure the key.",
-        )
-    raise SigningStubError(
-        "Live signing is not implemented in this phase.  The OrderClient must "
-        "remain in paper_mode=True.  See plan Phase 3 — signing is intentionally "
-        "deferred until paper-mode behaviour is verified end-to-end on the VPS.",
+def build_clob_client(
+    *,
+    private_key_hex: str,
+    api_key: str,
+    api_secret: str,
+    api_passphrase: str,
+    chain_id: int = 137,
+    host: str = "https://clob.polymarket.com",
+) -> ClobClient:
+    """Build an authenticated ClobClient for the Polymarket CLOB API."""
+    creds = ApiCreds(
+        api_key=api_key,
+        api_secret=api_secret,
+        api_passphrase=api_passphrase,
     )
+    return ClobClient(
+        host=host,
+        key=private_key_hex,
+        chain_id=chain_id,
+        creds=creds,
+        signature_type=0,
+    )
+
+
+def sign_and_build_order(
+    client: ClobClient,
+    *,
+    token_id: str,
+    price: Decimal,
+    size: Decimal,
+    side: str,
+) -> Any:
+    """Sign an order intent and return the signed order payload.
+
+    Raises:
+        SigningNotConfigured: if client is None.
+        ValueError: if side is not "buy".
+    """
+    if client is None:
+        raise SigningNotConfigured("ClobClient not initialised.")
+    if side.lower() != "buy":
+        raise ValueError(f"Only 'buy' side supported, got {side!r}")
+
+    order_args = OrderArgs(
+        token_id=token_id,
+        price=float(round(price, 4)),
+        size=float(round(size, 2)),
+        side=BUY,
+    )
+    signed = client.create_order(order_args)
+    logger.debug(
+        "signed order: token_id={} price={} size={}",
+        token_id, price, size,
+    )
+    return signed
+
+
+def post_order(client: ClobClient, signed_order: Any) -> dict[str, Any]:
+    """Submit a signed order to the CLOB. Returns the API response dict."""
+    resp = client.post_order(signed_order)
+    return resp if isinstance(resp, dict) else {"raw": resp}
