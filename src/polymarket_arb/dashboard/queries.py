@@ -49,19 +49,27 @@ class DuckDBQueryService:
         return str(self._data_root / "normalised" / table / "dt=*" / "*.parquet")
 
     def _glob_recent(self, table: str, days: int = 7) -> str:
-        """Return a DuckDB list literal of explicit partition globs for the last ``days`` days.
+        """Return a DuckDB list literal of partition globs for the last ``days`` days.
 
-        Only includes partition directories that exist on disk, so DuckDB never
-        errors on a missing path.  Falls back to the wildcard glob if no recent
-        partitions exist (caller is gated by _has_data upstream).
+        Enumerates partition directories that physically exist on disk *and*
+        contain at least one parquet file.  This avoids DuckDB IOExceptions from
+        empty directories left behind when the recorder's ``find … -mtime +N
+        -delete`` removes files without removing the parent directory.
         """
         base = self._data_root / "normalised" / table
-        today = date.today()
-        paths = [
-            str(base / f"dt={today - timedelta(days=i)}" / "*.parquet")
-            for i in range(days)
-            if (base / f"dt={today - timedelta(days=i)}").exists()
-        ]
+        cutoff = date.today() - timedelta(days=days)
+        paths: list[str] = []
+        for p in sorted(base.glob("dt=*")):
+            if not p.is_dir():
+                continue
+            try:
+                dt_val = date.fromisoformat(p.name[3:])  # strip "dt="
+            except ValueError:
+                continue
+            if dt_val <= cutoff:
+                continue
+            if any(p.glob("*.parquet")):
+                paths.append(str(p / "*.parquet"))
         if not paths:
             return f"'{base / 'dt=*' / '*.parquet'}'"
         return "['" + "', '".join(paths) + "']"
