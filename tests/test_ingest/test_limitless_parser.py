@@ -84,6 +84,41 @@ def test_percentage_to_fraction_conversion():
     assert abs(result.yes_price - 0.75) < 1e-9
 
 
+def test_decimal_prices_are_stored_without_rescaling():
+    raw = {
+        "slug": "decimal-api-response",
+        "title": "Decimal API response",
+        "address": "0xTEST",
+        "marketType": "single",
+        "prices": [0.428, 0.572],
+    }
+    result = parse_limitless_market(raw)
+    assert result is not None
+    assert abs(result.yes_price - 0.428) < 1e-9
+
+
+def test_rejects_price_total_in_neither_supported_format():
+    raw = {
+        "slug": "mixed-api-response",
+        "title": "Mixed API response",
+        "address": "0xTEST",
+        "marketType": "single",
+        "prices": [0.42, 58.0],
+    }
+    assert parse_limitless_market(raw) is None
+
+
+def test_rejects_normalized_yes_price_above_one():
+    raw = {
+        "slug": "over-one",
+        "title": "Over one",
+        "address": "0xTEST",
+        "marketType": "single",
+        "prices": [1.05, 0.01],
+    }
+    assert parse_limitless_market(raw) is None
+
+
 def test_prices_exactly_100_boundary_ok():
     raw = {
         "slug": "boundary",

@@ -226,6 +226,40 @@ Verification after this group and final compatibility/test hardening:
 - `python -m ruff check src/ tests/`: passed
 - `git diff --check`: passed
 
+## Deployment Group 7 - Limitless Price Format Compatibility
+
+### Bug 7 - Accept decimal prices from the updated Limitless API
+
+Changed files:
+
+- `src/polymarket_arb/ingest/limitless/parser.py`
+  - Updated parser documentation to describe both accepted API payload forms:
+    decimal probabilities summing approximately to `1`, and legacy percentage
+    values summing approximately to `100`.
+  - Renamed parsed values to `yes_raw` and `no_raw`, and now validates raw
+    numeric values against `0.0 < value < 110.0` before detecting format.
+  - Totals in the inclusive range `0.9` to `1.1` are treated as decimal
+    probabilities without rescaling.
+  - Totals in the inclusive range `90.0` to `110.0` are treated as percentage
+    values and divided by `100`.
+  - Totals in neither supported range are rejected.
+  - Added a final normalized-value guard so accepted `yes_price` values remain
+    strictly within `0.0` and `1.0`.
+- `tests/test_ingest/test_limitless_parser.py`
+  - Added coverage for a new decimal API response (`[0.428, 0.572]`).
+  - Added rejection coverage for a mixed/unknown total (`[0.42, 58.0]`).
+  - Added rejection coverage for a decimal-format value that would normalize
+    above one (`[1.05, 0.01]`).
+  - Existing legacy percentage tests continue to verify backward compatibility.
+
+Result: current Limitless API prices are no longer divided by `100` a second
+time, while older percentage payloads remain supported.
+
+Verification after this group:
+
+- `python -m pytest tests/ -q`: `832 passed`
+- `python -m ruff check src/ tests/`: passed
+
 ## Required Deployment Sequence
 
 Deploy only after committing and pushing the verified changes, in this order:
@@ -236,6 +270,7 @@ Deploy only after committing and pushing the verified changes, in this order:
 4. Feature 1: position tracking storage.
 5. Features 2 and 3: MTM query and positions page.
 6. Feature 4: expected PnL overview cards.
+7. Bug 7: Limitless decimal/percentage input normalization.
 
 Server deployment command for each deployed commit:
 

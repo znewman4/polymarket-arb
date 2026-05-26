@@ -7,7 +7,7 @@ The Limitless /markets/active endpoint returns:
         "slug": "btc-above-65000",
         "title": "Will BTC be above $65,000?",
         "address": "0x...",
-        "prices": [42.8, 57.2],   # [YES%, NO%] — percentages, always sum ≈ 100
+        "prices": [0.428, 0.572], # [YES, NO] decimals, sum approximately 1
         "marketType": "single",    # "single" = binary YES/NO; "group" = multi-outcome
         "tradeType": "amm",        # "amm" | "clob"
         ...
@@ -15,7 +15,9 @@ The Limitless /markets/active endpoint returns:
     ],
     "totalMarketsCount": 150
   }
-prices[0] is the YES probability as a percentage (divide by 100 to get 0.0-1.0).
+The API has returned both decimal prices summing approximately to 1 and older
+percentage prices summing approximately to 100. Both forms are normalized to
+0.0-1.0 before building an entry.
 Only "single" marketType markets are binary YES/NO.
 """
 
@@ -27,7 +29,7 @@ from ...limitless.models import LimitlessMarketEntry
 
 
 def parse_limitless_market(raw: dict) -> LimitlessMarketEntry | None:
-    """Parse one raw Limitless market dict. Returns None if invalid or non-binary."""
+    """Parse a binary market, accepting decimal or percentage price payloads."""
     slug = raw.get("slug", "")
     title = raw.get("title", "") or raw.get("question", "")
     address = raw.get("address", "")
@@ -41,25 +43,33 @@ def parse_limitless_market(raw: dict) -> LimitlessMarketEntry | None:
         return None
 
     try:
-        yes_pct = float(prices[0])
-        no_pct = float(prices[1])
+        yes_raw = float(prices[0])
+        no_raw = float(prices[1])
     except (TypeError, ValueError):
         logger.debug("limitless parser: skipping market {!r} — non-numeric prices", slug)
         return None
 
-    if not (0.0 < yes_pct < 100.0) or not (0.0 < no_pct < 100.0):
+    if not (0.0 < yes_raw < 110.0) or not (0.0 < no_raw < 110.0):
         return None
 
-    if abs(yes_pct + no_pct - 100.0) > 2.0:
+    total = yes_raw + no_raw
+    if 0.9 <= total <= 1.1:
+        yes_price = yes_raw
+    elif 90.0 <= total <= 110.0:
+        yes_price = yes_raw / 100.0
+    else:
         logger.debug(
-            "limitless parser: skipping market {!r} — prices don't sum to 100 ({} + {})",
-            slug, yes_pct, no_pct,
+            "limitless parser: skipping market {!r} — unrecognised price total ({} + {})",
+            slug, yes_raw, no_raw,
         )
+        return None
+
+    if not (0.0 < yes_price < 1.0):
         return None
 
     return LimitlessMarketEntry(
         slug=slug,
         title=title,
-        yes_price=yes_pct / 100.0,
+        yes_price=yes_price,
         address=address,
     )
