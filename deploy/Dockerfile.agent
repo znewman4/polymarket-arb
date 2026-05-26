@@ -22,5 +22,5 @@ RUN pip install -e . --no-deps && \
 
 ENTRYPOINT ["python", "-m", "polymarket_arb.cli"]
 
-HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
+HEALTHCHECK --interval=60s --timeout=30s --start-period=60s --retries=3 \
   CMD /usr/local/bin/agent-healthcheck || exit 1
