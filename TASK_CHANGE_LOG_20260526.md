@@ -289,6 +289,25 @@ Verification after this group:
 - `python -m pytest tests/ -q`: `834 passed`
 - `python -m ruff check src/ tests/`: passed
 
+## Deployment Group 9 - AWS SDK Runtime Dependency
+
+### Dependency Fix - Package `boto3` with the application image
+
+Changed files:
+
+- `pyproject.toml`
+  - Added `boto3>=1.34,<2.0` to runtime dependencies so AWS Secrets Manager
+    credential loading is available in rebuilt service containers.
+
+Result: deployments installing the project package include the AWS SDK required
+by the live credential-loading code paths.
+
+Verification after this group:
+
+- `python -m pytest tests/ -q`: `856 passed`
+- `python -m ruff check src/ tests/`: passed
+- `git diff --check`: passed
+
 ## Required Deployment Sequence
 
 Deploy only after committing and pushing the verified changes, in this order:
@@ -301,6 +320,7 @@ Deploy only after committing and pushing the verified changes, in this order:
 6. Feature 4: expected PnL overview cards.
 7. Bug 7: Limitless decimal/percentage input normalization.
 8. Bug 8: Limitless named-token match guard.
+9. Dependency Fix: install `boto3` in runtime images.
 
 Server deployment command for each deployed commit:
 
