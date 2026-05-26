@@ -54,8 +54,15 @@ services:
           python -m polymarket_arb.cli fetch-markets --all --max-pages 50
           python -m polymarket_arb.cli snapshot-candidate-tokens --limit 3000
           python -m polymarket_arb.cli snapshot-active-markets --limit 500
-          sleep 30
+          find /app/data/normalised -name "*.parquet" -mtime +3 -delete
+          find /app/data/raw -name "*.json" -mtime +1 -delete
+          sleep 300
         done
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   agent:
     build:
@@ -87,6 +94,11 @@ services:
       - --strategy
       - "${POLYMARKET_ARB_AGENT_STRATEGY:-noop}"
       - --strategy-auto-tokens
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   limitless-arb:
     build:
@@ -121,6 +133,11 @@ services:
             --min-net-edge "${POLYMARKET_ARB_LIM_MIN_NET_EDGE:-0.02}"
           sleep 300
         done
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   dashboard:
     image: polymarket-arb:agent
@@ -146,6 +163,11 @@ services:
       - "0.0.0.0"
       - --port
       - "5000"
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
 
   relationship-miner:
     image: polymarket-arb:agent
@@ -169,3 +191,8 @@ services:
           python -m polymarket_arb.cli relationships validate
           sleep 21600
         done
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
