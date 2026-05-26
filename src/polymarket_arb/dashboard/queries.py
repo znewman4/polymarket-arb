@@ -215,28 +215,57 @@ class DuckDBQueryService:
             "days_of_data": n,
         }
 
-    def cumulative_pnl_by_hour(self) -> list[dict]:
-        """Hourly running sum of filled paper notional over the last 7 days.
-
-        Note: ``notional_usdc`` is trade size, not realised P&L. Real P&L would
-        require fill price vs markout — see plan caveat.
-        """
+    def cumulative_expected_return_by_hour(self) -> dict[str, Any]:
+        """Expected PnL for filled paper trades over the last seven days."""
+        empty = {
+            "series": [],
+            "total_expected_pnl": 0.0,
+            "total_cost_basis": 0.0,
+            "expected_return_pct": 0.0,
+        }
         if not self._has_data("orders_log"):
-            return []
+            return empty
         rows = self._fetchall(
+            "WITH fills AS ("
+            " SELECT ts_ms, CAST(notional_usdc AS DOUBLE) AS cost_basis, "
+            " CASE "
+            "  WHEN strategy_id = 'limitless_arb' THEN "
+            "   COALESCE(TRY_CAST(regexp_extract(notes, 'arb_gap=([0-9.+-]+)', 1) "
+            "     AS DOUBLE), 0) * CAST(notional_usdc AS DOUBLE) "
+            "  WHEN strategy_id LIKE 'relationship_%' THEN "
+            "   COALESCE(TRY_CAST(json_extract_string(detail_json, '$.gross_edge') "
+            "     AS DOUBLE), 0) * CAST(notional_usdc AS DOUBLE) "
+            "  ELSE 0 END AS expected_pnl "
+            f" FROM read_parquet({self._glob_recent('orders_log', days=7)}, "
+            " hive_partitioning=true) "
+            " WHERE status = 'paper_filled' AND notional_usdc <> ''"
+            ") "
             "SELECT strftime(to_timestamp(ts_ms/1000), '%Y-%m-%d %H:00') AS hour_bucket, "
-            "SUM(CAST(notional_usdc AS DOUBLE)) AS hour_total "
-            f"FROM read_parquet({self._glob_recent('orders_log', days=7)}, "
-            "hive_partitioning=true) "
-            "WHERE status = 'paper_filled' AND notional_usdc <> '' "
-            "GROUP BY hour_bucket ORDER BY hour_bucket"
+            "SUM(expected_pnl) AS hourly_expected_pnl, SUM(cost_basis) AS hourly_cost_basis "
+            "FROM fills GROUP BY hour_bucket ORDER BY hour_bucket"
         )
-        out: list[dict] = []
+        if not rows:
+            return empty
+        series: list[dict] = []
         running = 0.0
-        for hour_bucket, hour_total in rows:
-            running += float(hour_total or 0.0)
-            out.append({"hour_bucket": hour_bucket, "cumulative_pnl": round(running, 4)})
-        return out
+        total_cost_basis = 0.0
+        for hour_bucket, hourly_expected_pnl, hourly_cost_basis in rows:
+            running += float(hourly_expected_pnl or 0.0)
+            total_cost_basis += float(hourly_cost_basis or 0.0)
+            series.append({
+                "hour_bucket": hour_bucket,
+                "cumulative_expected_pnl": round(running, 4),
+                "reference_zero": 0.0,
+            })
+        return {
+            "series": series,
+            "total_expected_pnl": round(running, 4),
+            "total_cost_basis": round(total_cost_basis, 4),
+            "expected_return_pct": round(
+                running / total_cost_basis * 100 if total_cost_basis else 0.0,
+                2,
+            ),
+        }
 
     # ─── orders ──────────────────────────────────────────────────────────────
 
@@ -453,6 +482,43 @@ class DuckDBQueryService:
             "GROUP BY id) m ON m.id = o.market_id"
         )
         return join_sql, "m.question AS question, "
+
+    # ─── positions page ──────────────────────────────────────────────────────
+
+    def open_positions_with_mtm(self) -> list[dict]:
+        """Return open positions marked against each token's latest two-sided book."""
+        if not self._has_data("positions") or not self._has_data("orderbook_snapshots"):
+            return []
+        positions_glob = self._glob_recent("positions", days=30)
+        books_glob = self._glob_recent("orderbook_snapshots", days=1)
+        return self._fetchall_dict(
+            "WITH position_states AS ("
+            "  SELECT *, row_number() OVER (PARTITION BY position_id "
+            "    ORDER BY COALESCE(close_ts_ms, open_ts_ms) DESC, status DESC) AS rn "
+            f"  FROM read_parquet({positions_glob}, hive_partitioning=true)"
+            "), latest_books AS ("
+            "  SELECT token_id, "
+            "    (CAST(bids[1].price AS DOUBLE) + CAST(asks[1].price AS DOUBLE)) / 2 "
+            "      AS current_mid, "
+            "    row_number() OVER (PARTITION BY token_id "
+            "      ORDER BY timestamp_ms DESC, ingested_ts_ms DESC) AS rn "
+            f"  FROM read_parquet({books_glob}, hive_partitioning=true) "
+            "  WHERE len(bids) > 0 AND len(asks) > 0"
+            ") "
+            "SELECT p.market_id, p.strategy_id, p.side, p.entry_price, p.size, "
+            "p.notional_usdc, b.current_mid, "
+            "(b.current_mid - CAST(p.entry_price AS DOUBLE)) * CAST(p.size AS DOUBLE) "
+            "  AS mtm_pnl, "
+            "p.open_ts_ms, p.notes, "
+            "CASE WHEN p.strategy_id = 'limitless_arb' THEN "
+            "  TRY_CAST(regexp_extract(p.notes, 'arb_gap=([0-9.+-]+)', 1) AS DOUBLE) "
+            "    * CAST(p.size AS DOUBLE) "
+            "ELSE NULL END AS locked_profit "
+            "FROM position_states p "
+            "LEFT JOIN latest_books b ON b.token_id = p.token_id AND b.rn = 1 "
+            "WHERE p.rn = 1 AND p.status = 'open' "
+            "ORDER BY p.open_ts_ms DESC"
+        )
 
     # ─── signals page ────────────────────────────────────────────────────────
 

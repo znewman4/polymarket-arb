@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
+import time
 from collections.abc import Iterable
 from dataclasses import asdict
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 from pathlib import Path
 
@@ -49,22 +50,30 @@ class ParquetOrderbookRepository:
         )
         return len(rows)
 
-    def _today_partition_dir(self) -> Path:
-        today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
-        return self._root / "normalised" / _TABLE / f"dt={today}"
-
-    def _glob(self) -> str:
-        return str(self._today_partition_dir() / "*.parquet")
+    def _glob_recent(self, days: int = 2) -> str | None:
+        """Return a DuckDB list literal for populated recent UTC partitions."""
+        base = self._root / "normalised" / _TABLE
+        today = datetime.now(timezone.utc).date()
+        paths: list[str] = []
+        for offset in reversed(range(days)):
+            dt_value = today - timedelta(days=offset)
+            partition = base / f"dt={dt_value.isoformat()}"
+            if partition.is_dir() and any(partition.glob("*.parquet")):
+                paths.append(str(partition / "*.parquet"))
+        if not paths:
+            return None
+        return "['" + "', '".join(paths) + "']"
 
     def _has_data(self) -> bool:
-        return any(self._today_partition_dir().glob("*.parquet"))
+        return self._glob_recent(days=1) is not None
 
     def latest_book(self, token_id: str) -> OrderbookSnapshot | None:
         return self.latest_books_bulk([token_id]).get(token_id)
 
     def latest_books_bulk(self, token_ids: list[str]) -> dict[str, OrderbookSnapshot]:
         wanted = list(dict.fromkeys(token_ids))
-        if not wanted or not self._has_data():
+        glob = self._glob_recent(days=2)
+        if not wanted or glob is None:
             return {}
 
         sql = (
@@ -72,7 +81,7 @@ class ParquetOrderbookRepository:
             " latest AS ("
             "  SELECT p.*, row_number() OVER (PARTITION BY p.token_id"
             "    ORDER BY p.timestamp_ms DESC, p.ingested_ts_ms DESC) AS rn"
-            f"  FROM read_parquet('{self._glob()}', hive_partitioning=true) p"
+            f"  FROM read_parquet({glob}, hive_partitioning=true) p"
             "  INNER JOIN wanted w ON p.token_id = w.token_id"
             " )"
             " SELECT * EXCLUDE rn FROM latest WHERE rn = 1"
@@ -84,7 +93,7 @@ class ParquetOrderbookRepository:
             except duckdb.IOException as exc:
                 if "No such file" not in str(exc):
                     raise
-                import time; time.sleep(0.5)
+                time.sleep(0.5)
                 cur = con.execute(sql)
             cols = [c[0] for c in cur.description]
             rows = cur.fetchall()

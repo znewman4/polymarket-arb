@@ -111,9 +111,9 @@ def match_markets(
 
     Uses rapidfuzz token_sort_ratio so word-order differences don't penalise
     the score.  Returns one ArbMatch per Limitless market where the best
-    Polymarket match exceeds the threshold.  arb_gap and status are computed
-    here via compute_arb internally, but callers usually call compute_arb
-    separately to control the tolerance.
+    Polymarket match exceeds the threshold.  Computes the raw arb gap only;
+    callers must pass the matches through compute_arb with their configured
+    tolerance before displaying or executing them.
     """
     poly_entries = []
     for raw in poly_raw:
@@ -135,13 +135,12 @@ def match_markets(
             arb_gap = round(1.0 - (lim.yes_price + best_poly.yes_price), 6)
             if arb_gap > 0.30:
                 continue  # almost certainly a false positive (price mismatch, not real arb)
-            status = _arb_status(arb_gap, tolerance=0.02)
             matches.append(ArbMatch(
                 limitless=lim,
                 poly=best_poly,
                 similarity=round(best_score, 4),
                 arb_gap=arb_gap,
-                status=status,
+                status="",
             ))
 
     logger.info("arb_scanner: {} matched pairs (threshold={})", len(matches), threshold)
@@ -222,7 +221,7 @@ async def execute_arb(
             intent,
             strategy_id="limitless_arb",
             market_id=match.poly.condition_id,
-            notes=f"limitless_arb pair: {match.limitless.slug} | gap={match.arb_gap:.4f}",
+            notes=f"limitless_arb pair: {match.limitless.slug} | arb_gap={match.arb_gap:.4f}",
         ),
     )
 

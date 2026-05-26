@@ -5,7 +5,11 @@ from datetime import datetime, timezone
 import pytest
 
 from polymarket_arb.storage.exceptions import SchemaMismatchError
-from polymarket_arb.storage.parquet._writer import _COMPACT_BATCH, _COMPACT_THRESHOLD, write_table_part
+from polymarket_arb.storage.parquet._writer import (
+    _COMPACT_BATCH,
+    _COMPACT_THRESHOLD,
+    write_table_part,
+)
 from polymarket_arb.storage.parquet.schemas import RISK_SNAPSHOTS_SCHEMA_V1
 
 _VALID_ROW = {

@@ -82,6 +82,7 @@ class OrderIntent:
     quote_age_ms: int | None = None
     spread_pct: Decimal | None = None
     available_balance_usdc: Decimal | None = None
+    detail: dict[str, Any] = field(default_factory=dict)
 
 
 @dataclass(frozen=True)

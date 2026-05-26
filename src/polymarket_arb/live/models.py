@@ -80,3 +80,25 @@ class OrdersLogRow:
     # Free-form metadata for human review later (e.g. evidence_summary).
     notes: str = ""
     detail_json: str = field(default_factory=lambda: "{}")
+
+
+@dataclass(frozen=True)
+class PositionRow:
+    """One append-only position state record created from a filled paper order."""
+
+    position_id: str
+    strategy_id: str
+    market_id: str
+    token_id: str
+    side: str
+    open_ts_ms: int
+    entry_price: str
+    size: str
+    notional_usdc: str
+    source_relationship_id: str
+    notes: str
+    status: str
+    close_ts_ms: int | None = None
+    close_price: str | None = None
+    realised_pnl: str | None = None
+    schema_version: int = 1

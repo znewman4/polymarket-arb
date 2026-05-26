@@ -667,6 +667,7 @@ ALL_SCHEMAS = {
     "context_rules": CONTEXT_RULES_SCHEMA_V1,
     "context_relationship_decisions": CONTEXT_RELATIONSHIP_DECISIONS_SCHEMA_V1,
     "orders_log": None,  # populated below
+    "positions": None,  # populated below
 }
 
 ORDERS_LOG_SCHEMA_V1 = pa.schema([
@@ -698,3 +699,23 @@ ORDERS_LOG_SCHEMA_V1 = pa.schema([
     pa.field("detail_json", pa.string()),
 ])
 ALL_SCHEMAS["orders_log"] = ORDERS_LOG_SCHEMA_V1
+
+POSITIONS_SCHEMA_V1 = pa.schema([
+    pa.field("position_id", pa.string()),
+    pa.field("strategy_id", pa.string()),
+    pa.field("market_id", pa.string()),
+    pa.field("token_id", pa.string()),
+    pa.field("side", pa.string()),
+    pa.field("open_ts_ms", pa.int64()),
+    pa.field("entry_price", pa.string()),
+    pa.field("size", pa.string()),
+    pa.field("notional_usdc", pa.string()),
+    pa.field("source_relationship_id", pa.string()),
+    pa.field("notes", pa.string()),
+    pa.field("status", pa.string()),
+    pa.field("close_ts_ms", pa.int64()),  # nullable
+    pa.field("close_price", pa.string()),  # nullable
+    pa.field("realised_pnl", pa.string()),  # nullable
+    pa.field("schema_version", pa.int32()),
+])
+ALL_SCHEMAS["positions"] = POSITIONS_SCHEMA_V1

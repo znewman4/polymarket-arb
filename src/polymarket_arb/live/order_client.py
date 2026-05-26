@@ -21,6 +21,7 @@ Safety order (every place_order checks these BEFORE doing anything else):
 
 from __future__ import annotations
 
+import hashlib
 import json
 import time
 import uuid
@@ -34,7 +35,8 @@ from ..monitoring import kill_switch
 from ..risk.models import OrderIntent
 from ..storage.parquet.orderbook_repo import ParquetOrderbookRepository
 from ..storage.parquet.orders_log_repo import ParquetOrdersLogRepository
-from .models import OrderResult, OrdersLogRow
+from ..storage.parquet.positions_repo import ParquetPositionsRepository
+from .models import OrderResult, OrdersLogRow, PositionRow
 from .signing import SigningNotConfigured, SigningStubError, sign_order_intent
 
 if TYPE_CHECKING:
@@ -56,11 +58,13 @@ class OrderClient:
         *,
         orderbook_repo: ParquetOrderbookRepository | None = None,
         orders_log_repo: ParquetOrdersLogRepository | None = None,
+        positions_repo: ParquetPositionsRepository | None = None,
         signing_key_hex: str | None = None,
     ) -> None:
         self._settings = settings
         self._orderbook_repo = orderbook_repo or ParquetOrderbookRepository(settings.data_root)
         self._orders_log_repo = orders_log_repo or ParquetOrdersLogRepository(settings.data_root)
+        self._positions_repo = positions_repo or ParquetPositionsRepository(settings.data_root)
         self._signing_key_hex = signing_key_hex
 
     def place_order(
@@ -389,15 +393,39 @@ class OrderClient:
             schema_version=1,
             ingested_ts_ms=ts,
             notes=notes,
-            detail_json=json.dumps(detail, default=str, sort_keys=True),
+            detail_json=json.dumps({**intent.detail, **detail}, default=str, sort_keys=True),
         )
+        orders_log_written = False
         try:
             self._orders_log_repo.append(row)
+            orders_log_written = True
         except Exception:
             # Audit-write failure is logged but never blocks the result.
             # The caller still gets an honest OrderResult.
             from loguru import logger
             logger.exception("orders_log append failed for intent_id={}", intent.id)
+
+        if orders_log_written and status == "paper_filled":
+            position_key = f"{row.market_id}{row.token_id}{row.strategy_id}{row.ts_ms}"
+            position = PositionRow(
+                position_id=hashlib.sha256(position_key.encode("utf-8")).hexdigest(),
+                strategy_id=row.strategy_id,
+                market_id=row.market_id,
+                token_id=row.token_id,
+                side=row.side,
+                open_ts_ms=row.ts_ms,
+                entry_price=row.avg_fill_price or "",
+                size=row.filled_size,
+                notional_usdc=row.notional_usdc,
+                source_relationship_id=row.source_relationship_id,
+                notes=row.notes,
+                status="open",
+            )
+            try:
+                self._positions_repo.append(position)
+            except Exception:
+                from loguru import logger
+                logger.exception("positions append failed for intent_id={}", intent.id)
 
         return OrderResult(
             intent_id=intent.id,

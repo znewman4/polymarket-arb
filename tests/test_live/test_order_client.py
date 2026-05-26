@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+import hashlib
+import json
 from decimal import Decimal
 
 import pytest
@@ -12,9 +14,15 @@ from polymarket_arb.risk.models import OrderIntent
 from polymarket_arb.storage.base import OrderbookLevel, OrderbookSnapshot
 from polymarket_arb.storage.parquet.orderbook_repo import ParquetOrderbookRepository
 from polymarket_arb.storage.parquet.orders_log_repo import ParquetOrdersLogRepository
+from polymarket_arb.storage.parquet.positions_repo import ParquetPositionsRepository
 
 
-def _intent(token_id: str = "tok-a", size: float = 100.0, price: float = 1.0) -> OrderIntent:
+def _intent(
+    token_id: str = "tok-a",
+    size: float = 100.0,
+    price: float = 1.0,
+    detail: dict[str, str] | None = None,
+) -> OrderIntent:
     return OrderIntent(
         id="intent-1",
         strategy_id="strict_research",
@@ -22,6 +30,7 @@ def _intent(token_id: str = "tok-a", size: float = 100.0, price: float = 1.0) ->
         side="buy",
         price=Decimal(str(price)),
         size=Decimal(str(size)),
+        detail=detail or {},
     )
 
 
@@ -47,7 +56,12 @@ def test_paper_mode_simulated_fill_writes_orders_log(settings, tmp_data_root) ->
     s = settings.model_copy(update={"paper_mode": True, "orders_allowed": False})
     _seed_book(tmp_data_root, "tok-a", [(0.51, 40.0), (0.53, 60.0)])
     client = OrderClient(s)
-    result = client.place_order(_intent(size=80.0))
+    result = client.place_order(
+        _intent(size=80.0, detail={"gross_edge": "0.05"}),
+        market_id="market-a",
+        source_relationship_id="rel-a",
+        notes="signal notes",
+    )
     # 40 @ 0.51 + 40 @ 0.53 = 20.4 + 21.2 = 41.6 over 80 shares → avg = 0.52
     assert result.status == "paper_filled"
     assert result.submitted is False
@@ -61,6 +75,19 @@ def test_paper_mode_simulated_fill_writes_orders_log(settings, tmp_data_root) ->
     assert row.intent_id == "intent-1"
     assert row.paper_mode is True
     assert row.status == "paper_filled"
+    assert json.loads(row.detail_json)["gross_edge"] == "0.05"
+    # Filled paper orders create an open tracked position.
+    positions = list(ParquetPositionsRepository(tmp_data_root).iter_recent())
+    assert len(positions) == 1
+    position = positions[0]
+    key = f"market-atok-astrict_research{result.ts_ms}".encode()
+    assert position.position_id == hashlib.sha256(key).hexdigest()
+    assert Decimal(position.entry_price) == Decimal("0.52")
+    assert Decimal(position.size) == Decimal("80")
+    assert Decimal(position.notional_usdc) == Decimal("41.60")
+    assert position.source_relationship_id == "rel-a"
+    assert position.notes == "signal notes"
+    assert position.status == "open"
 
 
 def test_paper_mode_no_book_falls_through_with_audit(settings, tmp_data_root) -> None:
@@ -72,6 +99,7 @@ def test_paper_mode_no_book_falls_through_with_audit(settings, tmp_data_root) ->
     rows = list(ParquetOrdersLogRepository(tmp_data_root).iter_recent())
     assert len(rows) == 1
     assert rows[0].status == "paper_no_book"
+    assert list(ParquetPositionsRepository(tmp_data_root).iter_recent()) == []
 
 
 def test_kill_switch_blocks_paper_order(settings, tmp_data_root) -> None:

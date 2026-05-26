@@ -234,6 +234,20 @@ VIEW_DEFINITIONS = {
         "  '{root}/normalised/orders_log/dt=*/*.parquet', hive_partitioning=true) "
         "ORDER BY ts_ms DESC LIMIT 1000"
     ),
+    "positions_all": (
+        "CREATE OR REPLACE VIEW positions_all AS "
+        "SELECT * FROM read_parquet("
+        "  '{root}/normalised/positions/dt=*/*.parquet', hive_partitioning=true)"
+    ),
+    "open_positions_latest": (
+        "CREATE OR REPLACE VIEW open_positions_latest AS "
+        "SELECT * EXCLUDE rn FROM ("
+        "  SELECT *, row_number() OVER (PARTITION BY position_id "
+        "    ORDER BY COALESCE(close_ts_ms, open_ts_ms) DESC, status DESC) AS rn "
+        "  FROM read_parquet('{root}/normalised/positions/dt=*/*.parquet', "
+        "  hive_partitioning=true)"
+        ") WHERE rn = 1 AND status = 'open'"
+    ),
     "backtest_metrics_all": (
         "CREATE OR REPLACE VIEW backtest_metrics_all AS "
         "SELECT * FROM read_parquet("

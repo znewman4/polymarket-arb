@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <title>{% block title %}polymarket-arb dashboard{% endblock %}</title>
-  {% if auto_refresh_seconds and active_page == 'overview' %}
+  {% if auto_refresh_seconds and active_page in ('overview', 'positions') %}
   <meta http-equiv="refresh" content="{{ auto_refresh_seconds }}">
   {% endif %}
   <style>
@@ -86,6 +86,7 @@
       <a href="/" class="{{ 'active' if active_page == 'overview' else '' }}">Overview</a>
       <a href="/orders" class="{{ 'active' if active_page == 'orders' else '' }}">Orders</a>
       <a href="/trades" class="{{ 'active' if active_page == 'trades' else '' }}">Tradebook</a>
+      <a href="/positions" class="{{ 'active' if active_page == 'positions' else '' }}">Positions</a>
       <a href="/signals" class="{{ 'active' if active_page == 'signals' else '' }}">Signals</a>
       <a href="/markets" class="{{ 'active' if active_page == 'markets' else '' }}">Markets</a>
       <a href="/health">Health (JSON)</a>

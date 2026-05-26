@@ -47,7 +47,15 @@ def overview() -> str:
         per_hour=cache.get("signals_per_hour_last_24h", []),
         top_markets=cache.get("top_markets_by_signal", []),
         health=cache.get("health_snapshot", {}),
-        pnl=cache.get("cumulative_pnl", []),
+        expected_return=cache.get(
+            "expected_return",
+            {
+                "series": [],
+                "total_expected_pnl": 0.0,
+                "total_cost_basis": 0.0,
+                "expected_return_pct": 0.0,
+            },
+        ),
         sharpe=cache.get("sharpe_stats", {"sharpe": None, "days_of_data": 0}),
         auto_refresh_seconds=30,
         active_page="overview",
@@ -157,6 +165,25 @@ def trades_csv() -> Response:
         headers={
             "Content-Disposition": f'attachment; filename="trades_{today}.csv"',
         },
+    )
+
+
+@bp.route("/positions")
+def positions() -> str:
+    qs = _qs()
+    data = qs.open_positions_with_mtm()
+    summary = {
+        "count": len(data),
+        "cost_basis": sum(float(row["notional_usdc"] or 0) for row in data),
+        "mtm_pnl": sum(float(row["mtm_pnl"] or 0) for row in data),
+        "locked_profit": sum(float(row["locked_profit"] or 0) for row in data),
+    }
+    return render_template(
+        "positions.html",
+        positions=data,
+        summary=summary,
+        auto_refresh_seconds=30,
+        active_page="positions",
     )
 
 

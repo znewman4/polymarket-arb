@@ -188,6 +188,10 @@ def test_relationship_diagnostic_emits_two_token_mapped_intents(tmp_data_root) -
     assert len(intents) == 2
     assert [intent.token_id for intent in intents] == ["a_no", "b_yes"]
     assert [intent.side for intent in intents] == ["buy", "buy"]
+    assert [intent.detail for intent in intents] == [
+        {"gross_edge": "0.30"},
+        {"gross_edge": "0.30"},
+    ]
     assert [intent.size for intent in intents] == [Decimal("50"), Decimal("50")]
     assert [intent.price for intent in intents] == [Decimal("0.30"), Decimal("0.40")]
     assert [intent.strategy_id for intent in intents] == [

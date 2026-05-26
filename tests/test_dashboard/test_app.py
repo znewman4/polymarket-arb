@@ -1,7 +1,7 @@
 """End-to-end tests for the read-only Flask dashboard.
 
 Covers:
-  * All five routes return 200 against an empty lake.
+  * All dashboard routes return 200 against an empty lake.
   * /health returns valid JSON with the expected top-level keys.
   * /orders.csv returns the right Content-Type + Content-Disposition.
   * Seeded-lake test: counters, /orders rows, and the markets-join all work
@@ -18,12 +18,13 @@ from pathlib import Path
 import pytest
 
 from polymarket_arb.dashboard.app import create_app
-from polymarket_arb.live.models import OrdersLogRow
+from polymarket_arb.live.models import OrdersLogRow, PositionRow
 from polymarket_arb.settings import Settings
 from polymarket_arb.storage.base import MarketRow, OrderbookLevel, OrderbookSnapshot
 from polymarket_arb.storage.parquet.markets_repo import ParquetMarketsRepository
 from polymarket_arb.storage.parquet.orderbook_repo import ParquetOrderbookRepository
 from polymarket_arb.storage.parquet.orders_log_repo import ParquetOrdersLogRepository
+from polymarket_arb.storage.parquet.positions_repo import ParquetPositionsRepository
 
 
 def _settings_with_root(base: Settings, data_root: Path) -> Settings:
@@ -52,7 +53,7 @@ def client(app):
 # ─── Empty lake: every route renders ──────────────────────────────────────────
 
 
-@pytest.mark.parametrize("path", ["/", "/orders", "/signals", "/markets", "/health"])
+@pytest.mark.parametrize("path", ["/", "/orders", "/positions", "/signals", "/markets", "/health"])
 def test_routes_200_on_empty_lake(client, path: str) -> None:
     resp = client.get(path)
     assert resp.status_code == 200, resp.data
@@ -136,14 +137,39 @@ def _market_row(market_id: str, question: str) -> MarketRow:
     )
 
 
-def _orderbook_snapshot(token_id: str) -> OrderbookSnapshot:
+def _position_row(**overrides) -> PositionRow:
+    base = dict(
+        position_id="p1",
+        strategy_id="limitless_arb",
+        market_id="m1",
+        token_id="t1",
+        side="buy",
+        open_ts_ms=int(datetime.now(timezone.utc).timestamp() * 1000),
+        entry_price="0.40",
+        size="10",
+        notional_usdc="4.00",
+        source_relationship_id="r1",
+        notes="arb_gap=0.0250 similarity=0.900",
+        status="open",
+    )
+    base.update(overrides)
+    return PositionRow(**base)
+
+
+def _orderbook_snapshot(
+    token_id: str,
+    *,
+    bid: str = "0.4",
+    ask: str = "0.6",
+    timestamp_ms: int | None = None,
+) -> OrderbookSnapshot:
     return OrderbookSnapshot(
         token_id=token_id,
         condition_id="c-m1",
         market_slug="slug-m1",
-        timestamp_ms=int(datetime.now(timezone.utc).timestamp() * 1000),
-        bids=[OrderbookLevel(price=Decimal("0.4"), size=Decimal("100"))],
-        asks=[OrderbookLevel(price=Decimal("0.6"), size=Decimal("100"))],
+        timestamp_ms=timestamp_ms or int(datetime.now(timezone.utc).timestamp() * 1000),
+        bids=[OrderbookLevel(price=Decimal(bid), size=Decimal("100"))],
+        asks=[OrderbookLevel(price=Decimal(ask), size=Decimal("100"))],
         book_hash="bh",
         source="rest",
         schema_version=1,
@@ -208,3 +234,61 @@ def test_orders_filter_by_status(client, tmp_data_root: Path) -> None:
     assert resp.status_code == 200
     body = resp.data.decode()
     assert "1 total rows" in body
+
+
+def test_positions_page_renders_mtm_and_locked_profit(
+    client, app, tmp_data_root: Path
+) -> None:
+    positions_repo = ParquetPositionsRepository(tmp_data_root)
+    book_repo = ParquetOrderbookRepository(tmp_data_root)
+    positions_repo.append(_position_row())
+    book_repo.append_snapshot(_orderbook_snapshot("t1", bid="0.48", ask="0.52"))
+
+    rows = app.extensions["dashboard_db"].open_positions_with_mtm()
+    assert len(rows) == 1
+    assert rows[0]["current_mid"] == pytest.approx(0.50)
+    assert rows[0]["mtm_pnl"] == pytest.approx(1.00)
+    assert rows[0]["locked_profit"] == pytest.approx(0.25)
+
+    resp = client.get("/positions")
+    assert resp.status_code == 200
+    body = resp.data.decode()
+    assert "Open positions" in body
+    assert "limitless_arb" in body
+    assert "+1.00" in body
+    assert "0.25" in body
+    assert 'http-equiv="refresh" content="30"' in body
+
+
+def test_overview_expected_return_uses_recorded_edges(
+    client, app, tmp_data_root: Path
+) -> None:
+    orders_repo = ParquetOrdersLogRepository(tmp_data_root)
+    orders_repo.append_many([
+        _orders_log_row(
+            intent_id="i-relationship",
+            status="paper_filled",
+            notional_usdc="100",
+            detail_json='{"gross_edge": "0.05"}',
+        ),
+        _orders_log_row(
+            intent_id="i-limitless",
+            strategy_id="limitless_arb",
+            status="paper_filled",
+            notional_usdc="50",
+            notes="arb_gap=0.0200 similarity=0.900",
+        ),
+    ])
+
+    expected_return = app.extensions["dashboard_db"].cumulative_expected_return_by_hour()
+    assert expected_return["total_expected_pnl"] == pytest.approx(6.0)
+    assert expected_return["total_cost_basis"] == pytest.approx(150.0)
+    assert expected_return["expected_return_pct"] == pytest.approx(4.0)
+    assert expected_return["series"][-1]["cumulative_expected_pnl"] == pytest.approx(6.0)
+
+    app.extensions["dashboard_cache"].refresh()
+    body = client.get("/").data.decode()
+    assert "Expected Return" in body
+    assert "+4.00%" in body
+    assert "Cumulative expected PnL (USDC)" in body
+    assert "Break-even" in body

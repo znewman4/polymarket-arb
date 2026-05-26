@@ -52,7 +52,7 @@ class DashboardCache:
             "market_coverage": lambda: self._qs.market_coverage(),
             "relationship_type_breakdown": lambda: self._qs.relationship_type_breakdown(),
             "markets_with_most_relationships": lambda: self._qs.markets_with_most_relationships(),
-            "cumulative_pnl": lambda: self._qs.cumulative_pnl_by_hour(),
+            "expected_return": lambda: self._qs.cumulative_expected_return_by_hour(),
             "sharpe_stats": lambda: self._qs.sharpe_ratio_stats(),
         }
         fresh: dict[str, Any] = {}

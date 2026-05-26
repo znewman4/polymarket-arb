@@ -1,11 +1,11 @@
-"""Unit tests for the Limitless × Polymarket arb scanner logic."""
+"""Unit tests for the Limitless x Polymarket arb scanner logic."""
 
 from __future__ import annotations
 
 import pytest
 
 from polymarket_arb.limitless.arb_scanner import _arb_status, compute_arb, match_markets
-from polymarket_arb.limitless.models import ArbMatch, LimitlessMarketEntry, PolyMarketEntry
+from polymarket_arb.limitless.models import LimitlessMarketEntry
 
 
 def _lim(slug: str, yes_price: float) -> LimitlessMarketEntry:
@@ -128,9 +128,11 @@ def test_compute_arb_reclassifies_with_new_tolerance():
     lim = _lim("x", yes_price=0.48)
     poly_raw = [_poly("x", yes_price=0.48)]
     matches = match_markets([lim], poly_raw, threshold=0.0)
-    # Default tolerance=0.02: gap=0.04 → ARB
-    assert matches[0].status == "ARB_OPPORTUNITY"
-    # With tolerance=0.05: gap=0.04 ≤ 0.05 → EFFICIENT
+    assert matches[0].status == ""
+    # With tolerance=0.02, gap=0.04 becomes an opportunity.
+    results = compute_arb(matches, tolerance=0.02)
+    assert results[0].status == "ARB_OPPORTUNITY"
+    # With tolerance=0.05, gap=0.04 remains efficient.
     results = compute_arb(matches, tolerance=0.05)
     assert results[0].status == "EFFICIENT"
 

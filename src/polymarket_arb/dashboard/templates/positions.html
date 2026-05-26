@@ -1,0 +1,69 @@
+{% extends "base.html" %}
+{% block title %}Positions - polymarket-arb{% endblock %}
+{% block content %}
+<h1>Open positions</h1>
+
+<div class="cards">
+  <div class="card">
+    <div class="label">Open positions</div>
+    <div class="value">{{ summary.count }}</div>
+  </div>
+  <div class="card">
+    <div class="label">Total cost basis (USDC)</div>
+    <div class="value">{{ "%.2f"|format(summary.cost_basis) }}</div>
+  </div>
+  <div class="card">
+    <div class="label">Total MTM PnL (USDC)</div>
+    <div class="value" style="color: {{ 'var(--good)' if summary.mtm_pnl > 0 else 'var(--bad)' if summary.mtm_pnl < 0 else 'var(--fg)' }}">
+      {{ "%+.2f"|format(summary.mtm_pnl) }}
+    </div>
+  </div>
+  <div class="card">
+    <div class="label">Locked profit - Limitless arb</div>
+    <div class="value">{{ "%.2f"|format(summary.locked_profit) }}</div>
+  </div>
+</div>
+
+<div class="panel">
+  {% if positions %}
+  <table>
+    <thead>
+      <tr>
+        <th>Opened</th>
+        <th>Strategy</th>
+        <th>Market</th>
+        <th>Side</th>
+        <th style="text-align:right">Entry Price</th>
+        <th style="text-align:right">Size</th>
+        <th style="text-align:right">Cost Basis</th>
+        <th style="text-align:right">Current Mid</th>
+        <th style="text-align:right">MTM PnL</th>
+        <th style="text-align:right">Locked Profit</th>
+        <th>Notes</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for p in positions %}
+      <tr>
+        <td class="mono">{{ (p.open_ts_ms // 1000) | int | datetimeformat }}</td>
+        <td>{{ p.strategy_id }}</td>
+        <td class="mono">{{ p.market_id }}</td>
+        <td>{{ p.side }}</td>
+        <td style="text-align:right" class="mono">{{ p.entry_price }}</td>
+        <td style="text-align:right" class="mono">{{ p.size }}</td>
+        <td style="text-align:right" class="mono">{{ "%.2f"|format(p.notional_usdc | float) }}</td>
+        <td style="text-align:right" class="mono">{{ "%.4f"|format(p.current_mid) if p.current_mid is not none else "-" }}</td>
+        <td style="text-align:right; color: {{ 'var(--good)' if p.mtm_pnl is not none and p.mtm_pnl > 0 else 'var(--bad)' if p.mtm_pnl is not none and p.mtm_pnl < 0 else 'var(--fg-dim)' }}" class="mono">
+          {{ "%+.2f"|format(p.mtm_pnl) if p.mtm_pnl is not none else "-" }}
+        </td>
+        <td style="text-align:right" class="mono">{{ "%.2f"|format(p.locked_profit) if p.locked_profit is not none else "-" }}</td>
+        <td>{{ p.notes }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+    <div class="empty">No open positions.</div>
+  {% endif %}
+</div>
+{% endblock %}

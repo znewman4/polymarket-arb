@@ -71,6 +71,17 @@ def test_docker_compose_yaml_parses_and_declares_safe_defaults() -> None:
     assert any("/app/data" in v for v in rec_vols)
     assert any("/app/data" in v for v in agent_vols)
 
+    # Recorder overrides the image-level agent check with a snapshot-output check.
+    rec_health = services["recorder"]["healthcheck"]
+    health_cmd = "\n".join(rec_health["test"])
+    assert "orderbook_snapshots" in health_cmd
+    assert "date -u" in health_cmd
+    assert "agent-healthcheck" not in health_cmd
+    assert rec_health["interval"] == "120s"
+    assert rec_health["timeout"] == "10s"
+    assert rec_health["retries"] == 3
+    assert rec_health["start_period"] == "120s"
+
     # Agent depends_on recorder (book lake must populate first).
     assert services["agent"].get("depends_on") == ["recorder"]
 

@@ -39,6 +39,13 @@
     <div class="value">{{ sharpe.sharpe if sharpe.sharpe is not none else '—' }}</div>
     <div class="sub">{{ sharpe.days_of_data }} day{{ '' if sharpe.days_of_data == 1 else 's' }} of data</div>
   </div>
+  <div class="card">
+    <div class="label">Expected Return</div>
+    <div class="value" style="color: {{ 'var(--good)' if expected_return.expected_return_pct > 0 else 'var(--bad)' if expected_return.expected_return_pct < 0 else 'var(--fg)' }}">
+      {{ "%+.2f"|format(expected_return.expected_return_pct) }}%
+    </div>
+    <div class="sub">Expected PnL {{ "%+.2f"|format(expected_return.total_expected_pnl) }} USDC on {{ "%.2f"|format(expected_return.total_cost_basis) }} USDC</div>
+  </div>
 </div>
 
 <div class="grid-2">
@@ -57,11 +64,11 @@
 </div>
 
 <div class="panel">
-  <h2>Cumulative paper PnL (USDC)</h2>
-  {% if pnl %}
+  <h2>Cumulative expected PnL (USDC)</h2>
+  {% if expected_return.series %}
     <canvas id="pnlChart" height="160"></canvas>
   {% else %}
-    <div class="empty">No filled trades yet.</div>
+    <div class="empty">No filled trades with expected-return data yet.</div>
   {% endif %}
 </div>
 
@@ -120,18 +127,25 @@
     },
     options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
   });
-  {% if pnl %}
+  {% if expected_return.series %}
   new Chart(document.getElementById('pnlChart'), {
     type: 'line',
     data: {
-      labels: {{ pnl | map(attribute='hour_bucket') | list | tojson }},
+      labels: {{ expected_return.series | map(attribute='hour_bucket') | list | tojson }},
       datasets: [{
-        label: 'Cumulative PnL',
-        data: {{ pnl | map(attribute='cumulative_pnl') | list | tojson }},
+        label: 'Cumulative expected PnL (USDC)',
+        data: {{ expected_return.series | map(attribute='cumulative_expected_pnl') | list | tojson }},
         borderColor: '#3fb950',
         backgroundColor: 'rgba(63,185,80,0.15)',
         tension: 0.25,
         fill: true,
+      }, {
+        label: 'Break-even',
+        data: {{ expected_return.series | map(attribute='reference_zero') | list | tojson }},
+        borderColor: '#8b949e',
+        borderDash: [6, 4],
+        pointRadius: 0,
+        fill: false,
       }]
     },
     options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }

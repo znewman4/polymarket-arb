@@ -51,14 +51,22 @@ services:
       - -c
       - |
         while true; do
+          python -m polymarket_arb.cli maintenance compact-lake --older-than-days 0
           python -m polymarket_arb.cli fetch-markets --all --max-pages 50
           python -m polymarket_arb.cli snapshot-candidate-tokens --limit 3000
           python -m polymarket_arb.cli snapshot-active-markets --limit 500
           find /app/data/normalised -name "*.parquet" -mtime +3 -delete
           find /app/data/raw -name "*.json" -mtime +1 -delete
           sleep 300
-          python -m polymarket_arb.cli maintenance compact-lake --older-than-days 1
         done
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - test -n "$$(find /app/data/normalised/orderbook_snapshots/dt=$$(date -u +%Y-%m-%d) -maxdepth 1 -name '*.parquet' -print -quit 2>/dev/null)"
+      interval: 120s
+      timeout: 10s
+      retries: 3
+      start_period: 120s
     logging:
       driver: "json-file"
       options:

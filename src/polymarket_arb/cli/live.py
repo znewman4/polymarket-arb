@@ -372,6 +372,7 @@ def _order_intents_from_candidate(
             price=price_a,
             size=_RELATIONSHIP_ORDER_SIZE,
             limit_price=None,
+            detail={"gross_edge": str(candidate.gross_edge)},
         ),
         OrderIntent(
             id=f"{candidate.candidate_id}:b",
@@ -381,6 +382,7 @@ def _order_intents_from_candidate(
             price=price_b,
             size=_RELATIONSHIP_ORDER_SIZE,
             limit_price=None,
+            detail={"gross_edge": str(candidate.gross_edge)},
         ),
     ]
 
