@@ -15,7 +15,7 @@ from __future__ import annotations
 
 import threading
 import uuid
-from datetime import date, datetime, timezone
+from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
 
@@ -47,6 +47,24 @@ class DuckDBQueryService:
     def _glob(self, table: str) -> str:
         return str(self._data_root / "normalised" / table / "dt=*" / "*.parquet")
 
+    def _glob_recent(self, table: str, days: int = 7) -> str:
+        """Return a DuckDB list literal of explicit partition globs for the last ``days`` days.
+
+        Only includes partition directories that exist on disk, so DuckDB never
+        errors on a missing path.  Falls back to the wildcard glob if no recent
+        partitions exist (caller is gated by _has_data upstream).
+        """
+        base = self._data_root / "normalised" / table
+        today = date.today()
+        paths = [
+            str(base / f"dt={today - timedelta(days=i)}" / "*.parquet")
+            for i in range(days)
+            if (base / f"dt={today - timedelta(days=i)}").exists()
+        ]
+        if not paths:
+            return f"'{base / 'dt=*' / '*.parquet'}'"
+        return "['" + "', '".join(paths) + "']"
+
     def _today(self) -> str:
         return datetime.now(timezone.utc).strftime("%Y-%m-%d")
 
@@ -69,7 +87,7 @@ class DuckDBQueryService:
         if not self._has_data("orders_log"):
             return empty
         rows = self._fetchall(
-            f"SELECT status, COUNT(*) AS n FROM read_parquet('{self._glob('orders_log')}', "
+            f"SELECT status, COUNT(*) AS n FROM read_parquet({self._glob_recent('orders_log')}, "
             "hive_partitioning=true) WHERE dt = ? GROUP BY status",
             [today],
         )
@@ -89,7 +107,7 @@ class DuckDBQueryService:
         if not self._has_data("orders_log"):
             return []
         return self._fetchall_dict(
-            f"SELECT strategy_id, COUNT(*) AS n FROM read_parquet('{self._glob('orders_log')}', "
+            f"SELECT strategy_id, COUNT(*) AS n FROM read_parquet({self._glob_recent('orders_log')}, "
             "hive_partitioning=true) WHERE dt = ? GROUP BY strategy_id ORDER BY n DESC",
             [today],
         )
@@ -110,7 +128,7 @@ class DuckDBQueryService:
         )
         rows = self._fetchall(
             f"SELECT strftime(to_timestamp(ts_ms/1000), '%Y-%m-%d %H:00') AS hour_bucket, "
-            f"COUNT(*) AS n FROM read_parquet('{self._glob('orders_log')}', "
+            f"COUNT(*) AS n FROM read_parquet({self._glob_recent('orders_log', days=2)}, "
             "hive_partitioning=true) "
             "WHERE dt IN (?, ?) AND ts_ms >= ? GROUP BY hour_bucket",
             [today, yesterday, cutoff_ms],
@@ -139,7 +157,7 @@ class DuckDBQueryService:
             select_q = "NULL AS question, "
         return self._fetchall_dict(
             f"SELECT o.market_id, {select_q}COUNT(*) AS signals "
-            f"FROM read_parquet('{self._glob('orders_log')}', hive_partitioning=true) o "
+            f"FROM read_parquet({self._glob_recent('orders_log')}, hive_partitioning=true) o "
             f"{markets_join} "
             "WHERE o.dt = ? AND o.market_id <> '' "
             "GROUP BY o.market_id ORDER BY signals DESC LIMIT ?",
@@ -267,7 +285,7 @@ class DuckDBQueryService:
         markets_join, question_select = self._markets_join()
         return self._fetchall_dict(
             f"SELECT o.market_id, {question_select} o.status, COUNT(*) AS n "
-            f"FROM read_parquet('{self._glob('orders_log')}', hive_partitioning=true) o "
+            f"FROM read_parquet({self._glob_recent('orders_log')}, hive_partitioning=true) o "
             f"{markets_join} "
             "WHERE o.dt = ? AND o.status IN ('paper_no_fill','paper_no_book','paper_partial') "
             "GROUP BY o.market_id, m.question, o.status "
@@ -289,7 +307,7 @@ class DuckDBQueryService:
             return []
         return self._fetchall_dict(
             "SELECT FLOOR(CAST(notional_usdc AS DOUBLE)) AS bucket, COUNT(*) AS n "
-            f"FROM read_parquet('{self._glob('orders_log')}', hive_partitioning=true) "
+            f"FROM read_parquet({self._glob_recent('orders_log')}, hive_partitioning=true) "
             "WHERE dt = ? AND strategy_id = ? AND notional_usdc <> '' "
             "GROUP BY bucket ORDER BY bucket",
             [today, strategy_id],
@@ -304,7 +322,7 @@ class DuckDBQueryService:
             "SELECT ts_ms, market_id, notes, "
             "TRY_CAST(regexp_extract(notes, 'arb_gap=([0-9.+-]+)', 1) AS DOUBLE) AS arb_gap, "
             "TRY_CAST(regexp_extract(notes, 'similarity=([0-9.+-]+)', 1) AS DOUBLE) AS similarity "
-            f"FROM read_parquet('{self._glob('orders_log')}', hive_partitioning=true) "
+            f"FROM read_parquet({self._glob_recent('orders_log')}, hive_partitioning=true) "
             "WHERE dt = ? AND strategy_id = 'limitless_arb' "
             "AND regexp_matches(notes, 'arb_gap=') "
             "ORDER BY arb_gap DESC NULLS LAST LIMIT ?",
@@ -328,7 +346,7 @@ class DuckDBQueryService:
         if self._has_data("orderbook_snapshots"):
             row = self._fetchall(
                 "SELECT COUNT(DISTINCT condition_id) "
-                f"FROM read_parquet('{self._glob('orderbook_snapshots')}', "
+                f"FROM read_parquet({self._glob_recent('orderbook_snapshots', days=1)}, "
                 "hive_partitioning=true) WHERE dt = ?",
                 [today],
             )
@@ -368,7 +386,7 @@ class DuckDBQueryService:
         snapshot_count = 0
         if self._has_data("orderbook_snapshots"):
             row = self._fetchall(
-                f"SELECT COUNT(*) FROM read_parquet('{self._glob('orderbook_snapshots')}', "
+                f"SELECT COUNT(*) FROM read_parquet({self._glob_recent('orderbook_snapshots', days=1)}, "
                 "hive_partitioning=true) WHERE dt = ?",
                 [today],
             )
@@ -389,7 +407,7 @@ class DuckDBQueryService:
         if not self._has_data(table):
             return None
         row = self._fetchall(
-            f"SELECT MAX({col}) FROM read_parquet('{self._glob(table)}', "
+            f"SELECT MAX({col}) FROM read_parquet({self._glob_recent(table, days=1)}, "
             "hive_partitioning=true) WHERE dt = ?",
             [today],
         )
