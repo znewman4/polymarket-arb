@@ -260,6 +260,35 @@ Verification after this group:
 - `python -m pytest tests/ -q`: `832 passed`
 - `python -m ruff check src/ tests/`: passed
 
+## Deployment Group 8 - Limitless Named-Token Match Guard
+
+### Bug 8 - Block high-similarity matches for different named projects
+
+Changed files:
+
+- `src/polymarket_arb/limitless/arb_scanner.py`
+  - Added `_first_named_token()` to extract the first meaningful capitalised
+    token from market titles while ignoring generic question prefixes such as
+    `Will` and `New`.
+  - `match_markets()` now computes fuzzy similarity and then rejects a
+    candidate whenever both titles expose named tokens and those tokens differ.
+  - The rejection happens before best-match selection, so an invalid
+    high-similarity template match cannot displace a valid lower-score match.
+  - Updated the `match_markets()` docstring to describe the named-token guard.
+- `tests/test_limitless/test_arb_scanner.py`
+  - Added the stated regression case preventing `Puffpaw` from matching
+    `Pacifica` solely because the rest of their template text is similar.
+  - Added coverage proving that a rejected mismatched candidate does not block
+    selection of a valid `Puffpaw` candidate with a lower fuzzy score.
+
+Result: the arb scanner avoids submitting pairs whose shared wording masks
+different named projects or people.
+
+Verification after this group:
+
+- `python -m pytest tests/ -q`: `834 passed`
+- `python -m ruff check src/ tests/`: passed
+
 ## Required Deployment Sequence
 
 Deploy only after committing and pushing the verified changes, in this order:
@@ -271,6 +300,7 @@ Deploy only after committing and pushing the verified changes, in this order:
 5. Features 2 and 3: MTM query and positions page.
 6. Feature 4: expected PnL overview cards.
 7. Bug 7: Limitless decimal/percentage input normalization.
+8. Bug 8: Limitless named-token match guard.
 
 Server deployment command for each deployed commit:
 

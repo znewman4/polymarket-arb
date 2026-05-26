@@ -121,6 +121,45 @@ def test_best_match_selected_not_first():
     assert matches[0].poly.condition_id == "0xRIGHT"
 
 
+def test_named_token_mismatch_rejects_template_false_positive():
+    lim = LimitlessMarketEntry(
+        slug="puffpaw-launch",
+        title="Will Puffpaw launch a token this year?",
+        yes_price=0.40,
+        address="0x0",
+    )
+    poly_raw = [_poly("Will Pacifica launch a token this year?", yes_price=0.45)]
+
+    matches = match_markets([lim], poly_raw, threshold=0.0)
+
+    assert matches == []
+
+
+def test_named_token_filter_still_selects_valid_lower_similarity_match():
+    lim = LimitlessMarketEntry(
+        slug="puffpaw-market-cap",
+        title="Will Puffpaw reach a $500M market cap this year?",
+        yes_price=0.40,
+        address="0x0",
+    )
+    poly_raw = [
+        _poly(
+            "Will Pacifica reach a $500M market cap this year?",
+            yes_price=0.45,
+            condition_id="0xWRONG",
+        ),
+        _poly(
+            "Will Puffpaw exceed a $500M valuation this year?",
+            yes_price=0.45,
+            condition_id="0xRIGHT",
+        ),
+    ]
+
+    matches = match_markets([lim], poly_raw, threshold=0.0)
+
+    assert matches[0].poly.condition_id == "0xRIGHT"
+
+
 # ─── compute_arb ─────────────────────────────────────────────────────────────
 
 

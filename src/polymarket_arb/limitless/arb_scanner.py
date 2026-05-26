@@ -39,12 +39,39 @@ if TYPE_CHECKING:
 
 
 _PUNCT = re.compile(r"[^\w\s]")
+_CAPITALISED_WORD = re.compile(r"\b[A-Z][A-Za-z0-9]*(?:['-][A-Za-z0-9]+)*\b")
+_TITLE_PREFIX_WORDS = frozenset({
+    "a",
+    "an",
+    "are",
+    "can",
+    "does",
+    "how",
+    "is",
+    "new",
+    "the",
+    "what",
+    "when",
+    "where",
+    "which",
+    "who",
+    "will",
+})
 
 
 def _normalise(text: str) -> str:
     text = text.lower()
     text = _PUNCT.sub("", text)
     return re.sub(r"\s+", " ", text).strip()
+
+
+def _first_named_token(text: str) -> str | None:
+    """Return the first capitalised token that is not question boilerplate."""
+    for match in _CAPITALISED_WORD.finditer(text):
+        token = match.group(0)
+        if token.casefold() not in _TITLE_PREFIX_WORDS:
+            return token.casefold()
+    return None
 
 
 def _poly_from_raw(raw: dict) -> PolyMarketEntry | None:
@@ -110,10 +137,11 @@ def match_markets(
     """Fuzzy-match Limitless markets to Polymarket markets by question text.
 
     Uses rapidfuzz token_sort_ratio so word-order differences don't penalise
-    the score.  Returns one ArbMatch per Limitless market where the best
-    Polymarket match exceeds the threshold.  Computes the raw arb gap only;
-    callers must pass the matches through compute_arb with their configured
-    tolerance before displaying or executing them.
+    the score. Candidates with different first meaningful capitalised tokens
+    are rejected before selecting the best fuzzy match. Returns one ArbMatch
+    per Limitless market where the best remaining match exceeds the threshold.
+    Computes the raw arb gap only; callers must pass the matches through
+    compute_arb with their configured tolerance before displaying or executing.
     """
     poly_entries = []
     for raw in poly_raw:
@@ -124,10 +152,14 @@ def match_markets(
     matches: list[ArbMatch] = []
     for lim in limitless:
         lim_norm = _normalise(lim.title)
+        lim_name = _first_named_token(lim.title)
         best_score = 0.0
         best_poly: PolyMarketEntry | None = None
         for p_norm, p in poly_entries:
             score = fuzz.token_sort_ratio(lim_norm, p_norm) / 100.0
+            poly_name = _first_named_token(p.question)
+            if lim_name is not None and poly_name is not None and lim_name != poly_name:
+                continue
             if score > best_score:
                 best_score = score
                 best_poly = p
