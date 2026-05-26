@@ -56,7 +56,8 @@ class ParquetPositionsRepository:
         con = duckdb.connect()
         try:
             cur = con.execute(
-                f"SELECT * FROM read_parquet('{self._glob()}', hive_partitioning=true) "
+                f"SELECT * FROM read_parquet('{self._glob()}', hive_partitioning=true, "
+                "union_by_name=true) "
                 f"ORDER BY open_ts_ms DESC LIMIT {int(limit)}"
             )
             cols = [c[0] for c in cur.description]
@@ -68,5 +69,11 @@ class ParquetPositionsRepository:
         for raw in rows:
             values = dict(zip(cols, raw, strict=False))
             values.pop("dt", None)
+            values["gross_edge"] = values.get("gross_edge") or ""
+            values["relationship_id"] = (
+                values.get("relationship_id") or values.get("source_relationship_id") or ""
+            )
+            values["relationship_type"] = values.get("relationship_type") or ""
+            values["ingested_ts_ms"] = values.get("ingested_ts_ms") or values["open_ts_ms"]
             out.append(PositionRow(**{key: value for key, value in values.items() if key in names}))
         return iter(out)

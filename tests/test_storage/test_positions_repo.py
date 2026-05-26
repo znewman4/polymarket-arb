@@ -15,9 +15,12 @@ def _position(position_id: str = "p1", *, open_ts_ms: int = 1) -> PositionRow:
         entry_price="0.42",
         size="10",
         notional_usdc="4.2",
-        source_relationship_id="rel-1",
+        gross_edge="0.05",
+        relationship_id="rel-1",
+        relationship_type="nested_a_implies_b",
         notes="paper fill",
         status="open",
+        ingested_ts_ms=open_ts_ms,
     )
 
 
@@ -30,3 +33,4 @@ def test_append_and_iter_recent_positions(tmp_data_root):
     assert [row.position_id for row in recent] == ["p2", "p1"]
     assert recent[0].status == "open"
     assert recent[0].entry_price == "0.42"
+    assert recent[0].relationship_id == "rel-1"

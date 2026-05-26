@@ -128,7 +128,7 @@ def test_compute_arb_reclassifies_with_new_tolerance():
     lim = _lim("x", yes_price=0.48)
     poly_raw = [_poly("x", yes_price=0.48)]
     matches = match_markets([lim], poly_raw, threshold=0.0)
-    assert matches[0].status == ""
+    assert matches[0].status == "PENDING"
     # With tolerance=0.02, gap=0.04 becomes an opportunity.
     results = compute_arb(matches, tolerance=0.02)
     assert results[0].status == "ARB_OPPORTUNITY"

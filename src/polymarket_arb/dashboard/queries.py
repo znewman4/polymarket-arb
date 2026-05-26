@@ -14,8 +14,10 @@ new day, not an error.
 from __future__ import annotations
 
 import math
+import re
 import threading
 import uuid
+from contextlib import suppress
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 from typing import Any
@@ -215,56 +217,66 @@ class DuckDBQueryService:
             "days_of_data": n,
         }
 
-    def cumulative_expected_return_by_hour(self) -> dict[str, Any]:
-        """Expected PnL for filled paper trades over the last seven days."""
+    def cumulative_notional_by_hour(self) -> list[dict]:
+        """Cumulative deployed notional for filled paper trades over seven days."""
+        if not self._has_data("orders_log"):
+            return []
+        rows = self._fetchall(
+            "SELECT strftime(to_timestamp(ts_ms/1000), '%Y-%m-%d %H:00') AS hour_bucket, "
+            "SUM(CAST(notional_usdc AS DOUBLE)) AS hourly_notional "
+            f"FROM read_parquet({self._glob_recent('orders_log', days=7)}, "
+            "hive_partitioning=true) "
+            "WHERE status = 'paper_filled' AND notional_usdc <> '' "
+            "GROUP BY hour_bucket ORDER BY hour_bucket"
+        )
+        series: list[dict] = []
+        running = 0.0
+        for hour_bucket, hourly_notional in rows:
+            running += float(hourly_notional or 0.0)
+            series.append({
+                "hour_bucket": hour_bucket,
+                "cumulative_notional": round(running, 4),
+            })
+        return series
+
+    def expected_pnl_stats(self) -> dict[str, Any]:
+        """Expected PnL estimated from ``gross_edge=X`` in filled-order notes."""
         empty = {
-            "series": [],
             "total_expected_pnl": 0.0,
             "total_cost_basis": 0.0,
             "expected_return_pct": 0.0,
+            "trade_count": 0,
         }
         if not self._has_data("orders_log"):
             return empty
         rows = self._fetchall(
-            "WITH fills AS ("
-            " SELECT ts_ms, CAST(notional_usdc AS DOUBLE) AS cost_basis, "
-            " CASE "
-            "  WHEN strategy_id = 'limitless_arb' THEN "
-            "   COALESCE(TRY_CAST(regexp_extract(notes, 'arb_gap=([0-9.+-]+)', 1) "
-            "     AS DOUBLE), 0) * CAST(notional_usdc AS DOUBLE) "
-            "  WHEN strategy_id LIKE 'relationship_%' THEN "
-            "   COALESCE(TRY_CAST(json_extract_string(detail_json, '$.gross_edge') "
-            "     AS DOUBLE), 0) * CAST(notional_usdc AS DOUBLE) "
-            "  ELSE 0 END AS expected_pnl "
-            f" FROM read_parquet({self._glob_recent('orders_log', days=7)}, "
-            " hive_partitioning=true) "
-            " WHERE status = 'paper_filled' AND notional_usdc <> ''"
-            ") "
-            "SELECT strftime(to_timestamp(ts_ms/1000), '%Y-%m-%d %H:00') AS hour_bucket, "
-            "SUM(expected_pnl) AS hourly_expected_pnl, SUM(cost_basis) AS hourly_cost_basis "
-            "FROM fills GROUP BY hour_bucket ORDER BY hour_bucket"
+            "SELECT notional_usdc, notes "
+            f"FROM read_parquet({self._glob_recent('orders_log', days=7)}, "
+            "hive_partitioning=true) "
+            "WHERE status = 'paper_filled' AND notional_usdc <> ''"
         )
-        if not rows:
-            return empty
-        series: list[dict] = []
-        running = 0.0
-        total_cost_basis = 0.0
-        for hour_bucket, hourly_expected_pnl, hourly_cost_basis in rows:
-            running += float(hourly_expected_pnl or 0.0)
-            total_cost_basis += float(hourly_cost_basis or 0.0)
-            series.append({
-                "hour_bucket": hour_bucket,
-                "cumulative_expected_pnl": round(running, 4),
-                "reference_zero": 0.0,
-            })
+        total_cost = 0.0
+        total_expected = 0.0
+        trade_count = 0
+        for notional_str, notes_str in rows:
+            try:
+                notional = float(notional_str or 0)
+            except (ValueError, TypeError):
+                continue
+            match = re.search(r"gross_edge=([0-9.+-]+)", notes_str or "")
+            if match:
+                with suppress(ValueError):
+                    total_expected += float(match.group(1)) * notional
+            total_cost += notional
+            trade_count += 1
         return {
-            "series": series,
-            "total_expected_pnl": round(running, 4),
-            "total_cost_basis": round(total_cost_basis, 4),
+            "total_expected_pnl": round(total_expected, 2),
+            "total_cost_basis": round(total_cost, 2),
             "expected_return_pct": round(
-                running / total_cost_basis * 100 if total_cost_basis else 0.0,
-                2,
+                total_expected / total_cost * 100.0 if total_cost else 0.0,
+                4,
             ),
+            "trade_count": trade_count,
         }
 
     # ─── orders ──────────────────────────────────────────────────────────────
@@ -363,7 +375,7 @@ class DuckDBQueryService:
         per_page: int = 50,
     ) -> dict[str, Any]:
         """Paginated view of filled paper trades over the last 30 days."""
-        empty_summary = {"trades": 0, "total_pnl": 0.0, "avg_size": 0.0, "best": 0.0}
+        empty_summary = {"trades": 0, "total_notional": 0.0, "avg_size": 0.0, "best": 0.0}
         if not self._has_data("orders_log"):
             return {
                 "rows": [],
@@ -383,7 +395,7 @@ class DuckDBQueryService:
             "WHERE status = 'paper_filled' AND notional_usdc <> ''"
         )
         total = int(total_row[0][0] or 0) if total_row else 0
-        total_pnl = float(total_row[0][1] or 0.0) if total_row else 0.0
+        total_notional = float(total_row[0][1] or 0.0) if total_row else 0.0
         avg_size = float(total_row[0][2] or 0.0) if total_row else 0.0
         best = float(total_row[0][3] or 0.0) if total_row else 0.0
         markets_join, question_select = self._markets_join()
@@ -394,7 +406,7 @@ class DuckDBQueryService:
             "  o.notional_usdc, o.notes, "
             "  SUM(CAST(o.notional_usdc AS DOUBLE)) OVER ("
             "    ORDER BY o.ts_ms ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW"
-            "  ) AS running_pnl "
+            "  ) AS cumulative_notional "
             f"  FROM read_parquet({glob}, hive_partitioning=true) o "
             f"  {markets_join} "
             "  WHERE o.status = 'paper_filled' AND o.notional_usdc <> '' "
@@ -410,7 +422,7 @@ class DuckDBQueryService:
             "pages": pages,
             "summary": {
                 "trades": total,
-                "total_pnl": round(total_pnl, 2),
+                "total_notional": round(total_notional, 2),
                 "avg_size": round(avg_size, 2),
                 "best": round(best, 2),
             },
@@ -420,7 +432,7 @@ class DuckDBQueryService:
         """Yield (cols, rows_chunk) of filled paper trades for streamed CSV export."""
         cols_static = [
             "ts_ms", "strategy_id", "market_id", "question", "side",
-            "notional_usdc", "notes", "running_pnl",
+            "notional_usdc", "notes", "cumulative_notional",
         ]
         if not self._has_data("orders_log"):
             yield cols_static, []
@@ -433,7 +445,7 @@ class DuckDBQueryService:
             "  o.notional_usdc, o.notes, "
             "  SUM(CAST(o.notional_usdc AS DOUBLE)) OVER ("
             "    ORDER BY o.ts_ms ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW"
-            "  ) AS running_pnl "
+            "  ) AS cumulative_notional "
             f"  FROM read_parquet({glob}, hive_partitioning=true) o "
             f"  {markets_join} "
             "  WHERE o.status = 'paper_filled' AND o.notional_usdc <> '' "
@@ -486,7 +498,12 @@ class DuckDBQueryService:
     # ─── positions page ──────────────────────────────────────────────────────
 
     def open_positions_with_mtm(self) -> list[dict]:
-        """Return open positions marked against each token's latest two-sided book."""
+        """Open positions joined against latest books for mark-to-market PnL.
+
+        MTM PnL = (current_mid - entry_price) * size, where current_mid uses
+        the latest two-sided orderbook. Limitless arb rows also expose the
+        profit locked by their recorded arb gap.
+        """
         if not self._has_data("positions") or not self._has_data("orderbook_snapshots"):
             return []
         positions_glob = self._glob_recent("positions", days=30)
@@ -494,8 +511,8 @@ class DuckDBQueryService:
         return self._fetchall_dict(
             "WITH position_states AS ("
             "  SELECT *, row_number() OVER (PARTITION BY position_id "
-            "    ORDER BY COALESCE(close_ts_ms, open_ts_ms) DESC, status DESC) AS rn "
-            f"  FROM read_parquet({positions_glob}, hive_partitioning=true)"
+            "    ORDER BY COALESCE(ingested_ts_ms, open_ts_ms) DESC, open_ts_ms DESC) AS rn "
+            f"  FROM read_parquet({positions_glob}, hive_partitioning=true, union_by_name=true)"
             "), latest_books AS ("
             "  SELECT token_id, "
             "    (CAST(bids[1].price AS DOUBLE) + CAST(asks[1].price AS DOUBLE)) / 2 "
@@ -505,11 +522,12 @@ class DuckDBQueryService:
             f"  FROM read_parquet({books_glob}, hive_partitioning=true) "
             "  WHERE len(bids) > 0 AND len(asks) > 0"
             ") "
-            "SELECT p.market_id, p.strategy_id, p.side, p.entry_price, p.size, "
-            "p.notional_usdc, b.current_mid, "
+            "SELECT p.position_id, p.strategy_id, p.market_id, p.token_id, p.side, "
+            "p.open_ts_ms, p.entry_price, p.size, p.notional_usdc, p.gross_edge, "
+            "p.relationship_id, p.relationship_type, p.notes, p.status, "
+            "p.schema_version, p.ingested_ts_ms, b.current_mid, "
             "(b.current_mid - CAST(p.entry_price AS DOUBLE)) * CAST(p.size AS DOUBLE) "
             "  AS mtm_pnl, "
-            "p.open_ts_ms, p.notes, "
             "CASE WHEN p.strategy_id = 'limitless_arb' THEN "
             "  TRY_CAST(regexp_extract(p.notes, 'arb_gap=([0-9.+-]+)', 1) AS DOUBLE) "
             "    * CAST(p.size AS DOUBLE) "

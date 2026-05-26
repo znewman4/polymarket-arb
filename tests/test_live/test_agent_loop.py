@@ -32,10 +32,16 @@ def _strategy_fires_one_intent(state: AgentState) -> list[OrderIntent]:
     return [OrderIntent(
         id=f"intent-{state.ts_ms}",
         strategy_id="test_strategy",
+        market_id="market-a",
         token_id=state.watched_tokens[0],
         side="buy",
         price=Decimal("1.0"),  # permissive limit — book asks are at 0.51
         size=Decimal("10"),
+        detail={
+            "gross_edge": "0.05",
+            "relationship_id": "rel-a",
+            "relationship_type": "nested_a_implies_b",
+        },
     )]
 
 
@@ -81,6 +87,9 @@ def test_agent_loop_runs_max_iterations_and_emits_orders(settings, tmp_data_root
     assert len(rows) == 3
     assert all(r.paper_mode is True for r in rows)
     assert all(r.status == "paper_filled" for r in rows)
+    assert all(r.market_id == "market-a" for r in rows)
+    assert all(r.source_relationship_id == "rel-a" for r in rows)
+    assert all(r.notes == "gross_edge=0.05 rel_type=nested_a_implies_b" for r in rows)
 
 
 def test_agent_loop_halts_when_kill_switch_set(settings, tmp_data_root) -> None:

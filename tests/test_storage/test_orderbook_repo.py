@@ -79,8 +79,8 @@ def test_latest_books_bulk_reads_previous_day_when_today_is_empty(tmp_data_root)
     assert latest["yesterday_tok"].timestamp_ms == 99
 
 
-def test_latest_books_bulk_ignores_old_partitions(tmp_data_root):
-    """Data written outside the recent read window must not appear."""
+def test_latest_books_bulk_falls_back_to_old_partitions_when_no_recent_data(tmp_data_root):
+    """A lake with no recent partitions still exposes its last recorded book."""
     from dataclasses import asdict
 
     yesterday = datetime(2000, 1, 1, tzinfo=timezone.utc)
@@ -93,4 +93,5 @@ def test_latest_books_bulk_ignores_old_partitions(tmp_data_root):
         ts=yesterday,
     )
     repo = ParquetOrderbookRepository(tmp_data_root)
-    assert repo.latest_books_bulk(["stale_tok"]) == {}
+    assert repo.latest_books_bulk(["stale_tok"])["stale_tok"].timestamp_ms == 99
+    assert repo._has_data() is False

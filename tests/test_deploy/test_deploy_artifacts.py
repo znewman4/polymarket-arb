@@ -65,6 +65,10 @@ def test_docker_compose_yaml_parses_and_declares_safe_defaults() -> None:
     assert services["recorder"]["restart"] == "unless-stopped"
     assert services["agent"]["restart"] == "unless-stopped"
 
+    recorder_cmd = "\n".join(services["recorder"]["command"])
+    assert "compact-lake --older-than-days 0 --min-files 5" in recorder_cmd
+    assert recorder_cmd.index("compact-lake") < recorder_cmd.index("fetch-markets")
+
     # Both bind-mount the same ./data so the kill-switch file is shared.
     rec_vols = services["recorder"]["volumes"]
     agent_vols = services["agent"]["volumes"]

@@ -148,9 +148,12 @@ def _position_row(**overrides) -> PositionRow:
         entry_price="0.40",
         size="10",
         notional_usdc="4.00",
-        source_relationship_id="r1",
+        gross_edge="",
+        relationship_id="r1",
+        relationship_type="",
         notes="arb_gap=0.0250 similarity=0.900",
         status="open",
+        ingested_ts_ms=int(datetime.now(timezone.utc).timestamp() * 1000),
     )
     base.update(overrides)
     return PositionRow(**base)
@@ -249,18 +252,21 @@ def test_positions_page_renders_mtm_and_locked_profit(
     assert rows[0]["current_mid"] == pytest.approx(0.50)
     assert rows[0]["mtm_pnl"] == pytest.approx(1.00)
     assert rows[0]["locked_profit"] == pytest.approx(0.25)
+    assert rows[0]["token_id"] == "t1"
 
+    app.extensions["dashboard_cache"].refresh()
     resp = client.get("/positions")
     assert resp.status_code == 200
     body = resp.data.decode()
-    assert "Open positions" in body
+    assert "Open Positions" in body
     assert "limitless_arb" in body
+    assert "t1" in body
     assert "+1.00" in body
     assert "0.25" in body
     assert 'http-equiv="refresh" content="30"' in body
 
 
-def test_overview_expected_return_uses_recorded_edges(
+def test_overview_and_tradebook_label_filled_notional_as_deployed_capital(
     client, app, tmp_data_root: Path
 ) -> None:
     orders_repo = ParquetOrdersLogRepository(tmp_data_root)
@@ -269,26 +275,34 @@ def test_overview_expected_return_uses_recorded_edges(
             intent_id="i-relationship",
             status="paper_filled",
             notional_usdc="100",
-            detail_json='{"gross_edge": "0.05"}',
+            notes="gross_edge=0.05 rel_type=nested_a_implies_b",
         ),
         _orders_log_row(
             intent_id="i-limitless",
             strategy_id="limitless_arb",
             status="paper_filled",
             notional_usdc="50",
-            notes="arb_gap=0.0200 similarity=0.900",
         ),
     ])
 
-    expected_return = app.extensions["dashboard_db"].cumulative_expected_return_by_hour()
-    assert expected_return["total_expected_pnl"] == pytest.approx(6.0)
-    assert expected_return["total_cost_basis"] == pytest.approx(150.0)
-    assert expected_return["expected_return_pct"] == pytest.approx(4.0)
-    assert expected_return["series"][-1]["cumulative_expected_pnl"] == pytest.approx(6.0)
+    series = app.extensions["dashboard_db"].cumulative_notional_by_hour()
+    assert series[-1]["cumulative_notional"] == pytest.approx(150.0)
+    expected = app.extensions["dashboard_db"].expected_pnl_stats()
+    assert expected["total_expected_pnl"] == pytest.approx(5.0)
+    assert expected["total_cost_basis"] == pytest.approx(150.0)
+    assert expected["expected_return_pct"] == pytest.approx(3.3333)
+    assert expected["trade_count"] == 2
 
     app.extensions["dashboard_cache"].refresh()
     body = client.get("/").data.decode()
-    assert "Expected Return" in body
-    assert "+4.00%" in body
-    assert "Cumulative expected PnL (USDC)" in body
-    assert "Break-even" in body
+    assert "Cumulative notional deployed (USDC)" in body
+    assert "capital deployed, not profit" in body
+    assert "Expected PnL" in body
+    assert "+5.00 USDC" in body
+    assert "+3.3333%" in body
+    assert "Requires gross_edge in trade notes" in body
+
+    tradebook = client.get("/trades").data.decode()
+    assert "Total Notional (USDC)" in tradebook
+    assert "Cumulative Notional (USDC)" in tradebook
+    assert "Running PnL" not in tradebook

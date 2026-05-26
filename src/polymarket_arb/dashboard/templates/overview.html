@@ -35,16 +35,23 @@
     <div class="sub mono">{{ health.agent_last_tick_ts_ms or '—' }}</div>
   </div>
   <div class="card">
-    <div class="label">Sharpe ratio (annualised)</div>
-    <div class="value">{{ sharpe.sharpe if sharpe.sharpe is not none else '—' }}</div>
-    <div class="sub">{{ sharpe.days_of_data }} day{{ '' if sharpe.days_of_data == 1 else 's' }} of data</div>
+    <div class="label">Expected PnL</div>
+    <div class="value" style="color: {{ 'var(--good)' if expected_pnl.total_expected_pnl > 0 else 'var(--bad)' if expected_pnl.total_expected_pnl < 0 else 'var(--fg)' }}">
+      {{ "%+.2f"|format(expected_pnl.total_expected_pnl) }} USDC
+    </div>
   </div>
   <div class="card">
     <div class="label">Expected Return</div>
-    <div class="value" style="color: {{ 'var(--good)' if expected_return.expected_return_pct > 0 else 'var(--bad)' if expected_return.expected_return_pct < 0 else 'var(--fg)' }}">
-      {{ "%+.2f"|format(expected_return.expected_return_pct) }}%
+    <div class="value" style="color: {{ 'var(--good)' if expected_pnl.expected_return_pct > 0 else 'var(--bad)' if expected_pnl.expected_return_pct < 0 else 'var(--fg)' }}">
+      {{ "%+.4f"|format(expected_pnl.expected_return_pct) }}%
     </div>
-    <div class="sub">Expected PnL {{ "%+.2f"|format(expected_return.total_expected_pnl) }} USDC on {{ "%.2f"|format(expected_return.total_cost_basis) }} USDC</div>
+    <div class="sub">{{ expected_pnl.trade_count }} filled trades | ${{ "%.2f"|format(expected_pnl.total_cost_basis) }} deployed</div>
+    <div class="sub">Requires gross_edge in trade notes (available after latest deploy).</div>
+  </div>
+  <div class="card">
+    <div class="label">Sharpe ratio (annualised)</div>
+    <div class="value">{{ sharpe.sharpe if sharpe.sharpe is not none else '—' }}</div>
+    <div class="sub">{{ sharpe.days_of_data }} day{{ '' if sharpe.days_of_data == 1 else 's' }} of data</div>
   </div>
 </div>
 
@@ -64,11 +71,12 @@
 </div>
 
 <div class="panel">
-  <h2>Cumulative expected PnL (USDC)</h2>
-  {% if expected_return.series %}
+  <h2>Cumulative notional deployed (USDC)</h2>
+  <p class="sub">Note: this is capital deployed, not profit. True PnL requires market resolution.</p>
+  {% if cumulative_notional %}
     <canvas id="pnlChart" height="160"></canvas>
   {% else %}
-    <div class="empty">No filled trades with expected-return data yet.</div>
+    <div class="empty">No filled paper trades yet.</div>
   {% endif %}
 </div>
 
@@ -127,25 +135,18 @@
     },
     options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }
   });
-  {% if expected_return.series %}
+  {% if cumulative_notional %}
   new Chart(document.getElementById('pnlChart'), {
     type: 'line',
     data: {
-      labels: {{ expected_return.series | map(attribute='hour_bucket') | list | tojson }},
+      labels: {{ cumulative_notional | map(attribute='hour_bucket') | list | tojson }},
       datasets: [{
-        label: 'Cumulative expected PnL (USDC)',
-        data: {{ expected_return.series | map(attribute='cumulative_expected_pnl') | list | tojson }},
+        label: 'Cumulative notional deployed (USDC)',
+        data: {{ cumulative_notional | map(attribute='cumulative_notional') | list | tojson }},
         borderColor: '#3fb950',
         backgroundColor: 'rgba(63,185,80,0.15)',
         tension: 0.25,
         fill: true,
-      }, {
-        label: 'Break-even',
-        data: {{ expected_return.series | map(attribute='reference_zero') | list | tojson }},
-        borderColor: '#8b949e',
-        borderDash: [6, 4],
-        pointRadius: 0,
-        fill: false,
       }]
     },
     options: { plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true } } }

@@ -710,12 +710,12 @@ POSITIONS_SCHEMA_V1 = pa.schema([
     pa.field("entry_price", pa.string()),
     pa.field("size", pa.string()),
     pa.field("notional_usdc", pa.string()),
-    pa.field("source_relationship_id", pa.string()),
+    pa.field("gross_edge", pa.string()),
+    pa.field("relationship_id", pa.string()),
+    pa.field("relationship_type", pa.string()),
     pa.field("notes", pa.string()),
     pa.field("status", pa.string()),
-    pa.field("close_ts_ms", pa.int64()),  # nullable
-    pa.field("close_price", pa.string()),  # nullable
-    pa.field("realised_pnl", pa.string()),  # nullable
     pa.field("schema_version", pa.int32()),
+    pa.field("ingested_ts_ms", pa.int64()),
 ])
 ALL_SCHEMAS["positions"] = POSITIONS_SCHEMA_V1

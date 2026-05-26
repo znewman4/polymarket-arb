@@ -28,7 +28,7 @@ class ArbMatch:
     poly: PolyMarketEntry
     similarity: float
     arb_gap: float   # = 1.0 - (lim_yes + poly_yes); positive = opportunity
-    status: str      # ARB_OPPORTUNITY | OVER_ROUND | EFFICIENT
+    status: str      # Set by compute_arb(), never match_markets(): ARB_OPPORTUNITY | OVER_ROUND | EFFICIENT
 
 
 @dataclass(frozen=True)

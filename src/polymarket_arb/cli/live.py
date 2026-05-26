@@ -367,22 +367,32 @@ def _order_intents_from_candidate(
         OrderIntent(
             id=f"{candidate.candidate_id}:a",
             strategy_id=strategy_id,
+            market_id=rel.market_id_a,
             token_id=candidate.token_id_a,
             side="buy",
             price=price_a,
             size=_RELATIONSHIP_ORDER_SIZE,
             limit_price=None,
-            detail={"gross_edge": str(candidate.gross_edge)},
+            detail={
+                "gross_edge": str(candidate.gross_edge),
+                "relationship_id": rel.relationship_id,
+                "relationship_type": rel.relationship_type,
+            },
         ),
         OrderIntent(
             id=f"{candidate.candidate_id}:b",
             strategy_id=strategy_id,
+            market_id=rel.market_id_b,
             token_id=candidate.token_id_b,
             side="buy",
             price=price_b,
             size=_RELATIONSHIP_ORDER_SIZE,
             limit_price=None,
-            detail={"gross_edge": str(candidate.gross_edge)},
+            detail={
+                "gross_edge": str(candidate.gross_edge),
+                "relationship_id": rel.relationship_id,
+                "relationship_type": rel.relationship_type,
+            },
         ),
     ]
 

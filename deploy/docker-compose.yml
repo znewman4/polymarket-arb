@@ -51,7 +51,7 @@ services:
       - -c
       - |
         while true; do
-          python -m polymarket_arb.cli maintenance compact-lake --older-than-days 0
+          python -m polymarket_arb.cli maintenance compact-lake --older-than-days 0 --min-files 5
           python -m polymarket_arb.cli fetch-markets --all --max-pages 50
           python -m polymarket_arb.cli snapshot-candidate-tokens --limit 3000
           python -m polymarket_arb.cli snapshot-active-markets --limit 500

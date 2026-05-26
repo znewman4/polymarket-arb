@@ -57,7 +57,14 @@ def test_paper_mode_simulated_fill_writes_orders_log(settings, tmp_data_root) ->
     _seed_book(tmp_data_root, "tok-a", [(0.51, 40.0), (0.53, 60.0)])
     client = OrderClient(s)
     result = client.place_order(
-        _intent(size=80.0, detail={"gross_edge": "0.05"}),
+        _intent(
+            size=80.0,
+            detail={
+                "gross_edge": "0.05",
+                "relationship_id": "rel-a",
+                "relationship_type": "nested_a_implies_b",
+            },
+        ),
         market_id="market-a",
         source_relationship_id="rel-a",
         notes="signal notes",
@@ -81,13 +88,16 @@ def test_paper_mode_simulated_fill_writes_orders_log(settings, tmp_data_root) ->
     assert len(positions) == 1
     position = positions[0]
     key = f"market-atok-astrict_research{result.ts_ms}".encode()
-    assert position.position_id == hashlib.sha256(key).hexdigest()
+    assert position.position_id == hashlib.sha256(key).hexdigest()[:16]
     assert Decimal(position.entry_price) == Decimal("0.52")
     assert Decimal(position.size) == Decimal("80")
     assert Decimal(position.notional_usdc) == Decimal("41.60")
-    assert position.source_relationship_id == "rel-a"
+    assert position.gross_edge == "0.05"
+    assert position.relationship_id == "rel-a"
+    assert position.relationship_type == "nested_a_implies_b"
     assert position.notes == "signal notes"
     assert position.status == "open"
+    assert position.ingested_ts_ms == result.ts_ms
 
 
 def test_paper_mode_no_book_falls_through_with_audit(settings, tmp_data_root) -> None:

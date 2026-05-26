@@ -405,21 +405,25 @@ class OrderClient:
             from loguru import logger
             logger.exception("orders_log append failed for intent_id={}", intent.id)
 
-        if orders_log_written and status == "paper_filled":
+        if orders_log_written and status == "paper_filled" and avg_fill_price is not None:
             position_key = f"{row.market_id}{row.token_id}{row.strategy_id}{row.ts_ms}"
             position = PositionRow(
-                position_id=hashlib.sha256(position_key.encode("utf-8")).hexdigest(),
+                position_id=hashlib.sha256(position_key.encode("utf-8")).hexdigest()[:16],
                 strategy_id=row.strategy_id,
                 market_id=row.market_id,
                 token_id=row.token_id,
                 side=row.side,
                 open_ts_ms=row.ts_ms,
-                entry_price=row.avg_fill_price or "",
+                entry_price=str(avg_fill_price),
                 size=row.filled_size,
                 notional_usdc=row.notional_usdc,
-                source_relationship_id=row.source_relationship_id,
+                gross_edge=str(intent.detail.get("gross_edge", "")),
+                relationship_id=str(intent.detail.get("relationship_id", "")),
+                relationship_type=str(intent.detail.get("relationship_type", "")),
                 notes=row.notes,
                 status="open",
+                schema_version=1,
+                ingested_ts_ms=row.ts_ms,
             )
             try:
                 self._positions_repo.append(position)

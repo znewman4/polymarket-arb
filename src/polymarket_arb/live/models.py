@@ -95,10 +95,10 @@ class PositionRow:
     entry_price: str
     size: str
     notional_usdc: str
-    source_relationship_id: str
+    gross_edge: str
+    relationship_id: str
+    relationship_type: str
     notes: str
     status: str
-    close_ts_ms: int | None = None
-    close_price: str | None = None
-    realised_pnl: str | None = None
     schema_version: int = 1
+    ingested_ts_ms: int = 0

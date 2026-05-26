@@ -9,15 +9,15 @@
     <div class="value">{{ data.summary.trades }}</div>
   </div>
   <div class="card">
-    <div class="label">Total PnL (USDC)</div>
-    <div class="value">{{ "%.2f"|format(data.summary.total_pnl) }}</div>
+    <div class="label">Total Notional (USDC)</div>
+    <div class="value">{{ "%.2f"|format(data.summary.total_notional) }}</div>
   </div>
   <div class="card">
     <div class="label">Avg trade size</div>
     <div class="value">{{ "%.2f"|format(data.summary.avg_size) }}</div>
   </div>
   <div class="card">
-    <div class="label">Best single trade</div>
+    <div class="label">Largest single trade</div>
     <div class="value">{{ "%.2f"|format(data.summary.best) }}</div>
   </div>
 </div>
@@ -36,7 +36,7 @@
         <th>Market</th>
         <th>Side</th>
         <th style="text-align:right">Notional</th>
-        <th style="text-align:right">Running PnL</th>
+        <th style="text-align:right">Cumulative Notional (USDC)</th>
         <th>Notes</th>
       </tr>
     </thead>
@@ -48,7 +48,7 @@
         <td>{{ r.question or r.market_id }}</td>
         <td>{{ r.side }}</td>
         <td style="text-align:right" class="mono">{{ r.notional_usdc }}</td>
-        <td style="text-align:right" class="mono">{{ "%.2f"|format(r.running_pnl or 0) }}</td>
+        <td style="text-align:right" class="mono">{{ "%.2f"|format(r.cumulative_notional or 0) }}</td>
         <td>{{ r.notes }}</td>
       </tr>
       {% endfor %}

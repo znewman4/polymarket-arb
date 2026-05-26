@@ -140,7 +140,7 @@ def match_markets(
                 poly=best_poly,
                 similarity=round(best_score, 4),
                 arb_gap=arb_gap,
-                status="",
+                status="PENDING",
             ))
 
     logger.info("arb_scanner: {} matched pairs (threshold={})", len(matches), threshold)

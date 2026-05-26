@@ -243,9 +243,9 @@ VIEW_DEFINITIONS = {
         "CREATE OR REPLACE VIEW open_positions_latest AS "
         "SELECT * EXCLUDE rn FROM ("
         "  SELECT *, row_number() OVER (PARTITION BY position_id "
-        "    ORDER BY COALESCE(close_ts_ms, open_ts_ms) DESC, status DESC) AS rn "
+        "    ORDER BY COALESCE(ingested_ts_ms, open_ts_ms) DESC, open_ts_ms DESC) AS rn "
         "  FROM read_parquet('{root}/normalised/positions/dt=*/*.parquet', "
-        "  hive_partitioning=true)"
+        "  hive_partitioning=true, union_by_name=true)"
         ") WHERE rn = 1 AND status = 'open'"
     ),
     "backtest_metrics_all": (

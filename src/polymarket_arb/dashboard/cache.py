@@ -52,8 +52,10 @@ class DashboardCache:
             "market_coverage": lambda: self._qs.market_coverage(),
             "relationship_type_breakdown": lambda: self._qs.relationship_type_breakdown(),
             "markets_with_most_relationships": lambda: self._qs.markets_with_most_relationships(),
-            "expected_return": lambda: self._qs.cumulative_expected_return_by_hour(),
+            "cumulative_notional": lambda: self._qs.cumulative_notional_by_hour(),
+            "expected_pnl": lambda: self._qs.expected_pnl_stats(),
             "sharpe_stats": lambda: self._qs.sharpe_ratio_stats(),
+            "open_positions": lambda: self._qs.open_positions_with_mtm(),
         }
         fresh: dict[str, Any] = {}
         for key, fn in methods.items():

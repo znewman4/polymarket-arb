@@ -125,7 +125,16 @@ def run_agent_loop(
             stats.intents_emitted += len(intents)
 
             for intent in intents:
-                result = client.place_order(intent)
+                result = client.place_order(
+                    intent,
+                    strategy_id=intent.strategy_id,
+                    market_id=intent.market_id,
+                    source_relationship_id=intent.detail.get("relationship_id", ""),
+                    notes=(
+                        f"gross_edge={intent.detail.get('gross_edge', '')} "
+                        f"rel_type={intent.detail.get('relationship_type', '')}"
+                    ),
+                )
                 _record_result(stats, result)
 
             stats.iterations += 1

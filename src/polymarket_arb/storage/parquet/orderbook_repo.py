@@ -50,8 +50,11 @@ class ParquetOrderbookRepository:
         )
         return len(rows)
 
-    def _glob_recent(self, days: int = 2) -> str | None:
-        """Return a DuckDB list literal for populated recent UTC partitions."""
+    def _glob(self) -> str:
+        return str(self._root / "normalised" / _TABLE / "dt=*" / "*.parquet")
+
+    def _glob_recent(self, days: int = 2) -> str:
+        """Return populated recent UTC partition globs for DuckDB reads."""
         base = self._root / "normalised" / _TABLE
         today = datetime.now(timezone.utc).date()
         paths: list[str] = []
@@ -61,20 +64,24 @@ class ParquetOrderbookRepository:
             if partition.is_dir() and any(partition.glob("*.parquet")):
                 paths.append(str(partition / "*.parquet"))
         if not paths:
-            return None
+            return f"'{self._glob()}'"
+        if len(paths) == 1:
+            return f"'{paths[0]}'"
         return "['" + "', '".join(paths) + "']"
 
     def _has_data(self) -> bool:
-        return self._glob_recent(days=1) is not None
+        today = datetime.now(timezone.utc).date().isoformat()
+        partition = self._root / "normalised" / _TABLE / f"dt={today}"
+        return partition.is_dir() and any(partition.glob("*.parquet"))
 
     def latest_book(self, token_id: str) -> OrderbookSnapshot | None:
         return self.latest_books_bulk([token_id]).get(token_id)
 
     def latest_books_bulk(self, token_ids: list[str]) -> dict[str, OrderbookSnapshot]:
         wanted = list(dict.fromkeys(token_ids))
-        glob = self._glob_recent(days=2)
-        if not wanted or glob is None:
+        if not wanted:
             return {}
+        glob = self._glob_recent(days=2)
 
         sql = (
             "WITH wanted AS (SELECT unnest([" + ", ".join(f"'{tid}'" for tid in wanted) + "]) AS token_id),"
@@ -91,6 +98,8 @@ class ParquetOrderbookRepository:
             try:
                 cur = con.execute(sql)
             except duckdb.IOException as exc:
+                if "No files found" in str(exc):
+                    return {}
                 if "No such file" not in str(exc):
                     raise
                 time.sleep(0.5)
