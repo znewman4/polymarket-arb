@@ -133,6 +133,8 @@ def match_markets(
                 best_poly = p
         if best_poly is not None and best_score >= threshold:
             arb_gap = round(1.0 - (lim.yes_price + best_poly.yes_price), 6)
+            if arb_gap > 0.30:
+                continue  # almost certainly a false positive (price mismatch, not real arb)
             status = _arb_status(arb_gap, tolerance=0.02)
             matches.append(ArbMatch(
                 limitless=lim,
