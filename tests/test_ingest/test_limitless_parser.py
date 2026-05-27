@@ -130,3 +130,43 @@ def test_prices_exactly_100_boundary_ok():
     result = parse_limitless_market(raw)
     assert result is not None
     assert abs(result.yes_price - 0.999) < 1e-9
+
+
+# ─── token IDs ───────────────────────────────────────────────────────────────
+
+
+def test_token_ids_populated_from_tokens_field(sample_markets):
+    raw = sample_markets[1]  # eth-above-3000-oct1, has tokens.yes/no
+    result = parse_limitless_market(raw)
+    assert result is not None
+    assert result.token_id_yes == "33333333333333333333333333333333333333333333333333333333333333333"
+    assert result.token_id_no == "44444444444444444444444444444444444444444444444444444444444444444"
+
+
+def test_token_ids_empty_string_when_tokens_absent():
+    raw = {
+        "slug": "no-tokens",
+        "title": "No tokens field",
+        "address": "0xTEST",
+        "marketType": "single",
+        "prices": [0.6, 0.4],
+    }
+    result = parse_limitless_market(raw)
+    assert result is not None
+    assert result.token_id_yes == ""
+    assert result.token_id_no == ""
+
+
+def test_token_ids_empty_string_when_tokens_is_none():
+    raw = {
+        "slug": "null-tokens",
+        "title": "Null tokens",
+        "address": "0xTEST",
+        "marketType": "single",
+        "prices": [0.5, 0.5],
+        "tokens": None,
+    }
+    result = parse_limitless_market(raw)
+    assert result is not None
+    assert result.token_id_yes == ""
+    assert result.token_id_no == ""

@@ -67,9 +67,15 @@ def parse_limitless_market(raw: dict) -> LimitlessMarketEntry | None:
     if not (0.0 < yes_price < 1.0):
         return None
 
+    tokens = raw.get("tokens") or {}
+    token_id_yes = str(tokens.get("yes", ""))
+    token_id_no = str(tokens.get("no", ""))
+
     return LimitlessMarketEntry(
         slug=slug,
         title=title,
         yes_price=yes_price,
         address=address,
+        token_id_yes=token_id_yes,
+        token_id_no=token_id_no,
     )

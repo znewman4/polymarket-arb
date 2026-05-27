@@ -11,6 +11,8 @@ class LimitlessMarketEntry:
     title: str
     yes_price: float   # 0.0-1.0
     address: str       # EVM contract address, required for live order placement
+    token_id_yes: str = ""  # CLOB token ID for YES outcome (numeric string from tokens.yes)
+    token_id_no: str = ""   # CLOB token ID for NO outcome (numeric string from tokens.no)
 
 
 @dataclass(frozen=True)

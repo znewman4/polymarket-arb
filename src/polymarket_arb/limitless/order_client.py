@@ -3,21 +3,27 @@
 Mirrors the safety structure of live/order_client.py:
   1. Kill switch check
   2. paper_mode branch → simulate fill, no network call
-  3. Live: sign + POST /orders
+  3. Live: resolve owner_id, sign + POST /orders
 
 In paper mode, no credentials are needed and no network is touched.
-In live mode, key_id + key_secret must be provided (loaded from AWS Secrets
-Manager by the CLI).
+In live mode, key_id + key_secret + wallet_address must be provided (loaded
+from AWS Secrets Manager by the CLI).
 
-NOTE: The live order request format (field names, endpoint path) is based on
-Limitless API docs as of 2026-05.  Verify against the latest docs at
-https://docs.limitless.exchange/ before flipping paper_mode off.
+Order body format (per Limitless TypeScript SDK, verified 2026-05):
+  tokenId     — YES or NO token ID from market.token_id_yes / token_id_no
+  price       — decimal string
+  size        — decimal string (USDC notional)
+  side        — "BUY" (always buying a position in our arb strategy)
+  orderType   — "GTC" (Good Till Cancelled)
+  marketSlug  — market slug
+  ownerId     — numeric profile ID, fetched once from GET /profiles/{wallet}
+
+Reference: https://docs.limitless.exchange/developers/authentication
 """
 
 from __future__ import annotations
 
 import json
-import time
 import uuid
 from pathlib import Path
 from typing import Any
@@ -30,10 +36,7 @@ from .models import LimitlessMarketEntry, LimitlessOrderResult
 from .signing import sign_request
 
 _ORDERS_PATH = "/orders"
-
-
-def _now_ms() -> int:
-    return int(time.time() * 1000)
+_PROFILES_PATH = "/profiles"
 
 
 class LimitlessOrderClient:
@@ -52,6 +55,7 @@ class LimitlessOrderClient:
         paper_mode: bool = True,
         key_id: str | None = None,
         key_secret: str | None = None,
+        wallet_address: str | None = None,
     ) -> None:
         self._host = limitless_host.rstrip("/")
         self._http = http
@@ -59,6 +63,8 @@ class LimitlessOrderClient:
         self._paper_mode = paper_mode
         self._key_id = key_id
         self._key_secret = key_secret
+        self._wallet_address = wallet_address
+        self._owner_id: int | None = None  # cached after first fetch
 
     async def place_order(
         self,
@@ -119,6 +125,48 @@ class LimitlessOrderClient:
             error=None,
         )
 
+    async def _get_owner_id(self) -> int | None:
+        """Return the numeric Limitless profile ID for our wallet, fetching once.
+
+        Calls GET /profiles/{wallet_address} with HMAC auth and caches the
+        result.  Returns None if wallet_address is not configured or the fetch
+        fails, which will cause the order to be rejected with a clear error.
+        """
+        if self._owner_id is not None:
+            return self._owner_id
+
+        if not self._wallet_address:
+            logger.warning("limitless: wallet_address not configured; cannot resolve owner_id")
+            return None
+
+        if not self._key_id or not self._key_secret:
+            logger.warning("limitless: credentials not configured; cannot resolve owner_id")
+            return None
+
+        path = f"{_PROFILES_PATH}/{self._wallet_address}"
+        auth_headers = sign_request(
+            key_id=self._key_id,
+            key_secret=self._key_secret,
+            method="GET",
+            path=path,
+            body="",
+        )
+        try:
+            resp = await self._http.request_json(
+                "GET",
+                f"{self._host}{path}",
+                headers=auth_headers,
+            )
+            if isinstance(resp, dict) and "id" in resp:
+                self._owner_id = int(resp["id"])
+                logger.info("limitless: resolved owner_id={}", self._owner_id)
+                return self._owner_id
+            logger.error("limitless: profile response missing 'id' field: {!r}", resp)
+            return None
+        except HttpError as exc:
+            logger.error("limitless: failed to fetch owner_id from {}: {}", path, exc)
+            return None
+
     async def _live_submit(
         self,
         *,
@@ -138,12 +186,38 @@ class LimitlessOrderClient:
                 error="limitless credentials not configured",
             )
 
+        owner_id = await self._get_owner_id()
+        if owner_id is None:
+            return LimitlessOrderResult(
+                status="failed",
+                order_id=None,
+                side=side,
+                price=price,
+                size_usdc=size_usdc,
+                market_slug=market.slug,
+                error="could not resolve owner_id (wallet_address not configured or profile fetch failed)",
+            )
+
+        token_id = market.token_id_yes if side == "YES" else market.token_id_no
+        if not token_id:
+            return LimitlessOrderResult(
+                status="failed",
+                order_id=None,
+                side=side,
+                price=price,
+                size_usdc=size_usdc,
+                market_slug=market.slug,
+                error=f"token_id_{side.lower()} not populated on market {market.slug!r}",
+            )
+
         body_dict: dict[str, Any] = {
-            "marketAddress": market.address,
-            "side": "BUY",
-            "outcome": side,
-            "amount": str(round(size_usdc, 6)),
+            "tokenId": token_id,
             "price": str(round(price, 6)),
+            "size": str(round(size_usdc, 6)),
+            "side": "BUY",
+            "orderType": "GTC",
+            "marketSlug": market.slug,
+            "ownerId": owner_id,
         }
         body_str = json.dumps(body_dict, separators=(",", ":"), sort_keys=True)
         auth_headers = sign_request(
@@ -163,7 +237,13 @@ class LimitlessOrderClient:
             )
             order_id = None
             if isinstance(resp, dict):
-                order_id = resp.get("orderId") or resp.get("id") or resp.get("order_id")
+                order = resp.get("order") or {}
+                order_id = (
+                    order.get("id")
+                    or resp.get("orderId")
+                    or resp.get("id")
+                    or resp.get("order_id")
+                )
             logger.info(
                 "limitless live submit: {} {} @ {:.4f} ({}) order_id={}",
                 side, size_usdc, price, market.slug, order_id,
