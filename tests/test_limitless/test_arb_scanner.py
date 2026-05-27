@@ -2,10 +2,19 @@
 
 from __future__ import annotations
 
+from decimal import Decimal
+from types import SimpleNamespace
+
 import pytest
 
-from polymarket_arb.limitless.arb_scanner import _arb_status, compute_arb, match_markets
-from polymarket_arb.limitless.models import LimitlessMarketEntry
+from polymarket_arb.limitless.arb_scanner import (
+    _arb_status,
+    _fetch_live_poly_best_ask,
+    compute_arb,
+    execute_arb,
+    match_markets,
+)
+from polymarket_arb.limitless.models import ArbMatch, LimitlessMarketEntry, LimitlessOrderResult
 
 
 def _lim(slug: str, yes_price: float) -> LimitlessMarketEntry:
@@ -28,6 +37,45 @@ def _poly(question: str, yes_price: float, condition_id: str = "0xPOLY") -> dict
             {"token_id": "tok_no", "outcome": "No"},
         ],
     }
+
+
+def _match() -> ArbMatch:
+    matched = match_markets(
+        [_lim("btc-above-65k", yes_price=0.40)],
+        [_poly("Will btc-above-65k happen?", yes_price=0.45)],
+        threshold=0.0,
+    )[0]
+    return ArbMatch(
+        limitless=matched.limitless,
+        poly=matched.poly,
+        similarity=1.0,
+        arb_gap=0.15,
+        status="ARB_OPPORTUNITY",
+    )
+
+
+class _LimOrderClient:
+    async def place_order(self, market, *, side: str, size_usdc: float):
+        return LimitlessOrderResult(
+            status="paper_filled",
+            order_id="lim-order",
+            side=side,
+            price=market.yes_price,
+            size_usdc=size_usdc,
+            market_slug=market.slug,
+            error=None,
+        )
+
+
+class _PolyOrderClient:
+    def __init__(self) -> None:
+        self.intent = None
+        self.kwargs = None
+
+    def place_order(self, intent, **kwargs):
+        self.intent = intent
+        self.kwargs = kwargs
+        return SimpleNamespace(status="paper_filled")
 
 
 # ─── _arb_status ─────────────────────────────────────────────────────────────
@@ -207,3 +255,81 @@ def test_poly_missing_tokens_still_matches():
     assert len(matches) == 1
     assert matches[0].poly.token_id_yes == ""
     assert matches[0].poly.token_id_no == ""
+
+
+# ─── live execution quote ─────────────────────────────────────────────────────
+
+
+@pytest.mark.asyncio
+async def test_fetch_live_poly_best_ask_returns_float_when_api_has_asks(monkeypatch):
+    class _Response:
+        def raise_for_status(self) -> None:
+            return None
+
+        def json(self) -> dict:
+            return {"asks": [{"price": "0.57", "size": "100"}]}
+
+    class _Client:
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *args):
+            return None
+
+        async def get(self, url: str, *, params: dict):
+            assert url == "https://clob.polymarket.com/book"
+            assert params == {"token_id": "tok_no"}
+            return _Response()
+
+    monkeypatch.setattr("httpx.AsyncClient", lambda timeout: _Client())
+
+    assert await _fetch_live_poly_best_ask("tok_no") == 0.57
+
+
+@pytest.mark.asyncio
+async def test_execute_arb_uses_live_price_when_book_available(monkeypatch):
+    async def _live_ask(token_id: str) -> float:
+        assert token_id == "tok_no"
+        return 0.57
+
+    monkeypatch.setattr(
+        "polymarket_arb.limitless.arb_scanner._fetch_live_poly_best_ask",
+        _live_ask,
+    )
+    poly_client = _PolyOrderClient()
+
+    await execute_arb(
+        _match(),
+        lim_client=_LimOrderClient(),
+        poly_client=poly_client,
+        stake_usdc=1.0,
+        min_net_edge=0.02,
+    )
+
+    assert poly_client.intent.price == Decimal("0.57")
+    assert poly_client.intent.market_id == "0xPOLY"
+    assert poly_client.kwargs["preflight_book"] == {"best_ask": 0.57}
+
+
+@pytest.mark.asyncio
+async def test_execute_arb_falls_back_when_live_book_unavailable(monkeypatch):
+    async def _no_live_ask(token_id: str) -> None:
+        assert token_id == "tok_no"
+        return None
+
+    monkeypatch.setattr(
+        "polymarket_arb.limitless.arb_scanner._fetch_live_poly_best_ask",
+        _no_live_ask,
+    )
+    poly_client = _PolyOrderClient()
+
+    await execute_arb(
+        _match(),
+        lim_client=_LimOrderClient(),
+        poly_client=poly_client,
+        stake_usdc=1.0,
+        min_net_edge=0.02,
+    )
+
+    assert poly_client.intent.price == Decimal("0.55")
+    assert poly_client.kwargs["preflight_book"] is None

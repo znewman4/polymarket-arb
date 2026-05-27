@@ -212,6 +212,10 @@ class LimitlessOrderClient:
             )
 
         if not market.address:
+            logger.warning(
+                "limitless live submit rejected: exchange_address missing for {}",
+                market.slug,
+            )
             return LimitlessOrderResult(
                 status="failed", order_id=None, side=side, price=price,
                 size_usdc=size_usdc, market_slug=market.slug,

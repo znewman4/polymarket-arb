@@ -25,7 +25,7 @@ import hashlib
 import json
 import time
 import uuid
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from typing import TYPE_CHECKING
 
@@ -33,6 +33,7 @@ from ..backtest.execution_sim import simulate_buy_from_orderbook
 from ..compliance.trade_gate import OrdersForbidden, raise_if_orders_disallowed
 from ..monitoring import kill_switch
 from ..risk.models import OrderIntent
+from ..storage.base import OrderbookLevel, OrderbookSnapshot
 from ..storage.parquet.orderbook_repo import ParquetOrderbookRepository
 from ..storage.parquet.orders_log_repo import ParquetOrdersLogRepository
 from ..storage.parquet.positions_repo import ParquetPositionsRepository
@@ -50,6 +51,18 @@ if TYPE_CHECKING:
 
 def _now_ms() -> int:
     return int(time.time() * 1000)
+
+
+def _best_ask_from_preflight_book(preflight_book: dict | None) -> Decimal | None:
+    if preflight_book is None:
+        return None
+    try:
+        best_ask = Decimal(str(preflight_book.get("best_ask")))
+    except (InvalidOperation, TypeError, ValueError):
+        return None
+    if not best_ask.is_finite() or not Decimal("0") < best_ask <= Decimal("1"):
+        return None
+    return best_ask
 
 
 class OrderClient:
@@ -81,6 +94,7 @@ class OrderClient:
         source_hypothesis_id: str = "",
         preflight_token_id: str | None = None,
         preflight_passed: bool = True,
+        preflight_book: dict | None = None,
         notes: str = "",
     ) -> OrderResult:
         """Place an order (paper or live).  Always returns an OrderResult and
@@ -99,6 +113,11 @@ class OrderClient:
         ks_active = kill_switch.is_active(self._settings.killswitch_path)
         orders_allowed = self._settings.orders_allowed
         paper_mode = self._settings.paper_mode
+
+        live_best_ask = _best_ask_from_preflight_book(preflight_book)
+        if live_best_ask is not None:
+            preflight_passed = True
+            preflight_token_id = intent.token_id
 
         # ── Gate 0: caller-supplied preflight verdict ────────────────────────
         if not preflight_passed:
@@ -168,6 +187,7 @@ class OrderClient:
                 orders_allowed=orders_allowed,
                 preflight_passed=preflight_passed,
                 preflight_token_id=preflight_token_id,
+                live_best_ask=live_best_ask,
                 notes=notes,
             )
 
@@ -346,9 +366,24 @@ class OrderClient:
         orders_allowed: bool,
         preflight_passed: bool,
         preflight_token_id: str | None,
+        live_best_ask: Decimal | None,
         notes: str,
     ) -> OrderResult:
-        book = self._orderbook_repo.latest_book(intent.token_id)
+        if live_best_ask is not None:
+            book = OrderbookSnapshot(
+                token_id=intent.token_id,
+                condition_id=None,
+                market_slug=None,
+                timestamp_ms=ts,
+                bids=[],
+                asks=[OrderbookLevel(price=live_best_ask, size=intent.size)],
+                book_hash=None,
+                source="live_preflight",
+                schema_version=1,
+                ingested_ts_ms=ts,
+            )
+        else:
+            book = self._orderbook_repo.latest_book(intent.token_id)
         if book is None:
             return self._record_and_return(
                 intent=intent,

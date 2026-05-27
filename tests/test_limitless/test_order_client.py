@@ -287,13 +287,20 @@ async def test_live_submit_fails_if_token_id_missing():
 
 @pytest.mark.asyncio
 async def test_live_submit_fails_if_exchange_address_missing():
-    with patch("polymarket_arb.limitless.order_client.build_signed_order"):
+    with (
+        patch("polymarket_arb.limitless.order_client.build_signed_order"),
+        patch("polymarket_arb.limitless.order_client.logger") as mock_logger,
+    ):
         client = _make_client()
         market = _make_market(address="")
         result = await client.place_order(market, side="YES", size_usdc=10.0)
 
     assert result.status == "failed"
     assert "exchange_address" in result.error
+    mock_logger.warning.assert_called_once_with(
+        "limitless live submit rejected: exchange_address missing for {}",
+        market.slug,
+    )
 
 
 @pytest.mark.asyncio

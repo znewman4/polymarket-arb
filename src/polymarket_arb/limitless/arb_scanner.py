@@ -204,6 +204,26 @@ def _arb_status(arb_gap: float, tolerance: float) -> str:
     return "EFFICIENT"
 
 
+async def _fetch_live_poly_best_ask(token_id: str) -> float | None:
+    """Fetch best ask price from Polymarket CLOB API directly."""
+    import httpx
+
+    try:
+        async with httpx.AsyncClient(timeout=5.0) as client:
+            response = await client.get(
+                "https://clob.polymarket.com/book",
+                params={"token_id": token_id},
+            )
+            response.raise_for_status()
+            data = response.json()
+            asks = data.get("asks", [])
+            if asks:
+                return float(asks[0]["price"])
+    except Exception as exc:
+        logger.warning("failed to fetch live poly book for {}: {}", token_id, exc)
+    return None
+
+
 async def execute_arb(
     match: ArbMatch,
     *,
@@ -237,12 +257,22 @@ async def execute_arb(
         )
         return dummy_lim, None
 
+    live_ask = await _fetch_live_poly_best_ask(match.poly.token_id_no)
+    if live_ask is None:
+        logger.warning("execute_arb: no live poly book for {}", match.limitless.slug)
+        live_price = Decimal(str(round(1.0 - match.poly.yes_price, 6)))
+        preflight_book = None
+    else:
+        live_price = Decimal(str(round(live_ask, 6)))
+        preflight_book = {"best_ask": float(live_price)}
+
     intent = OrderIntent(
         id=uuid.uuid4().hex,
         strategy_id="limitless_arb",
         token_id=match.poly.token_id_no,
+        market_id=match.poly.condition_id,
         side="buy",
-        price=Decimal(str(round(1.0 - match.poly.yes_price, 6))),
+        price=live_price,
         size=Decimal(str(round(stake_usdc, 6))),
     )
 
@@ -253,6 +283,7 @@ async def execute_arb(
             intent,
             strategy_id="limitless_arb",
             market_id=match.poly.condition_id,
+            preflight_book=preflight_book,
             notes=f"limitless_arb pair: {match.limitless.slug} | arb_gap={match.arb_gap:.4f}",
         ),
     )

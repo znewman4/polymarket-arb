@@ -93,6 +93,12 @@ def test_docker_compose_yaml_parses_and_declares_safe_defaults() -> None:
     agent_cmd = services["agent"]["command"]
     assert "live" in agent_cmd and "agent" in agent_cmd
 
+    # Limitless arb lets either execution leg be made live explicitly and starts small.
+    limitless_env_str = "\n".join(services["limitless-arb"]["environment"])
+    limitless_cmd = "\n".join(services["limitless-arb"]["command"])
+    assert "POLYMARKET_ARB_PAPER_MODE=${POLYMARKET_ARB_PAPER_MODE:-true}" in limitless_env_str
+    assert '--stake-usdc "${POLYMARKET_ARB_LIM_STAKE_USDC:-1}"' in limitless_cmd
+
 
 @pytest.mark.parametrize(
     "unit_name,exec_substr",

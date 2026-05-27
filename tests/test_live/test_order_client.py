@@ -112,6 +112,20 @@ def test_paper_mode_no_book_falls_through_with_audit(settings, tmp_data_root) ->
     assert list(ParquetPositionsRepository(tmp_data_root).iter_recent()) == []
 
 
+def test_live_preflight_quote_fills_without_recorded_book(settings, tmp_data_root) -> None:
+    s = settings.model_copy(update={"paper_mode": True})
+    client = OrderClient(s)
+    result = client.place_order(
+        _intent(size=1.0, price=0.57),
+        preflight_book={"best_ask": 0.57},
+    )
+
+    assert result.status == "paper_filled"
+    assert result.avg_fill_price == Decimal("0.57")
+    assert result.preflight_passed is True
+    assert result.preflight_token_id == "tok-a"
+
+
 def test_kill_switch_blocks_paper_order(settings, tmp_data_root) -> None:
     s = settings.model_copy(update={"paper_mode": True})
     # Drop the killswitch file in place.

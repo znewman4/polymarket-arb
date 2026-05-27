@@ -6,7 +6,7 @@
 #                           have fresh data to read.
 #   agent                 — runs ``polymarket-arb live agent`` indefinitely in paper-mode.
 #   limitless-arb         — runs ``polymarket-arb limitless scan-arb --execute`` every 5
-#                           minutes, paper-trading the Limitless x Polymarket arb strategy
+#                           minutes; both legs default to paper mode with a $1 stake
 #                           and logging both legs to data/normalised/orders_log/.
 #   relationship-miner    — runs ``polymarket-arb relationships validate`` every 6 hours,
 #                           scoring and promoting relationship candidates in the lake.
@@ -121,11 +121,11 @@ services:
       - ../.env
     environment:
       - POLYMARKET_ARB_ENV=${POLYMARKET_ARB_ENV:-prod}
-      # Paper mode on by default. Set POLYMARKET_ARB_LIMITLESS_PAPER_MODE=false
-      # in .env (alongside real Limitless API creds) to go live.
+      # Both legs default to paper mode. Set each paper-mode variable false in
+      # .env (alongside real API credentials) to go live.
       - POLYMARKET_ARB_LIMITLESS_PAPER_MODE=${POLYMARKET_ARB_LIMITLESS_PAPER_MODE:-true}
       - POLYMARKET_ARB_ORDERS_ALLOWED=${POLYMARKET_ARB_ORDERS_ALLOWED:-false}
-      - POLYMARKET_ARB_PAPER_MODE=true
+      - POLYMARKET_ARB_PAPER_MODE=${POLYMARKET_ARB_PAPER_MODE:-true}
     volumes:
       - ../data:/app/data
       - ../configs:/app/configs:ro
@@ -137,7 +137,7 @@ services:
         while true; do
           python -m polymarket_arb.cli limitless scan-arb \
             --execute \
-            --stake-usdc "${POLYMARKET_ARB_LIM_STAKE_USDC:-50}" \
+            --stake-usdc "${POLYMARKET_ARB_LIM_STAKE_USDC:-1}" \
             --tolerance "${POLYMARKET_ARB_LIM_TOLERANCE:-0.05}" \
             --threshold "${POLYMARKET_ARB_LIM_THRESHOLD:-0.75}" \
             --min-net-edge "${POLYMARKET_ARB_LIM_MIN_NET_EDGE:-0.02}"

@@ -71,6 +71,19 @@ def test_result_has_correct_address(sample_markets):
     assert result.address == "0xAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA1"
 
 
+def test_result_address_falls_back_to_venue_exchange():
+    raw = {
+        "slug": "clob-no-top-level-address",
+        "title": "CLOB address fallback",
+        "venue": {"exchange": "0xEXCHANGE"},
+        "marketType": "single",
+        "prices": [0.5, 0.5],
+    }
+    result = parse_limitless_market(raw)
+    assert result is not None
+    assert result.address == "0xEXCHANGE"
+
+
 def test_percentage_to_fraction_conversion():
     raw = {
         "slug": "test",
