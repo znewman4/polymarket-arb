@@ -149,6 +149,8 @@ class LimitlessOrderClient:
         auth_headers = sign_request(
             key_id=self._key_id,
             key_secret=self._key_secret,
+            method="POST",
+            path=_ORDERS_PATH,
             body=body_str,
         )
 
