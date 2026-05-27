@@ -1,10 +1,10 @@
-"""Tests for LimitlessOrderClient — body format, owner_id caching, error paths."""
+"""Tests for LimitlessOrderClient — EIP-712 payload, owner_id caching, error paths."""
 
 from __future__ import annotations
 
 import json
 from pathlib import Path
-from unittest.mock import AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
@@ -12,6 +12,9 @@ from polymarket_arb.limitless.models import LimitlessMarketEntry
 from polymarket_arb.limitless.order_client import LimitlessOrderClient
 
 _KILL_SWITCH = Path("/tmp/test-limitless-ks")
+# Deterministic test key (safe secp256k1 scalar, never used on mainnet)
+_TEST_PRIVATE_KEY = "0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d"
+_TEST_WALLET = "0x70997970C51812dc3A010C7d01b50e0d17dc79C8"
 
 
 def _make_client(
@@ -19,7 +22,8 @@ def _make_client(
     paper_mode: bool = False,
     key_id: str = "kid",
     key_secret: str = "a77aUecRr6g1cwK6vmRRaLCVnxkj/cfl4STLg7Q0yBM=",
-    wallet_address: str | None = "0xWALLET",
+    wallet_address: str | None = _TEST_WALLET,
+    private_key: str | None = _TEST_PRIVATE_KEY,
     http: MagicMock | None = None,
 ) -> LimitlessOrderClient:
     if http is None:
@@ -32,6 +36,7 @@ def _make_client(
         key_id=key_id,
         key_secret=key_secret,
         wallet_address=wallet_address,
+        private_key=private_key,
     )
 
 
@@ -41,12 +46,13 @@ def _make_market(
     yes_price: float = 0.6,
     token_id_yes: str = "111000111",
     token_id_no: str = "222000222",
+    address: str = "0xEXCHANGE",
 ) -> LimitlessMarketEntry:
     return LimitlessMarketEntry(
         slug=slug,
         title="Will BTC be above $65k?",
         yes_price=yes_price,
-        address="0xADDR",
+        address=address,
         token_id_yes=token_id_yes,
         token_id_no=token_id_no,
     )
@@ -66,7 +72,7 @@ async def test_paper_fill_returns_paper_filled_status():
 
 
 @pytest.mark.asyncio
-async def test_paper_fill_no_side_yes_price():
+async def test_paper_fill_no_side_uses_no_price():
     client = _make_client(paper_mode=True)
     market = _make_market(yes_price=0.4)
     result = await client.place_order(market, side="NO", size_usdc=5.0)
@@ -142,32 +148,59 @@ async def test_get_owner_id_returns_none_if_id_missing_in_response():
     assert await client._get_owner_id() is None
 
 
-# ─── live submit body format ──────────────────────────────────────────────────
+# ─── live submit — payload structure ─────────────────────────────────────────
+
+
+_FAKE_SIGNED_ORDER = {"salt": 123, "signature": "0xdeadbeef", "tokenId": "111000111"}
 
 
 @pytest.mark.asyncio
-async def test_live_submit_sends_correct_body_fields():
+async def test_live_submit_correct_outer_payload():
+    """POST /orders body must be {order, orderType, marketSlug, ownerId}."""
     http = MagicMock()
-    profile_resp = {"id": 7}
-    order_resp = {"order": {"id": "ord-abc"}}
-    http.request_json = AsyncMock(side_effect=[profile_resp, order_resp])
+    http.request_json = AsyncMock(side_effect=[{"id": 7}, {"order": {"id": "ord-1"}}])
 
-    client = _make_client(http=http)
-    market = _make_market(yes_price=0.55, token_id_yes="TOK_YES_123")
-    result = await client.place_order(market, side="YES", size_usdc=25.0)
+    with patch(
+        "polymarket_arb.limitless.order_client.build_signed_order",
+        return_value=_FAKE_SIGNED_ORDER,
+    ):
+        client = _make_client(http=http)
+        result = await client.place_order(_make_market(), side="YES", size_usdc=25.0)
 
     assert result.status == "live_submitted"
-    # Second call is the POST /orders
     post_call = http.request_json.call_args_list[1]
     body = json.loads(post_call[1]["content"])
 
-    assert body["tokenId"] == "TOK_YES_123"
-    assert body["price"] == "0.55"
-    assert body["size"] == "25.0"
-    assert body["side"] == "BUY"
+    assert body["order"] == _FAKE_SIGNED_ORDER
     assert body["orderType"] == "GTC"
     assert body["marketSlug"] == "btc-65k"
     assert body["ownerId"] == 7
+
+
+@pytest.mark.asyncio
+async def test_live_submit_passes_correct_args_to_build_signed_order():
+    """build_signed_order is called with the right token_id, price, side."""
+    http = MagicMock()
+    http.request_json = AsyncMock(side_effect=[{"id": 3}, {"order": {"id": "x"}}])
+
+    with patch(
+        "polymarket_arb.limitless.order_client.build_signed_order",
+        return_value=_FAKE_SIGNED_ORDER,
+    ) as mock_build:
+        client = _make_client(http=http)
+        market = _make_market(yes_price=0.55, token_id_yes="TOK_YES_999")
+        await client.place_order(market, side="YES", size_usdc=20.0)
+
+    mock_build.assert_called_once()
+    kwargs = mock_build.call_args.kwargs
+    assert kwargs["token_id"] == "TOK_YES_999"
+    assert abs(kwargs["price"] - 0.55) < 1e-9
+    assert kwargs["size_usdc"] == 20.0
+    assert kwargs["side"] == "BUY"
+    assert kwargs["order_type"] == "GTC"
+    assert kwargs["exchange_address"] == "0xEXCHANGE"
+    assert kwargs["private_key"] == _TEST_PRIVATE_KEY
+    assert kwargs["wallet_address"] == _TEST_WALLET
 
 
 @pytest.mark.asyncio
@@ -175,28 +208,21 @@ async def test_live_submit_uses_no_token_for_no_side():
     http = MagicMock()
     http.request_json = AsyncMock(side_effect=[{"id": 1}, {"order": {"id": "x"}}])
 
-    client = _make_client(http=http)
-    market = _make_market(yes_price=0.4, token_id_no="TOK_NO_456")
-    result = await client.place_order(market, side="NO", size_usdc=10.0)
+    with patch(
+        "polymarket_arb.limitless.order_client.build_signed_order",
+        return_value=_FAKE_SIGNED_ORDER,
+    ) as mock_build:
+        client = _make_client(http=http)
+        market = _make_market(yes_price=0.4, token_id_no="TOK_NO_456")
+        result = await client.place_order(market, side="NO", size_usdc=10.0)
 
     assert result.status == "live_submitted"
-    post_call = http.request_json.call_args_list[1]
-    body = json.loads(post_call[1]["content"])
-    assert body["tokenId"] == "TOK_NO_456"
-    assert body["price"] == "0.6"  # 1 - 0.4
+    kwargs = mock_build.call_args.kwargs
+    assert kwargs["token_id"] == "TOK_NO_456"
+    assert abs(kwargs["price"] - 0.6) < 1e-9  # 1 - 0.4
 
 
-@pytest.mark.asyncio
-async def test_live_submit_fails_if_token_id_missing():
-    http = MagicMock()
-    http.request_json = AsyncMock(return_value={"id": 1})
-
-    client = _make_client(http=http)
-    market = _make_market(token_id_yes="", token_id_no="")
-    result = await client.place_order(market, side="YES", size_usdc=10.0)
-
-    assert result.status == "failed"
-    assert "token_id_yes" in result.error
+# ─── live submit — preflight failures ────────────────────────────────────────
 
 
 @pytest.mark.asyncio
@@ -208,8 +234,47 @@ async def test_live_submit_fails_if_credentials_missing():
 
 
 @pytest.mark.asyncio
-async def test_live_submit_fails_if_owner_id_unresolvable():
-    client = _make_client(wallet_address=None)
+async def test_live_submit_fails_if_private_key_missing():
+    client = _make_client(private_key=None)
     result = await client.place_order(_make_market(), side="YES", size_usdc=10.0)
     assert result.status == "failed"
-    assert "owner_id" in result.error
+    assert "private_key" in result.error
+
+
+@pytest.mark.asyncio
+async def test_live_submit_fails_if_wallet_address_missing():
+    client = _make_client(wallet_address=None, private_key=_TEST_PRIVATE_KEY)
+    result = await client.place_order(_make_market(), side="YES", size_usdc=10.0)
+    assert result.status == "failed"
+    assert "wallet_address" in result.error
+
+
+@pytest.mark.asyncio
+async def test_live_submit_fails_if_token_id_missing():
+    with patch("polymarket_arb.limitless.order_client.build_signed_order"):
+        client = _make_client()
+        market = _make_market(token_id_yes="", token_id_no="")
+        result = await client.place_order(market, side="YES", size_usdc=10.0)
+
+    assert result.status == "failed"
+    assert "token_id_yes" in result.error
+
+
+@pytest.mark.asyncio
+async def test_live_submit_fails_if_exchange_address_missing():
+    with patch("polymarket_arb.limitless.order_client.build_signed_order"):
+        client = _make_client()
+        market = _make_market(address="")
+        result = await client.place_order(market, side="YES", size_usdc=10.0)
+
+    assert result.status == "failed"
+    assert "exchange_address" in result.error
+
+
+@pytest.mark.asyncio
+async def test_live_submit_fails_if_owner_id_unresolvable():
+    # wallet_address=None means _get_owner_id() returns None
+    client = _make_client(wallet_address=None, private_key=_TEST_PRIVATE_KEY)
+    result = await client.place_order(_make_market(), side="YES", size_usdc=10.0)
+    assert result.status == "failed"
+    assert "wallet_address" in result.error

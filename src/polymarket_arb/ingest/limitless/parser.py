@@ -32,7 +32,9 @@ def parse_limitless_market(raw: dict) -> LimitlessMarketEntry | None:
     """Parse a binary market, accepting decimal or percentage price payloads."""
     slug = raw.get("slug", "")
     title = raw.get("title", "") or raw.get("question", "")
-    address = raw.get("address", "")
+    # For CLOB markets the top-level "address" field is absent; fall back to
+    # venue.exchange which is the EIP-712 verifying contract address.
+    address = raw.get("address", "") or (raw.get("venue") or {}).get("exchange", "")
 
     if raw.get("marketType", "single") != "single":
         return None

@@ -188,8 +188,9 @@ async def _run_execute(
     key_id: str | None = None
     key_secret: str | None = None
     wallet_address: str | None = None
+    private_key: str | None = None
     if not paper_mode:
-        key_id, key_secret, wallet_address = _load_limitless_creds()
+        key_id, key_secret, wallet_address, private_key = _load_limitless_creds()
 
     orders_log_repo = ParquetOrdersLogRepository(settings.data_root)
     poly_client = OrderClient(settings)
@@ -204,6 +205,7 @@ async def _run_execute(
             key_id=key_id,
             key_secret=key_secret,
             wallet_address=wallet_address,
+            private_key=private_key,
         )
 
         for match in opps:
@@ -224,15 +226,16 @@ async def _run_execute(
     return results
 
 
-def _load_limitless_creds() -> tuple[str, str, str]:
-    """Load Limitless API credentials and derive wallet address.
+def _load_limitless_creds() -> tuple[str, str, str, str]:
+    """Load Limitless API credentials, private key, and derive wallet address.
 
     Returns:
-        (key_id, key_secret, wallet_address)
+        (key_id, key_secret, wallet_address, private_key)
 
     key_id and key_secret come from the ``limitless/api_credentials`` secret.
-    wallet_address is derived from the private key in the ``polygon`` secret
-    via ``eth_account.Account.from_key(private_key).address``.
+    private_key and wallet_address come from ``polymarket/api_credentials``
+    (private_key field); wallet_address is derived via
+    ``eth_account.Account.from_key(private_key).address``.
     """
     try:
         import boto3  # type: ignore[import-untyped]
@@ -251,16 +254,18 @@ def _load_limitless_creds() -> tuple[str, str, str]:
 
     try:
         from eth_account import Account  # type: ignore[import-untyped]
-        poly_secret = json.loads(sm.get_secret_value(SecretId="polymarket/api_credentials")["SecretString"])
+        poly_secret = json.loads(
+            sm.get_secret_value(SecretId="polymarket/api_credentials")["SecretString"]
+        )
         private_key: str = poly_secret["private_key"]
         wallet_address: str = Account.from_key(private_key).address
     except Exception as exc:
         raise click.ClickException(
-            f"Failed to derive wallet address from polygon secret: {exc}\n"
-            "Ensure the 'polygon' secret in Secrets Manager contains the raw private key."
+            f"Failed to derive wallet address from polymarket/api_credentials: {exc}\n"
+            "Ensure the 'polymarket/api_credentials' secret contains a 'private_key' field."
         ) from exc
 
-    return key_id, key_secret, wallet_address
+    return key_id, key_secret, wallet_address, private_key
 
 
 # ─── display ─────────────────────────────────────────────────────────────────

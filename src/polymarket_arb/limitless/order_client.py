@@ -3,22 +3,25 @@
 Mirrors the safety structure of live/order_client.py:
   1. Kill switch check
   2. paper_mode branch → simulate fill, no network call
-  3. Live: resolve owner_id, sign + POST /orders
+  3. Live: resolve owner_id → EIP-712 sign order → POST /orders
 
 In paper mode, no credentials are needed and no network is touched.
-In live mode, key_id + key_secret + wallet_address must be provided (loaded
-from AWS Secrets Manager by the CLI).
+In live mode, key_id, key_secret, wallet_address, and private_key must all be
+provided (loaded from AWS Secrets Manager by the CLI).
 
-Order body format (per Limitless TypeScript SDK, verified 2026-05):
-  tokenId     — YES or NO token ID from market.token_id_yes / token_id_no
-  price       — decimal string
-  size        — decimal string (USDC notional)
-  side        — "BUY" (always buying a position in our arb strategy)
-  orderType   — "GTC" (Good Till Cancelled)
-  marketSlug  — market slug
-  ownerId     — numeric profile ID, fetched once from GET /profiles/{wallet}
+POST /orders payload (per Limitless TypeScript SDK + API, verified 2026-05):
+  {
+    "order":       <eip712_signed_order>,   # from eip712.build_signed_order()
+    "orderType":   "GTC",
+    "marketSlug":  "<slug>",
+    "ownerId":     <int>,
+  }
 
-Reference: https://docs.limitless.exchange/developers/authentication
+The EIP-712 signed order fields are documented in limitless/eip712.py.
+
+References:
+  https://docs.limitless.exchange/developers/authentication
+  https://github.com/guzus/dr-manhattan/blob/main/dr_manhattan/exchanges/limitless.py
 """
 
 from __future__ import annotations
@@ -26,12 +29,12 @@ from __future__ import annotations
 import json
 import uuid
 from pathlib import Path
-from typing import Any
 
 from loguru import logger
 
 from ..http.client import AsyncHttpClient, HttpError
 from ..monitoring import kill_switch
+from .eip712 import build_signed_order
 from .models import LimitlessMarketEntry, LimitlessOrderResult
 from .signing import sign_request
 
@@ -43,7 +46,7 @@ class LimitlessOrderClient:
     """Place orders on Limitless Exchange.
 
     Paper mode simulates a fill at the current market mid-price with no
-    network contact.  Live mode POSTs a signed order to the Limitless API.
+    network contact.  Live mode builds an EIP-712 signed order and POSTs it.
     """
 
     def __init__(
@@ -56,6 +59,7 @@ class LimitlessOrderClient:
         key_id: str | None = None,
         key_secret: str | None = None,
         wallet_address: str | None = None,
+        private_key: str | None = None,
     ) -> None:
         self._host = limitless_host.rstrip("/")
         self._http = http
@@ -64,6 +68,7 @@ class LimitlessOrderClient:
         self._key_id = key_id
         self._key_secret = key_secret
         self._wallet_address = wallet_address
+        self._private_key = private_key
         self._owner_id: int | None = None  # cached after first fetch
 
     async def place_order(
@@ -128,9 +133,10 @@ class LimitlessOrderClient:
     async def _get_owner_id(self) -> int | None:
         """Return the numeric Limitless profile ID for our wallet, fetching once.
 
-        Calls GET /profiles/{wallet_address} with HMAC auth and caches the
-        result.  Returns None if wallet_address is not configured or the fetch
-        fails, which will cause the order to be rejected with a clear error.
+        Calls GET /profiles/public/{wallet_address} with HMAC auth and caches
+        the result.  Returns None if wallet_address is not configured or the
+        fetch fails, which will cause the order to be rejected with a clear
+        error.
         """
         if self._owner_id is not None:
             return self._owner_id
@@ -175,51 +181,70 @@ class LimitlessOrderClient:
         price: float,
         size_usdc: float,
     ) -> LimitlessOrderResult:
+        # --- preflight checks ---
         if not self._key_id or not self._key_secret:
             return LimitlessOrderResult(
-                status="failed",
-                order_id=None,
-                side=side,
-                price=price,
-                size_usdc=size_usdc,
-                market_slug=market.slug,
+                status="failed", order_id=None, side=side, price=price,
+                size_usdc=size_usdc, market_slug=market.slug,
                 error="limitless credentials not configured",
             )
 
-        owner_id = await self._get_owner_id()
-        if owner_id is None:
+        if not self._private_key:
             return LimitlessOrderResult(
-                status="failed",
-                order_id=None,
-                side=side,
-                price=price,
-                size_usdc=size_usdc,
-                market_slug=market.slug,
-                error="could not resolve owner_id (wallet_address not configured or profile fetch failed)",
+                status="failed", order_id=None, side=side, price=price,
+                size_usdc=size_usdc, market_slug=market.slug,
+                error="private_key not configured for EIP-712 signing",
+            )
+
+        if not self._wallet_address:
+            return LimitlessOrderResult(
+                status="failed", order_id=None, side=side, price=price,
+                size_usdc=size_usdc, market_slug=market.slug,
+                error="wallet_address not configured",
             )
 
         token_id = market.token_id_yes if side == "YES" else market.token_id_no
         if not token_id:
             return LimitlessOrderResult(
-                status="failed",
-                order_id=None,
-                side=side,
-                price=price,
-                size_usdc=size_usdc,
-                market_slug=market.slug,
+                status="failed", order_id=None, side=side, price=price,
+                size_usdc=size_usdc, market_slug=market.slug,
                 error=f"token_id_{side.lower()} not populated on market {market.slug!r}",
             )
 
-        body_dict: dict[str, Any] = {
-            "tokenId": token_id,
-            "price": str(round(price, 6)),
-            "size": str(round(size_usdc, 6)),
-            "side": "BUY",
-            "orderType": "GTC",
-            "marketSlug": market.slug,
-            "ownerId": owner_id,
+        if not market.address:
+            return LimitlessOrderResult(
+                status="failed", order_id=None, side=side, price=price,
+                size_usdc=size_usdc, market_slug=market.slug,
+                error=f"exchange_address (market.address) not populated for {market.slug!r}",
+            )
+
+        owner_id = await self._get_owner_id()
+        if owner_id is None:
+            return LimitlessOrderResult(
+                status="failed", order_id=None, side=side, price=price,
+                size_usdc=size_usdc, market_slug=market.slug,
+                error="could not resolve owner_id (wallet_address not configured or profile fetch failed)",
+            )
+
+        # --- build EIP-712 signed order ---
+        signed_order = build_signed_order(
+            token_id=token_id,
+            price=price,
+            size_usdc=size_usdc,
+            side="BUY",
+            order_type="GTC",
+            exchange_address=market.address,
+            private_key=self._private_key,
+            wallet_address=self._wallet_address,
+        )
+
+        payload = {
+            "order":       signed_order,
+            "orderType":   "GTC",
+            "marketSlug":  market.slug,
+            "ownerId":     owner_id,
         }
-        body_str = json.dumps(body_dict, separators=(",", ":"), sort_keys=True)
+        body_str = json.dumps(payload, separators=(",", ":"), sort_keys=True)
         auth_headers = sign_request(
             key_id=self._key_id,
             key_secret=self._key_secret,
@@ -237,9 +262,9 @@ class LimitlessOrderClient:
             )
             order_id = None
             if isinstance(resp, dict):
-                order = resp.get("order") or {}
+                order_data = resp.get("order") or {}
                 order_id = (
-                    order.get("id")
+                    order_data.get("id")
                     or resp.get("orderId")
                     or resp.get("id")
                     or resp.get("order_id")
