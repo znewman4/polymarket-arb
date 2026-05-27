@@ -25,10 +25,12 @@ async def test_transient_then_success(settings):
 async def test_non_transient_no_retry(settings):
     async with AsyncHttpClient(settings.http) as http, respx.mock() as router:
         route = router.get("https://gamma-api.example/markets").mock(
-            return_value=Response(404)
+            return_value=Response(404, text="market not found")
         )
-        with pytest.raises(HttpError):
+        with pytest.raises(HttpError) as exc_info:
             await http.get_json("https://gamma-api.example/markets")
+        assert exc_info.value.response is not None
+        assert exc_info.value.response.text == "market not found"
         assert route.call_count == 1
 
 

@@ -8,6 +8,7 @@ from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
 
+from polymarket_arb.http.client import HttpError
 from polymarket_arb.limitless.models import LimitlessMarketEntry
 from polymarket_arb.limitless.order_client import LimitlessOrderClient
 
@@ -130,8 +131,6 @@ async def test_get_owner_id_returns_none_if_no_wallet():
 
 @pytest.mark.asyncio
 async def test_get_owner_id_returns_none_on_http_error():
-    from polymarket_arb.http.client import HttpError
-
     http = MagicMock()
     http.request_json = AsyncMock(side_effect=HttpError(401, "Unauthorized"))
     client = _make_client(http=http)
@@ -220,6 +219,32 @@ async def test_live_submit_uses_no_token_for_no_side():
     kwargs = mock_build.call_args.kwargs
     assert kwargs["token_id"] == "TOK_NO_456"
     assert abs(kwargs["price"] - 0.6) < 1e-9  # 1 - 0.4
+
+
+@pytest.mark.asyncio
+async def test_live_submit_logs_http_response_body_on_failure():
+    http = MagicMock()
+    response = MagicMock(text='{"error":"invalid signature"}')
+    error = HttpError("401 Unauthorized", response=response)
+    http.request_json = AsyncMock(side_effect=[{"id": 1}, error])
+
+    with (
+        patch(
+            "polymarket_arb.limitless.order_client.build_signed_order",
+            return_value=_FAKE_SIGNED_ORDER,
+        ),
+        patch("polymarket_arb.limitless.order_client.logger") as mock_logger,
+    ):
+        client = _make_client(http=http)
+        result = await client.place_order(_make_market(), side="YES", size_usdc=10.0)
+
+    assert result.status == "failed"
+    mock_logger.error.assert_called_once_with(
+        "limitless live submit failed for {}: {} | response: {}",
+        "btc-65k",
+        error,
+        '{"error":"invalid signature"}',
+    )
 
 
 # ─── live submit — preflight failures ────────────────────────────────────────

@@ -283,7 +283,13 @@ class LimitlessOrderClient:
                 error=None,
             )
         except HttpError as exc:
-            logger.error("limitless live submit failed for {}: {}", market.slug, exc)
+            response_body = getattr(getattr(exc, "response", None), "text", "")
+            logger.error(
+                "limitless live submit failed for {}: {} | response: {}",
+                market.slug,
+                exc,
+                response_body,
+            )
             return LimitlessOrderResult(
                 status="failed",
                 order_id=None,

@@ -31,6 +31,10 @@ from .rate_limit import RateLimiter
 class HttpError(RuntimeError):
     """Non-transient HTTP failure: caller should not retry."""
 
+    def __init__(self, *args: object, response: httpx.Response | None = None) -> None:
+        super().__init__(*args)
+        self.response = response
+
 
 class TransientError(RuntimeError):
     """Transient HTTP/network failure: retried internally; raised only after
@@ -112,7 +116,7 @@ class AsyncHttpClient:
                         kind = _classify(exc)
                         if kind is TransientError:
                             raise TransientError(str(exc)) from exc
-                        raise HttpError(str(exc)) from exc
+                        raise HttpError(str(exc), response=getattr(exc, "response", None)) from exc
                     return resp.json()
         except RetryError as exc:  # pragma: no cover — `reraise=True` should make this unreachable
             raise TransientError("retry budget exhausted") from exc
