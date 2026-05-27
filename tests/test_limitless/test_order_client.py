@@ -100,7 +100,7 @@ async def test_get_owner_id_fetches_from_profile_endpoint():
     http.request_json.assert_called_once()
     call_args = http.request_json.call_args
     assert call_args[0][0] == "GET"
-    assert "/profiles/0xABC" in call_args[0][1]
+    assert "/profiles/public/0xABC" in call_args[0][1]
 
 
 @pytest.mark.asyncio

@@ -143,7 +143,7 @@ class LimitlessOrderClient:
             logger.warning("limitless: credentials not configured; cannot resolve owner_id")
             return None
 
-        path = f"{_PROFILES_PATH}/{self._wallet_address}"
+        path = f"{_PROFILES_PATH}/public/{self._wallet_address}"
         auth_headers = sign_request(
             key_id=self._key_id,
             key_secret=self._key_secret,
