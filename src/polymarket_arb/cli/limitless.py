@@ -187,8 +187,9 @@ async def _run_execute(
 
     key_id: str | None = None
     key_secret: str | None = None
+    wallet_address: str | None = None
     if not paper_mode:
-        key_id, key_secret = _load_limitless_creds()
+        key_id, key_secret, wallet_address = _load_limitless_creds()
 
     orders_log_repo = ParquetOrdersLogRepository(settings.data_root)
     poly_client = OrderClient(settings)
@@ -202,6 +203,7 @@ async def _run_execute(
             paper_mode=paper_mode,
             key_id=key_id,
             key_secret=key_secret,
+            wallet_address=wallet_address,
         )
 
         for match in opps:
@@ -222,20 +224,43 @@ async def _run_execute(
     return results
 
 
-def _load_limitless_creds() -> tuple[str, str]:
-    """Load Limitless credentials from AWS Secrets Manager."""
+def _load_limitless_creds() -> tuple[str, str, str]:
+    """Load Limitless API credentials and derive wallet address.
+
+    Returns:
+        (key_id, key_secret, wallet_address)
+
+    key_id and key_secret come from the ``limitless/api_credentials`` secret.
+    wallet_address is derived from the private key in the ``polygon`` secret
+    via ``eth_account.Account.from_key(private_key).address``.
+    """
     try:
         import boto3  # type: ignore[import-untyped]
-        client = boto3.client("secretsmanager", region_name="eu-west-1")
-        secret = client.get_secret_value(SecretId="limitless/api_credentials")
-        creds = json.loads(secret["SecretString"])
-        return creds["key_id"], creds["key_secret"]
+        sm = boto3.client("secretsmanager", region_name="eu-west-1")
+
+        lim_secret = sm.get_secret_value(SecretId="limitless/api_credentials")
+        creds = json.loads(lim_secret["SecretString"])
+        key_id: str = creds["key_id"]
+        key_secret: str = creds["key_secret"]
     except Exception as exc:
         raise click.ClickException(
             f"Failed to load limitless/api_credentials from Secrets Manager: {exc}\n"
             "Run: aws secretsmanager create-secret --name limitless/api_credentials "
             "--secret-string '{\"key_id\":\"...\",\"key_secret\":\"...\"}' --region eu-west-1"
         ) from exc
+
+    try:
+        from eth_account import Account  # type: ignore[import-untyped]
+        poly_secret = sm.get_secret_value(SecretId="polygon")
+        private_key: str = json.loads(poly_secret["SecretString"])
+        wallet_address: str = Account.from_key(private_key).address
+    except Exception as exc:
+        raise click.ClickException(
+            f"Failed to derive wallet address from polygon secret: {exc}\n"
+            "Ensure the 'polygon' secret in Secrets Manager contains the raw private key."
+        ) from exc
+
+    return key_id, key_secret, wallet_address
 
 
 # ─── display ─────────────────────────────────────────────────────────────────
