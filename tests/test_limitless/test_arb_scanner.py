@@ -10,6 +10,7 @@ import pytest
 from polymarket_arb.limitless.arb_scanner import (
     _arb_status,
     _fetch_live_poly_best_ask,
+    _poly_from_raw,
     compute_arb,
     execute_arb,
     match_markets,
@@ -243,7 +244,30 @@ def test_poly_token_ids_extracted():
     assert matches[0].poly.token_id_no == "tok_no"
 
 
-def test_poly_missing_tokens_still_matches():
+def test_poly_token_ids_extracted_from_nested_object():
+    raw = _poly("test", yes_price=0.45)
+    raw["tokens"] = {"yes": "nested_yes", "no": "nested_no"}
+
+    entry = _poly_from_raw(raw)
+
+    assert entry is not None
+    assert entry.token_id_yes == "nested_yes"
+    assert entry.token_id_no == "nested_no"
+
+
+def test_poly_token_ids_extracted_from_gamma_clob_token_ids():
+    raw = _poly("test", yes_price=0.45)
+    raw.pop("tokens")
+    raw["clobTokenIds"] = '["gamma_yes", "gamma_no"]'
+
+    entry = _poly_from_raw(raw)
+
+    assert entry is not None
+    assert entry.token_id_yes == "gamma_yes"
+    assert entry.token_id_no == "gamma_no"
+
+
+def test_poly_missing_tokens_still_matches_and_warns(monkeypatch):
     lim = _lim("test", yes_price=0.40)
     raw = {
         "question": "test",
@@ -251,10 +275,43 @@ def test_poly_missing_tokens_still_matches():
         "outcomes": '["Yes","No"]',
         "outcomePrices": '["0.45","0.55"]',
     }
+    warnings = []
+    monkeypatch.setattr(
+        "polymarket_arb.limitless.arb_scanner.logger.warning",
+        lambda *args: warnings.append(args),
+    )
     matches = match_markets([lim], [raw], threshold=0.0)
     assert len(matches) == 1
     assert matches[0].poly.token_id_yes == ""
     assert matches[0].poly.token_id_no == ""
+    assert warnings == [(
+        "poly parser: no token IDs for {}; raw tokens={!r}; raw clobTokenIds={!r}",
+        "0xNOTOK",
+        None,
+        None,
+    )]
+
+
+def test_poly_missing_no_token_debug_logs_raw_tokens(monkeypatch):
+    raw = _poly("test", yes_price=0.45)
+    raw["tokens"] = {"yes": "nested_yes"}
+    debug_logs = []
+    monkeypatch.setattr(
+        "polymarket_arb.limitless.arb_scanner.logger.debug",
+        lambda *args: debug_logs.append(args),
+    )
+
+    entry = _poly_from_raw(raw)
+
+    assert entry is not None
+    assert entry.token_id_yes == "nested_yes"
+    assert entry.token_id_no == ""
+    assert debug_logs == [(
+        "poly parser: NO token ID missing for {}; raw tokens={!r}; raw clobTokenIds={!r}",
+        "0xPOLY",
+        {"yes": "nested_yes"},
+        None,
+    )]
 
 
 # ─── live execution quote ─────────────────────────────────────────────────────

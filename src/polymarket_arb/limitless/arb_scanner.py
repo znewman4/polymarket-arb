@@ -106,8 +106,9 @@ def _poly_from_raw(raw: dict) -> PolyMarketEntry | None:
     if yes_price <= 0.0 or yes_price >= 1.0:
         return None
 
-    # Extract CLOB token IDs from the "tokens" array.
-    tokens = raw.get("tokens", [])
+    # Extract CLOB token IDs from supported raw payload shapes. Gamma currently
+    # exposes stringified clobTokenIds aligned with outcomes.
+    tokens = raw.get("tokens")
     token_id_yes = ""
     token_id_no = ""
     if isinstance(tokens, list):
@@ -119,6 +120,43 @@ def _poly_from_raw(raw: dict) -> PolyMarketEntry | None:
                     token_id_yes = str(tid)
                 elif outcome == "no":
                     token_id_no = str(tid)
+    elif isinstance(tokens, dict):
+        for outcome, tid in tokens.items():
+            if str(outcome).lower() == "yes":
+                token_id_yes = str(tid)
+            elif str(outcome).lower() == "no":
+                token_id_no = str(tid)
+
+    clob_token_ids_raw = raw.get("clobTokenIds", raw.get("clob_token_ids"))
+    if isinstance(clob_token_ids_raw, str):
+        try:
+            clob_token_ids = json.loads(clob_token_ids_raw)
+        except Exception:
+            clob_token_ids = []
+    else:
+        clob_token_ids = clob_token_ids_raw or []
+    if isinstance(clob_token_ids, list):
+        for outcome, tid in zip(outcomes, clob_token_ids, strict=False):
+            if str(outcome).lower() == "yes" and not token_id_yes:
+                token_id_yes = str(tid)
+            elif str(outcome).lower() == "no" and not token_id_no:
+                token_id_no = str(tid)
+
+    if not token_id_no:
+        if not token_id_yes:
+            logger.warning(
+                "poly parser: no token IDs for {}; raw tokens={!r}; raw clobTokenIds={!r}",
+                condition_id,
+                tokens,
+                clob_token_ids_raw,
+            )
+        else:
+            logger.debug(
+                "poly parser: NO token ID missing for {}; raw tokens={!r}; raw clobTokenIds={!r}",
+                condition_id,
+                tokens,
+                clob_token_ids_raw,
+            )
 
     return PolyMarketEntry(
         condition_id=condition_id,
