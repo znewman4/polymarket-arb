@@ -2,7 +2,7 @@
 
 ## Limitless Live Submit Error Diagnostics
 
-### Change - Log API response body on failed live order submission
+### Change - Log API response body on failed live order submision
 
 Changed files:
 

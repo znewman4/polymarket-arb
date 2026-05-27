@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
+from types import SimpleNamespace
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import pytest
@@ -26,10 +27,11 @@ def _make_client(
     wallet_address: str | None = _TEST_WALLET,
     private_key: str | None = _TEST_PRIVATE_KEY,
     http: MagicMock | None = None,
+    collateral_approved: bool = True,
 ) -> LimitlessOrderClient:
     if http is None:
         http = MagicMock()
-    return LimitlessOrderClient(
+    client = LimitlessOrderClient(
         limitless_host="https://api.limitless.exchange",
         http=http,
         kill_switch_path=_KILL_SWITCH,
@@ -39,6 +41,9 @@ def _make_client(
         wallet_address=wallet_address,
         private_key=private_key,
     )
+    if collateral_approved:
+        client._approved.add("0xEXCHANGE")
+    return client
 
 
 def _make_market(
@@ -147,6 +152,64 @@ async def test_get_owner_id_returns_none_if_id_missing_in_response():
     assert await client._get_owner_id() is None
 
 
+# ─── _ensure_collateral_approval ──────────────────────────────────────────────
+
+
+_VALID_EXCHANGE = "0x1111111111111111111111111111111111111111"
+
+
+def test_collateral_approval_uses_existing_allowance_and_caches_address():
+    with patch("polymarket_arb.limitless.order_client.Web3") as mock_web3:
+        mock_web3.to_checksum_address.side_effect = lambda address: address
+        w3 = mock_web3.return_value
+        usdc = w3.eth.contract.return_value
+        usdc.functions.allowance.return_value.call.return_value = 1_000_000
+        client = _make_client(collateral_approved=False)
+
+        client._ensure_collateral_approval(_VALID_EXCHANGE, 1.0)
+        client._ensure_collateral_approval(_VALID_EXCHANGE, 1.0)
+
+    usdc.functions.allowance.assert_called_once_with(_TEST_WALLET, _VALID_EXCHANGE)
+    usdc.functions.approve.assert_not_called()
+    assert _VALID_EXCHANGE in client._approved
+
+
+def test_collateral_approval_sends_max_approval_when_allowance_insufficient():
+    with patch("polymarket_arb.limitless.order_client.Web3") as mock_web3:
+        mock_web3.to_checksum_address.side_effect = lambda address: address
+        mock_web3.to_hex.return_value = "0xapprove"
+        w3 = mock_web3.return_value
+        w3.eth.chain_id = 8453
+        w3.eth.gas_price = 100
+        w3.eth.get_transaction_count.return_value = 4
+        w3.eth.account.sign_transaction.return_value = SimpleNamespace(raw_transaction=b"signed")
+        w3.eth.send_raw_transaction.return_value = b"tx-hash"
+        w3.eth.wait_for_transaction_receipt.return_value = {"status": 1}
+        usdc = w3.eth.contract.return_value
+        usdc.functions.allowance.return_value.call.return_value = 0
+        approve_call = usdc.functions.approve.return_value
+        approve_call.build_transaction.return_value = {"built": True}
+        client = _make_client(collateral_approved=False)
+
+        client._ensure_collateral_approval(_VALID_EXCHANGE, 1.0)
+
+    usdc.functions.approve.assert_called_once_with(_VALID_EXCHANGE, (1 << 256) - 1)
+    approve_call.build_transaction.assert_called_once_with({
+        "from": _TEST_WALLET,
+        "chainId": 8453,
+        "nonce": 4,
+        "gas": 100_000,
+        "gasPrice": 100,
+    })
+    w3.eth.account.sign_transaction.assert_called_once_with(
+        {"built": True},
+        private_key=_TEST_PRIVATE_KEY,
+    )
+    w3.eth.send_raw_transaction.assert_called_once_with(b"signed")
+    w3.eth.wait_for_transaction_receipt.assert_called_once_with(b"tx-hash", timeout=120)
+    assert _VALID_EXCHANGE in client._approved
+
+
 # ─── live submit — payload structure ─────────────────────────────────────────
 
 
@@ -174,6 +237,27 @@ async def test_live_submit_correct_outer_payload():
     assert body["orderType"] == "GTC"
     assert body["marketSlug"] == "btc-65k"
     assert body["ownerId"] == 7
+
+
+@pytest.mark.asyncio
+async def test_live_submit_ensures_collateral_approval_before_signing():
+    http = MagicMock()
+    http.request_json = AsyncMock(side_effect=[{"id": 7}, {"order": {"id": "ord-1"}}])
+    client = _make_client(http=http, collateral_approved=False)
+    market = _make_market(address=_VALID_EXCHANGE)
+
+    with (
+        patch.object(client, "_ensure_collateral_approval") as mock_approval,
+        patch(
+            "polymarket_arb.limitless.order_client.build_signed_order",
+            return_value=_FAKE_SIGNED_ORDER,
+        ) as mock_build,
+    ):
+        result = await client.place_order(market, side="YES", size_usdc=1.0)
+
+    assert result.status == "live_submitted"
+    mock_approval.assert_called_once_with(_VALID_EXCHANGE, 1.0)
+    mock_build.assert_called_once()
 
 
 @pytest.mark.asyncio
@@ -310,3 +394,26 @@ async def test_live_submit_fails_if_owner_id_unresolvable():
     result = await client.place_order(_make_market(), side="YES", size_usdc=10.0)
     assert result.status == "failed"
     assert "wallet_address" in result.error
+
+
+@pytest.mark.asyncio
+async def test_live_submit_fails_when_collateral_approval_fails():
+    http = MagicMock()
+    http.request_json = AsyncMock(return_value={"id": 1})
+    client = _make_client(http=http, collateral_approved=False)
+    market = _make_market(address=_VALID_EXCHANGE)
+
+    with (
+        patch.object(
+            client,
+            "_ensure_collateral_approval",
+            side_effect=RuntimeError("transaction reverted"),
+        ),
+        patch("polymarket_arb.limitless.order_client.build_signed_order") as mock_build,
+    ):
+        result = await client.place_order(market, side="YES", size_usdc=1.0)
+
+    assert result.status == "failed"
+    assert "collateral approval failed: transaction reverted" in result.error
+    mock_build.assert_not_called()
+    assert http.request_json.call_count == 1

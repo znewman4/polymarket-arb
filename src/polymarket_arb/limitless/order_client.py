@@ -26,11 +26,14 @@ References:
 
 from __future__ import annotations
 
+import asyncio
 import json
 import uuid
+from decimal import ROUND_CEILING, Decimal
 from pathlib import Path
 
 from loguru import logger
+from web3 import Web3
 
 from ..http.client import AsyncHttpClient, HttpError
 from ..monitoring import kill_switch
@@ -40,6 +43,32 @@ from .signing import sign_request
 
 _ORDERS_PATH = "/orders"
 _PROFILES_PATH = "/profiles"
+_BASE_MAINNET_RPC_URL = "https://mainnet.base.org"
+_BASE_USDC_ADDRESS = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
+_USDC_SCALE = Decimal("1000000")
+_MAX_UINT256 = (1 << 256) - 1
+_ERC20_APPROVAL_ABI = [
+    {
+        "inputs": [
+            {"name": "owner", "type": "address"},
+            {"name": "spender", "type": "address"},
+        ],
+        "name": "allowance",
+        "outputs": [{"name": "", "type": "uint256"}],
+        "stateMutability": "view",
+        "type": "function",
+    },
+    {
+        "inputs": [
+            {"name": "spender", "type": "address"},
+            {"name": "amount", "type": "uint256"},
+        ],
+        "name": "approve",
+        "outputs": [{"name": "", "type": "bool"}],
+        "stateMutability": "nonpayable",
+        "type": "function",
+    },
+]
 
 
 class LimitlessOrderClient:
@@ -70,6 +99,7 @@ class LimitlessOrderClient:
         self._wallet_address = wallet_address
         self._private_key = private_key
         self._owner_id: int | None = None  # cached after first fetch
+        self._approved: set[str] = set()
 
     async def place_order(
         self,
@@ -173,6 +203,49 @@ class LimitlessOrderClient:
             logger.error("limitless: failed to fetch owner_id from {}: {}", path, exc)
             return None
 
+    def _ensure_collateral_approval(self, exchange_address: str, amount_usdc: float) -> None:
+        """Ensure the exchange may spend sufficient Base USDC for this order."""
+        if exchange_address in self._approved:
+            return
+        if not self._wallet_address or not self._private_key:
+            raise RuntimeError("wallet credentials not configured for collateral approval")
+
+        owner = Web3.to_checksum_address(self._wallet_address)
+        spender = Web3.to_checksum_address(exchange_address)
+        if spender in self._approved:
+            return
+
+        required_allowance = int(
+            (Decimal(str(amount_usdc)) * _USDC_SCALE).to_integral_value(rounding=ROUND_CEILING)
+        )
+        w3 = Web3(Web3.HTTPProvider(_BASE_MAINNET_RPC_URL, request_kwargs={"timeout": 10}))
+        usdc = w3.eth.contract(
+            address=Web3.to_checksum_address(_BASE_USDC_ADDRESS),
+            abi=_ERC20_APPROVAL_ABI,
+        )
+        allowance = int(usdc.functions.allowance(owner, spender).call())
+
+        if allowance < required_allowance:
+            transaction = usdc.functions.approve(spender, _MAX_UINT256).build_transaction({
+                "from": owner,
+                "chainId": w3.eth.chain_id,
+                "nonce": w3.eth.get_transaction_count(owner, "pending"),
+                "gas": 100_000,
+                "gasPrice": w3.eth.gas_price,
+            })
+            signed = w3.eth.account.sign_transaction(transaction, private_key=self._private_key)
+            tx_hash = w3.eth.send_raw_transaction(signed.raw_transaction)
+            receipt = w3.eth.wait_for_transaction_receipt(tx_hash, timeout=120)
+            if int(receipt.get("status", 0)) != 1:
+                raise RuntimeError(f"USDC approve transaction reverted: {w3.to_hex(tx_hash)}")
+            logger.info(
+                "limitless: Base USDC approval confirmed for exchange={} tx_hash={}",
+                spender,
+                w3.to_hex(tx_hash),
+            )
+
+        self._approved.add(spender)
+
     async def _live_submit(
         self,
         *,
@@ -228,6 +301,20 @@ class LimitlessOrderClient:
                 status="failed", order_id=None, side=side, price=price,
                 size_usdc=size_usdc, market_slug=market.slug,
                 error="could not resolve owner_id (wallet_address not configured or profile fetch failed)",
+            )
+
+        try:
+            await asyncio.to_thread(
+                self._ensure_collateral_approval,
+                market.address,
+                size_usdc,
+            )
+        except Exception as exc:
+            logger.exception("limitless collateral approval failed for {}", market.slug)
+            return LimitlessOrderResult(
+                status="failed", order_id=None, side=side, price=price,
+                size_usdc=size_usdc, market_slug=market.slug,
+                error=f"collateral approval failed: {exc}",
             )
 
         # --- build EIP-712 signed order ---
