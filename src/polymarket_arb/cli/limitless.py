@@ -251,8 +251,8 @@ def _load_limitless_creds() -> tuple[str, str, str]:
 
     try:
         from eth_account import Account  # type: ignore[import-untyped]
-        poly_secret = sm.get_secret_value(SecretId="polygon")
-        private_key: str = json.loads(poly_secret["SecretString"])
+        poly_secret = json.loads(sm.get_secret_value(SecretId="polymarket/api_credentials")["SecretString"])
+        private_key: str = poly_secret["private_key"]
         wallet_address: str = Account.from_key(private_key).address
     except Exception as exc:
         raise click.ClickException(
