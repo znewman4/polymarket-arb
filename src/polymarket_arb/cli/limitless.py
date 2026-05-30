@@ -10,6 +10,8 @@ from __future__ import annotations
 import asyncio
 import csv
 import json
+import os
+import re
 import time
 from datetime import datetime
 from pathlib import Path
@@ -22,8 +24,13 @@ from rich.table import Table
 from ..http.client import AsyncHttpClient, HttpError
 from ..ingest.gamma.client import GammaClient
 from ..ingest.limitless.client import LimitlessClient
-from ..limitless.arb_scanner import compute_arb, execute_arb, match_markets
-from ..limitless.models import ArbMatch
+from ..limitless.arb_scanner import (
+    compute_arb,
+    execute_arb,
+    match_markets,
+    scan_and_exit_positions,
+)
+from ..limitless.models import ArbMatch, LimitlessArbPosition
 from ..live.order_client import OrderClient
 from ..settings import Settings
 from ..storage.parquet.orders_log_repo import ParquetOrdersLogRepository
@@ -47,8 +54,10 @@ def limitless_cmd() -> None:
               help="Fuzzy-match minimum score 0-1 for question matching.")
 @click.option("--stake-usdc", type=float, default=50.0, show_default=True,
               help="USDC size per leg when executing.")
-@click.option("--min-net-edge", type=float, default=0.02, show_default=True,
-              help="Minimum arb gap required before executing a trade.")
+@click.option("--min-net-edge", type=float, default=0.05, show_default=True,
+              help="Minimum arb gap required before executing a trade. Default 0.05 "
+                   "covers round-trip fees: Polymarket taker 2%x2 legs = 4% + "
+                   "Limitless ~0.3%x2 = 0.6%, total ~4.6%, leaving ~0.4% margin.")
 @click.option("--execute/--no-execute", default=False, show_default=True,
               help="Place orders on matched opportunities (paper or live).")
 @click.option("--csv/--no-csv", "write_csv", default=True, show_default=True,
@@ -223,7 +232,110 @@ async def _run_execute(
                 f"lim={lim_res.status} poly={poly_status}"
             )
 
+        # Convergence-based early-exit pass: load open positions, check whether
+        # both legs have moved enough since entry to lock in profit now.
+        try:
+            convergence_threshold = float(
+                os.environ.get("POLYMARKET_ARB_CONVERGENCE_THRESHOLD", "0.5"),
+            )
+        except ValueError:
+            convergence_threshold = 0.5
+        open_positions = _load_open_limitless_positions(
+            settings, paper_mode=paper_mode,
+        )
+        exited = await scan_and_exit_positions(
+            open_positions,
+            lim_client=lim_order_client,
+            orders_log_repo=orders_log_repo,
+            convergence_threshold=convergence_threshold,
+            limitless_host=settings.limitless_host,
+        )
+        console.log(
+            f"[cyan]Convergence scan: {len(open_positions)} open position(s), "
+            f"{exited} exited.[/cyan]"
+        )
+
     return results
+
+
+_NOTE_KV_RE = re.compile(r"(\w+)=([^\s]+)")
+
+
+def _parse_notes_kv(notes: str) -> dict[str, str]:
+    """Parse a ``key=value key=value`` notes blob into a dict."""
+    return dict(_NOTE_KV_RE.findall(notes or ""))
+
+
+def _load_open_limitless_positions(
+    settings: Settings, *, paper_mode: bool,
+) -> list[LimitlessArbPosition]:
+    """Reconstruct currently-open limitless_arb positions from orders_log.
+
+    Reads the orders_log parquet table, filters for entry rows (strategy_id
+    'limitless_arb' with status 'paper_filled' in paper mode, or
+    'live_submitted' in live mode), excludes positions that already have a
+    recorded exit (strategy_id 'limitless_arb_exit'), and parses arb_gap, slug,
+    lim_entry, poly_yes_entry out of the notes field via regex.
+    """
+    import duckdb
+
+    lake = settings.data_root / "normalised" / "orders_log"
+    if not lake.exists():
+        return []
+    entry_status = "paper_filled" if paper_mode else "live_submitted"
+    glob = str(lake) + "/dt=*/*.parquet"
+    try:
+        con = duckdb.connect(":memory:")
+        # Pick only the Polymarket leg of each arb pair (side='buy'); it
+        # carries the poly condition_id (market_id) and token_id_no.
+        rows = con.execute(
+            f"""
+            SELECT intent_id, ts_ms, market_id, token_id, notes,
+                   TRY_CAST(notional_usdc AS DOUBLE) AS notional
+            FROM read_parquet('{glob}', hive_partitioning=true)
+            WHERE strategy_id = 'limitless_arb' AND status = '{entry_status}'
+              AND lower(side) = 'buy'
+            ORDER BY ts_ms DESC
+            """,
+        ).fetchall()
+        exited_ids = {
+            r[0] for r in con.execute(
+                f"""
+                SELECT source_relationship_id
+                FROM read_parquet('{glob}', hive_partitioning=true)
+                WHERE strategy_id = 'limitless_arb_exit'
+                """,
+            ).fetchall()
+        }
+    except Exception as exc:
+        console.log(f"[yellow]load_open_positions: query failed: {exc}[/yellow]")
+        return []
+
+    positions: list[LimitlessArbPosition] = []
+    for intent_id, ts_ms, market_id, token_id, notes, notional in rows:
+        kv = _parse_notes_kv(notes or "")
+        try:
+            arb_gap = float(kv["arb_gap"])
+            lim_entry = float(kv["lim_entry"])
+            poly_yes_entry = float(kv["poly_yes_entry"])
+        except (KeyError, ValueError):
+            continue
+        slug = kv.get("slug", "")
+        position_id = f"{slug}|{market_id}|{intent_id}"
+        if position_id in exited_ids:
+            continue
+        positions.append(LimitlessArbPosition(
+            position_id=position_id,
+            limitless_slug=slug,
+            poly_condition_id=str(market_id or ""),
+            poly_token_id_no=str(token_id or ""),
+            lim_entry_price=lim_entry,
+            poly_yes_entry=poly_yes_entry,
+            arb_gap=arb_gap,
+            stake_usdc=float(notional) if notional else 1.0,
+            open_ts_ms=int(ts_ms),
+        ))
+    return positions
 
 
 def _load_limitless_creds() -> tuple[str, str, str, str]:

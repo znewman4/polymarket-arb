@@ -285,10 +285,13 @@ def test_poly_missing_tokens_still_matches_and_warns(monkeypatch):
     assert matches[0].poly.token_id_yes == ""
     assert matches[0].poly.token_id_no == ""
     assert warnings == [(
-        "poly parser: no token IDs for {}; raw tokens={!r}; raw clobTokenIds={!r}",
+        "poly parser: no token IDs for {}; "
+        "tokens type={} sample={}; clobTokenIds type={} sample={}",
         "0xNOTOK",
-        None,
-        None,
+        "NoneType",
+        "None",
+        "NoneType",
+        "None",
     )]
 
 
@@ -307,10 +310,13 @@ def test_poly_missing_no_token_debug_logs_raw_tokens(monkeypatch):
     assert entry.token_id_yes == "nested_yes"
     assert entry.token_id_no == ""
     assert debug_logs == [(
-        "poly parser: NO token ID missing for {}; raw tokens={!r}; raw clobTokenIds={!r}",
+        "poly parser: NO token ID missing for {}; "
+        "tokens type={} sample={}; clobTokenIds type={} sample={}",
         "0xPOLY",
-        {"yes": "nested_yes"},
-        None,
+        "dict",
+        repr({"yes": "nested_yes"}),
+        "NoneType",
+        "None",
     )]
 
 
@@ -390,3 +396,185 @@ async def test_execute_arb_falls_back_when_live_book_unavailable(monkeypatch):
 
     assert poly_client.intent.price == Decimal("0.55")
     assert poly_client.kwargs["preflight_book"] is None
+
+
+# ─── Task 2: tokenID capital-D + clobTokenIds plain list ─────────────────────
+
+
+def test_poly_token_ids_extracted_from_tokenID_capital_D():
+    raw = _poly("test", yes_price=0.45)
+    raw["tokens"] = [
+        {"tokenID": "capD_yes", "outcome": "Yes"},
+        {"tokenID": "capD_no", "outcome": "No"},
+    ]
+
+    entry = _poly_from_raw(raw)
+
+    assert entry is not None
+    assert entry.token_id_yes == "capD_yes"
+    assert entry.token_id_no == "capD_no"
+
+
+def test_poly_token_ids_extracted_from_clob_token_ids_plain_list():
+    raw = _poly("test", yes_price=0.45)
+    raw.pop("tokens")
+    # Plain Python list (not JSON-encoded string).
+    raw["clobTokenIds"] = ["plain_yes", "plain_no"]
+
+    entry = _poly_from_raw(raw)
+
+    assert entry is not None
+    assert entry.token_id_yes == "plain_yes"
+    assert entry.token_id_no == "plain_no"
+
+
+# ─── Task 6: enriched orders_log notes on Poly leg ───────────────────────────
+
+
+@pytest.mark.asyncio
+async def test_execute_arb_notes_contain_all_keys(monkeypatch):
+    async def _live_ask(token_id: str) -> float:
+        return 0.57
+
+    monkeypatch.setattr(
+        "polymarket_arb.limitless.arb_scanner._fetch_live_poly_best_ask",
+        _live_ask,
+    )
+    poly_client = _PolyOrderClient()
+
+    await execute_arb(
+        _match(),
+        lim_client=_LimOrderClient(),
+        poly_client=poly_client,
+        stake_usdc=1.0,
+        min_net_edge=0.02,
+    )
+
+    notes = poly_client.kwargs["notes"]
+    for key in ("arb_gap", "slug", "lim_entry", "poly_yes_entry", "similarity"):
+        assert f"{key}=" in notes, f"missing key {key!r} in notes: {notes!r}"
+
+
+# ─── Task 4: convergence-based early exit ────────────────────────────────────
+
+
+def _make_position(arb_gap: float = 0.10):
+    from polymarket_arb.limitless.models import LimitlessArbPosition
+    return LimitlessArbPosition(
+        position_id="pos-1",
+        limitless_slug="test-slug",
+        poly_condition_id="0xCOND",
+        poly_token_id_no="tok_no",
+        lim_entry_price=0.40,
+        poly_yes_entry=0.50,
+        arb_gap=arb_gap,
+        stake_usdc=10.0,
+        open_ts_ms=1_000_000,
+    )
+
+
+class _CollectingLogRepo:
+    def __init__(self) -> None:
+        self.rows: list = []
+
+    def append(self, row) -> None:
+        self.rows.append(row)
+
+
+class _PaperLimOrderClient:
+    _paper_mode = True
+
+
+@pytest.mark.asyncio
+async def test_scan_and_exit_positions_exits_when_converged(monkeypatch):
+    from polymarket_arb.limitless.arb_scanner import scan_and_exit_positions
+
+    # lim moved 0.40 -> 0.55 (delta=0.15); poly_yes moved 0.50 -> 0.40 (delta=0.10)
+    # arb_gap=0.10, threshold=0.5 => required move=0.05; both exceed.
+    async def _lim_price(slug, limitless_host="x"):
+        return 0.55
+    # _fetch_live_poly_best_ask returns NO ask; current_poly_yes = 1 - 0.60 = 0.40
+    async def _poly_ask(token_id):
+        return 0.60
+
+    monkeypatch.setattr(
+        "polymarket_arb.limitless.arb_scanner._fetch_limitless_current_price",
+        _lim_price,
+    )
+    monkeypatch.setattr(
+        "polymarket_arb.limitless.arb_scanner._fetch_live_poly_best_ask",
+        _poly_ask,
+    )
+
+    repo = _CollectingLogRepo()
+    exited = await scan_and_exit_positions(
+        [_make_position()],
+        lim_client=_PaperLimOrderClient(),
+        orders_log_repo=repo,
+        convergence_threshold=0.5,
+    )
+    assert exited == 1
+    # Two rows logged: limitless exit + polymarket exit placeholder.
+    assert len(repo.rows) == 2
+    statuses = {r.status for r in repo.rows}
+    assert "paper_exit_filled" in statuses
+    assert "exit_not_implemented" in statuses
+
+
+@pytest.mark.asyncio
+async def test_scan_and_exit_positions_holds_when_movement_below_threshold(monkeypatch):
+    from polymarket_arb.limitless.arb_scanner import scan_and_exit_positions
+
+    # Tiny movements — far below arb_gap * threshold.
+    async def _lim_price(slug, limitless_host="x"):
+        return 0.41  # delta=0.01
+    async def _poly_ask(token_id):
+        return 0.51  # poly_yes_current = 0.49, delta=0.01
+
+    monkeypatch.setattr(
+        "polymarket_arb.limitless.arb_scanner._fetch_limitless_current_price",
+        _lim_price,
+    )
+    monkeypatch.setattr(
+        "polymarket_arb.limitless.arb_scanner._fetch_live_poly_best_ask",
+        _poly_ask,
+    )
+
+    repo = _CollectingLogRepo()
+    exited = await scan_and_exit_positions(
+        [_make_position()],
+        lim_client=_PaperLimOrderClient(),
+        orders_log_repo=repo,
+        convergence_threshold=0.5,
+    )
+    assert exited == 0
+    assert repo.rows == []
+
+
+@pytest.mark.asyncio
+async def test_scan_and_exit_positions_skips_when_price_fetch_returns_none(monkeypatch):
+    from polymarket_arb.limitless.arb_scanner import scan_and_exit_positions
+
+    async def _lim_price(slug, limitless_host="x"):
+        return None
+    async def _poly_ask(token_id):
+        return 0.55
+
+    monkeypatch.setattr(
+        "polymarket_arb.limitless.arb_scanner._fetch_limitless_current_price",
+        _lim_price,
+    )
+    monkeypatch.setattr(
+        "polymarket_arb.limitless.arb_scanner._fetch_live_poly_best_ask",
+        _poly_ask,
+    )
+
+    repo = _CollectingLogRepo()
+    exited = await scan_and_exit_positions(
+        [_make_position()],
+        lim_client=_PaperLimOrderClient(),
+        orders_log_repo=repo,
+        convergence_threshold=0.5,
+    )
+    assert exited == 0
+    assert repo.rows == []

@@ -139,6 +139,65 @@ def compact_lake(
     )
 
 
+@maintenance_cmd.command(name="diagnose-relationships")
+@click.option(
+    "--output",
+    type=click.Path(path_type=Path, dir_okay=False),
+    default=None,
+    help="CSV output path. Defaults to data/diagnose_relationships_<date>.csv.",
+)
+@click.pass_context
+def diagnose_relationships(ctx: click.Context, output: Path | None) -> None:
+    """Join orders_log with relationship_candidates and write a CSV summary.
+
+    Groups by relationship type/id/questions/confidence and aggregates the
+    number of signals and average gross edge each relationship has produced.
+    Used to spot which relationship types are actually firing and at what
+    edge — there is currently no other visibility into this.
+    """
+    settings: Settings = ctx.obj["settings"]
+    root = Path(settings.data_root) / "normalised"
+    orders_glob = root / "orders_log" / "dt=*" / "*.parquet"
+    rels_glob = root / "relationship_candidates" / "dt=*" / "*.parquet"
+
+    out = output or (
+        Path(settings.data_root)
+        / f"diagnose_relationships_{date.today().isoformat()}.csv"
+    )
+    out.parent.mkdir(parents=True, exist_ok=True)
+
+    sql = f"""
+        COPY (
+          SELECT
+            r.relationship_type AS relationship_type,
+            r.relationship_id AS relationship_id,
+            r.question_a AS question_a,
+            r.question_b AS question_b,
+            TRY_CAST(r.confidence AS DOUBLE) AS confidence,
+            COUNT(o.intent_id) AS signal_count,
+            ROUND(AVG(TRY_CAST(o.avg_fill_price AS DOUBLE)), 4) AS avg_fill_price,
+            ROUND(AVG(
+              CASE WHEN o.notes LIKE '%gross_edge=%'
+                   THEN TRY_CAST(regexp_extract(o.notes, 'gross_edge=([0-9.\\-]+)', 1) AS DOUBLE)
+              END
+            ), 4) AS avg_gross_edge
+          FROM read_parquet('{orders_glob}', hive_partitioning=true) o
+          LEFT JOIN read_parquet('{rels_glob}', hive_partitioning=true) r
+            ON o.source_relationship_id = r.relationship_id
+          GROUP BY r.relationship_type, r.relationship_id,
+                   r.question_a, r.question_b, r.confidence
+          ORDER BY signal_count DESC
+        ) TO '{out}' (HEADER, DELIMITER ',')
+    """
+    try:
+        con = duckdb.connect(":memory:")
+        con.execute(sql)
+        click.echo(f"wrote {out}")
+    except Exception as exc:
+        click.echo(f"diagnose-relationships failed: {exc}", err=True)
+        raise SystemExit(1) from exc
+
+
 @maintenance_cmd.command(name="test-connectivity")
 @click.pass_context
 def test_connectivity(ctx: click.Context) -> None:

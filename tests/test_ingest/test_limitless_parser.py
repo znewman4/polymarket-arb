@@ -183,3 +183,52 @@ def test_token_ids_empty_string_when_tokens_is_none():
     assert result is not None
     assert result.token_id_yes == ""
     assert result.token_id_no == ""
+
+
+# ─── Task 3: wider address fallback chain ──────────────────────────────────
+
+
+def _binary_market_no_address(**overrides) -> dict:
+    base = {
+        "slug": "test-market",
+        "title": "Test market",
+        "marketType": "single",
+        "prices": [0.5, 0.5],
+    }
+    base.update(overrides)
+    return base
+
+
+def test_address_falls_back_to_venue_address():
+    raw = _binary_market_no_address(venue={"address": "0xVENUE_ADDR"})
+    result = parse_limitless_market(raw)
+    assert result is not None and result.address == "0xVENUE_ADDR"
+
+
+def test_address_falls_back_to_contract_address_camel():
+    raw = _binary_market_no_address(contractAddress="0xCAMEL")
+    result = parse_limitless_market(raw)
+    assert result is not None and result.address == "0xCAMEL"
+
+
+def test_address_falls_back_to_contract_address_snake():
+    raw = _binary_market_no_address(contract_address="0xSNAKE")
+    result = parse_limitless_market(raw)
+    assert result is not None and result.address == "0xSNAKE"
+
+
+def test_address_warns_when_all_fallbacks_empty(monkeypatch):
+    warnings = []
+    monkeypatch.setattr(
+        "polymarket_arb.ingest.limitless.parser.logger.warning",
+        lambda *args: warnings.append(args),
+    )
+    raw = _binary_market_no_address(venue={"some_other_key": "x"})
+    result = parse_limitless_market(raw)
+    assert result is not None and result.address == ""
+    assert len(warnings) == 1
+    # Warning includes the slug and key listings so the missing field is visible.
+    fmt = warnings[0][0]
+    assert "address missing" in fmt
+    assert "test-market" in warnings[0]
+    assert "some_other_key" in warnings[0][-1]

@@ -126,6 +126,9 @@ services:
       - POLYMARKET_ARB_LIMITLESS_PAPER_MODE=${POLYMARKET_ARB_LIMITLESS_PAPER_MODE:-true}
       - POLYMARKET_ARB_ORDERS_ALLOWED=${POLYMARKET_ARB_ORDERS_ALLOWED:-false}
       - POLYMARKET_ARB_PAPER_MODE=${POLYMARKET_ARB_PAPER_MODE:-true}
+      # Convergence scan: exit a position when both legs have moved more than
+      # arb_gap * threshold since entry (0.5 = halfway-to-resolution).
+      - POLYMARKET_ARB_CONVERGENCE_THRESHOLD=${POLYMARKET_ARB_CONVERGENCE_THRESHOLD:-0.5}
     volumes:
       - ../data:/app/data
       - ../configs:/app/configs:ro
@@ -135,12 +138,14 @@ services:
       - -c
       - |
         while true; do
+          # --min-net-edge 0.05 covers round-trip fees: Polymarket taker 2% x 2 legs = 4%,
+          # Limitless ~0.3% x 2 = 0.6%, total ~4.6%, leaving ~0.4% minimum margin after fees.
           python -m polymarket_arb.cli limitless scan-arb \
             --execute \
             --stake-usdc "${POLYMARKET_ARB_LIM_STAKE_USDC:-1}" \
             --tolerance "${POLYMARKET_ARB_LIM_TOLERANCE:-0.05}" \
             --threshold "${POLYMARKET_ARB_LIM_THRESHOLD:-0.75}" \
-            --min-net-edge "${POLYMARKET_ARB_LIM_MIN_NET_EDGE:-0.02}"
+            --min-net-edge "${POLYMARKET_ARB_LIM_MIN_NET_EDGE:-0.05}"
           sleep 300
         done
     logging:

@@ -42,3 +42,23 @@ class LimitlessOrderResult:
     size_usdc: float
     market_slug: str
     error: str | None
+
+
+@dataclass(frozen=True)
+class LimitlessArbPosition:
+    """An open Limitless x Polymarket arb position reconstructed from orders_log.
+
+    Used by the convergence-based early-exit scanner to monitor open positions
+    and decide whether current market prices have converged enough since entry
+    to lock in a profit before resolution.
+    """
+
+    position_id: str
+    limitless_slug: str
+    poly_condition_id: str
+    poly_token_id_no: str
+    lim_entry_price: float
+    poly_yes_entry: float
+    arb_gap: float
+    stake_usdc: float
+    open_ts_ms: int
