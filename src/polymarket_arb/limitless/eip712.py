@@ -87,6 +87,7 @@ def build_signed_order(
 
     # Scale amounts to 6 decimals and align to price tick
     shares = int(size_usdc * _SCALE)
+    price = round(round(price / _PRICE_TICK) * _PRICE_TICK, 3)
     price_int = int(price * _SCALE)
     tick_int = int(_PRICE_TICK * _SCALE)
     shares_step = _SCALE // tick_int

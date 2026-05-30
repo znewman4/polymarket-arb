@@ -142,6 +142,12 @@ def test_buy_maker_amount_is_usdc_collateral():
     assert order["makerAmount"] == pytest.approx(50_000_000, rel=0.01)
 
 
+def test_price_is_rounded_to_tick_before_amounts():
+    order = _order(price=0.4246, size_usdc=100.0)
+    assert order["price"] == 0.425
+    assert order["makerAmount"] == 42_500_000
+
+
 def test_buy_taker_amount_is_shares():
     # taker receives 100 shares = 100_000_000 scaled
     order = _order(price=0.5, size_usdc=100.0)
