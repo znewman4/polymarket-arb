@@ -303,6 +303,7 @@ class LimitlessOrderClient:
                 error="could not resolve owner_id (wallet_address not configured or profile fetch failed)",
             )
 
+        was_already_approved = market.address in self._approved
         try:
             await asyncio.to_thread(
                 self._ensure_collateral_approval,
@@ -316,6 +317,10 @@ class LimitlessOrderClient:
                 size_usdc=size_usdc, market_slug=market.slug,
                 error=f"collateral approval failed: {exc}",
             )
+
+        if not was_already_approved:
+            logger.info("limitless: new approval confirmed, waiting 3s before order submission")
+            await asyncio.sleep(3)
 
         # --- build EIP-712 signed order ---
         signed_order = build_signed_order(

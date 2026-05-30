@@ -261,6 +261,50 @@ async def test_live_submit_ensures_collateral_approval_before_signing():
 
 
 @pytest.mark.asyncio
+async def test_live_submit_sleeps_after_fresh_approval():
+    http = MagicMock()
+    http.request_json = AsyncMock(side_effect=[
+        {"id": 7},
+        {"order": {"id": "ord-1"}},
+        {"order": {"id": "ord-2"}},
+    ])
+    client = _make_client(http=http, collateral_approved=False)
+    market = _make_market(address=_VALID_EXCHANGE)
+
+    def approve(address: str, amount: float) -> None:
+        client._approved.add(address)
+
+    with (
+        patch.object(client, "_get_owner_id", AsyncMock(return_value=7)),
+        patch.object(client, "_ensure_collateral_approval", side_effect=approve),
+        patch("polymarket_arb.limitless.order_client.asyncio.sleep", new_callable=AsyncMock) as sleep,
+        patch(
+            "polymarket_arb.limitless.order_client.build_signed_order",
+            return_value=_FAKE_SIGNED_ORDER,
+        ),
+    ):
+        first = await client._live_submit(
+            market=market,
+            side="YES",
+            price=market.yes_price,
+            size_usdc=1.0,
+        )
+        sleep.assert_awaited_once_with(3)
+
+        sleep.reset_mock()
+        second = await client._live_submit(
+            market=market,
+            side="YES",
+            price=market.yes_price,
+            size_usdc=1.0,
+        )
+        sleep.assert_not_awaited()
+
+    assert first.status == "live_submitted"
+    assert second.status == "live_submitted"
+
+
+@pytest.mark.asyncio
 async def test_live_submit_passes_correct_args_to_build_signed_order():
     """build_signed_order is called with the right token_id, price, side."""
     http = MagicMock()

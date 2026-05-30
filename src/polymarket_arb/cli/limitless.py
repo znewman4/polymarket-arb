@@ -222,6 +222,7 @@ async def _run_execute(
     private_key: str | None = None
     if not paper_mode:
         key_id, key_secret, wallet_address, private_key = _load_limitless_creds()
+        settings = _load_poly_creds_into_settings(settings)
 
     orders_log_repo = ParquetOrdersLogRepository(settings.data_root)
     positions_repo = ParquetPositionsRepository(settings.data_root)
@@ -420,6 +421,32 @@ def _load_limitless_creds() -> tuple[str, str, str, str]:
         ) from exc
 
     return key_id, key_secret, wallet_address, private_key
+
+
+def _load_poly_creds_into_settings(settings: Settings) -> Settings:
+    """Load Polymarket CLOB credentials from Secrets Manager into settings.
+
+    Fetches from the 'polymarket/api_credentials' secret and injects all
+    four CLOB credential fields into a new Settings copy so OrderClient
+    can authenticate for live order submission.
+    """
+    try:
+        import boto3  # type: ignore[import-untyped]
+        sm = boto3.client("secretsmanager", region_name="eu-west-1")
+        poly_secret = json.loads(
+            sm.get_secret_value(SecretId="polymarket/api_credentials")["SecretString"]
+        )
+        return settings.model_copy(update={
+            "polymarket_private_key": poly_secret.get("private_key", ""),
+            "polymarket_api_key": poly_secret.get("api_key", ""),
+            "polymarket_api_secret": poly_secret.get("api_secret", ""),
+            "polymarket_api_passphrase": poly_secret.get("api_passphrase", ""),
+        })
+    except Exception as exc:
+        raise click.ClickException(
+            f"Failed to load polymarket/api_credentials from Secrets Manager: {exc}\n"
+            "Ensure the secret exists with keys: private_key, api_key, api_secret, api_passphrase"
+        ) from exc
 
 
 # ─── display ─────────────────────────────────────────────────────────────────
