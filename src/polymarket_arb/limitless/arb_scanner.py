@@ -306,6 +306,37 @@ async def execute_arb(
         )
         return dummy_lim, None
 
+    # The paginated Limitless endpoint can omit venue.exchange for CLOB markets;
+    # fetch the detail payload before handing the market to live order placement.
+    if not match.limitless.address and (
+        match.limitless.token_id_yes or match.limitless.token_id_no
+    ):
+        fetched_address = await _fetch_limitless_market_address(
+            match.limitless.slug,
+            limitless_host="https://api.limitless.exchange",
+        )
+        if fetched_address:
+            from dataclasses import replace as _replace
+            match = _replace(
+                match,
+                limitless=_replace(match.limitless, address=fetched_address),
+            )
+        else:
+            logger.warning(
+                "execute_arb: skipping {} — could not resolve exchange address",
+                match.limitless.slug,
+            )
+            dummy_lim = LimitlessOrderResult(
+                status="failed",
+                order_id=None,
+                side="YES",
+                price=match.limitless.yes_price,
+                size_usdc=stake_usdc,
+                market_slug=match.limitless.slug,
+                error="exchange_address could not be resolved from detail endpoint",
+            )
+            return dummy_lim, None
+
     live_ask = await _fetch_live_poly_best_ask(match.poly.token_id_no)
     if live_ask is None:
         logger.warning("execute_arb: no live poly book for {}", match.limitless.slug)
@@ -517,6 +548,40 @@ async def _fetch_limitless_current_price(
     if not (0.0 < yes_price < 1.0):
         return None
     return yes_price
+
+
+async def _fetch_limitless_market_address(
+    slug: str,
+    limitless_host: str = "https://api.limitless.exchange",
+) -> str:
+    """Fetch the exchange address for a Limitless market by slug.
+
+    The paginated /markets/active endpoint returns venue={} for CLOB markets,
+    but the individual /markets/{slug} endpoint returns the full venue.exchange.
+    """
+    import httpx
+
+    url = f"{limitless_host.rstrip('/')}/markets/{slug}"
+    try:
+        async with httpx.AsyncClient(timeout=5.0) as client:
+            response = await client.get(url)
+            response.raise_for_status()
+            data = response.json()
+            venue = data.get("venue") or {}
+            address = (
+                venue.get("exchange", "")
+                or venue.get("address", "")
+                or data.get("address", "")
+                or data.get("contractAddress", "")
+            )
+            if address:
+                logger.debug("limitless detail fetch: address={} for {}", address, slug)
+            else:
+                logger.warning("limitless detail fetch: no address found for {}", slug)
+            return address
+    except Exception as exc:
+        logger.warning("limitless detail fetch failed for {}: {}", slug, exc)
+        return ""
 
 
 async def _exit_both_legs(

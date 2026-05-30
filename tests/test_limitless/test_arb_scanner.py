@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from dataclasses import replace
 from decimal import Decimal
 from types import SimpleNamespace
 
@@ -58,6 +59,23 @@ def _match() -> ArbMatch:
 
 class _LimOrderClient:
     async def place_order(self, market, *, side: str, size_usdc: float):
+        return LimitlessOrderResult(
+            status="paper_filled",
+            order_id="lim-order",
+            side=side,
+            price=market.yes_price,
+            size_usdc=size_usdc,
+            market_slug=market.slug,
+            error=None,
+        )
+
+
+class _RecordingLimOrderClient:
+    def __init__(self) -> None:
+        self.market = None
+
+    async def place_order(self, market, *, side: str, size_usdc: float):
+        self.market = market
         return LimitlessOrderResult(
             status="paper_filled",
             order_id="lim-order",
@@ -397,6 +415,48 @@ async def test_execute_arb_falls_back_when_live_book_unavailable(monkeypatch):
 
     assert poly_client.intent.price == Decimal("0.55")
     assert poly_client.kwargs["preflight_book"] is None
+
+
+@pytest.mark.asyncio
+async def test_execute_arb_fetches_address_when_missing(monkeypatch):
+    async def _live_ask(token_id: str) -> float:
+        assert token_id == "tok_no"
+        return 0.57
+
+    async def _market_address(slug: str, limitless_host: str) -> str:
+        assert slug == "btc-above-65k"
+        assert limitless_host == "https://api.limitless.exchange"
+        return "0xABC"
+
+    monkeypatch.setattr(
+        "polymarket_arb.limitless.arb_scanner._fetch_live_poly_best_ask",
+        _live_ask,
+    )
+    monkeypatch.setattr(
+        "polymarket_arb.limitless.arb_scanner._fetch_limitless_market_address",
+        _market_address,
+    )
+    match = _match()
+    match = replace(
+        match,
+        limitless=replace(
+            match.limitless,
+            address="",
+            token_id_yes="lim_yes",
+            token_id_no="lim_no",
+        ),
+    )
+    lim_client = _RecordingLimOrderClient()
+
+    await execute_arb(
+        match,
+        lim_client=lim_client,
+        poly_client=_PolyOrderClient(),
+        stake_usdc=1.0,
+        min_net_edge=0.02,
+    )
+
+    assert lim_client.market.address == "0xABC"
 
 
 # ─── Task 2: tokenID capital-D + clobTokenIds plain list ─────────────────────
