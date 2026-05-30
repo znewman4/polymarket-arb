@@ -8,6 +8,7 @@ legs (paper or live) when opportunities are found.
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import csv
 import json
 import os
@@ -17,6 +18,7 @@ from pathlib import Path
 from typing import Any
 
 import click
+from loguru import logger
 from rich.console import Console
 from rich.table import Table
 
@@ -189,10 +191,30 @@ async def _run_execute(
         return results
 
     paper_mode = settings.limitless_paper_mode
+    if not paper_mode and settings.paper_mode:
+        message = (
+            "SAFETY ABORT: Limitless leg is LIVE but Polymarket leg is PAPER.\n"
+            "This creates unhedged positions. Either set both legs to paper or\n"
+            "both to live. Set POLYMARKET_ARB_LIMITLESS_PAPER_MODE=true to fix."
+        )
+        logger.error(message)
+        console.log(f"[bold red]{message}[/bold red]")
+        return results
+
     console.log(
         f"[yellow]Executing {len(opps)} opportunit(ies) "
         f"({'PAPER' if paper_mode else 'LIVE'})…[/yellow]"
     )
+
+    original_opps = list(opps)
+    active_slugs = _get_active_slugs(settings, paper_mode=paper_mode)
+    opps = [match for match in opps if match.limitless.slug not in active_slugs]
+    if len(opps) < len(original_opps):
+        console.log(
+            f"[dim]Skipped {len(original_opps) - len(opps)} already-open position(s)[/dim]"
+        )
+    if not opps:
+        return results
 
     key_id: str | None = None
     key_secret: str | None = None
@@ -314,6 +336,48 @@ def _load_open_limitless_positions(
     except Exception as exc:
         console.log(f"[yellow]load_open_positions: query failed: {exc}[/yellow]")
     return positions
+
+
+def _get_active_slugs(settings: Settings, *, paper_mode: bool) -> set[str]:
+    """Return Limitless slugs traded in the last seven days from orders_log notes."""
+    _ = paper_mode
+    import re as _re
+
+    import duckdb
+
+    lake = settings.data_root / "normalised" / "orders_log"
+    if not lake.exists():
+        return set()
+
+    glob = str(lake / "dt=*" / "*.parquet")
+    cutoff_ms = int(time.time() * 1000) - 7 * 24 * 60 * 60 * 1000
+    con = None
+    try:
+        con = duckdb.connect(":memory:")
+        rows = con.execute(
+            f"""
+            SELECT DISTINCT notes
+            FROM read_parquet('{glob}', hive_partitioning=true)
+            WHERE strategy_id = 'limitless_arb'
+              AND status IN ('live_submitted', 'paper_filled')
+              AND ts_ms > ?
+            """,
+            [cutoff_ms],
+        ).fetchall()
+    except Exception as exc:
+        console.log(f"[yellow]active slug query failed: {exc}[/yellow]")
+        return set()
+    finally:
+        with contextlib.suppress(Exception):
+            con.close()
+
+    active: set[str] = set()
+    for (notes,) in rows:
+        kv = dict(_re.findall(r"(\w+)=([\S]+)", notes or ""))
+        slug = kv.get("slug")
+        if slug:
+            active.add(slug)
+    return active
 
 
 def _load_limitless_creds() -> tuple[str, str, str, str]:
