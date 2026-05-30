@@ -4,13 +4,17 @@ from __future__ import annotations
 
 from datetime import date, timedelta
 from pathlib import Path
+from types import SimpleNamespace
 
 import duckdb
 import pyarrow as pa
 import pyarrow.parquet as pq
+import respx
 from click.testing import CliRunner
+from httpx import Response
 
 from polymarket_arb.cli import cli
+from polymarket_arb.cli import maintenance as maintenance_mod
 
 
 def _env_for(tmp_path: Path) -> dict[str, str]:
@@ -103,3 +107,169 @@ def test_compact_lake_dry_run_keeps_files(tmp_path: Path) -> None:
     )
     assert result.exit_code == 0
     assert len(list(partition.glob("*.parquet"))) == 12
+
+
+def test_test_connectivity_passes_all_checks(tmp_path: Path, monkeypatch) -> None:
+    class FakePolymarketClient:
+        def get_api_keys(self):
+            return [{"key": "poly-key"}]
+
+        def get_order_book(self, token_id):
+            assert token_id == "0x123456789"
+            return SimpleNamespace(
+                bids=[SimpleNamespace(price="0.42", size="12")],
+                asks=[SimpleNamespace(price="0.44", size="10")],
+            )
+
+    monkeypatch.setattr(
+        maintenance_mod,
+        "_load_limitless_credentials",
+        lambda: {
+            "key_id": "limitless-key",
+            "key_secret": "not-base64-but-ok",
+            "wallet_address": "0xWallet",
+        },
+    )
+    monkeypatch.setattr(
+        maintenance_mod,
+        "_load_polymarket_credentials",
+        lambda: {
+            "private_key": "0xprivate",
+            "api_key": "abcdefghi",
+            "api_secret": "secret",
+            "api_passphrase": "pass",
+        },
+    )
+    monkeypatch.setattr(
+        maintenance_mod,
+        "_build_polymarket_client",
+        lambda settings, creds: FakePolymarketClient(),
+    )
+    monkeypatch.setattr(
+        maintenance_mod,
+        "_first_relationship_token",
+        lambda data_root: "0x123456789",
+    )
+
+    env = {
+        **_env_for(tmp_path),
+        "POLYMARKET_ARB_LIMITLESS_HOST": "https://limitless.example",
+        "POLYMARKET_ARB_POLYMARKET_CLOB_HOST": "https://clob.example",
+    }
+    with respx.mock(assert_all_called=True) as router:
+        router.get("https://limitless.example/profiles/public/0xWallet").mock(
+            return_value=Response(200, json={"id": 12345})
+        )
+        router.get("https://limitless.example/markets").mock(
+            return_value=Response(
+                200,
+                json={
+                    "data": [
+                        {
+                            "slug": "will-x-happen",
+                            "title": "Will X happen?",
+                            "address": "0xABCDEF123456789",
+                            "marketType": "single",
+                            "prices": [0.51, 0.49],
+                        }
+                    ]
+                },
+            )
+        )
+        result = CliRunner().invoke(
+            cli,
+            ["maintenance", "test-connectivity"],
+            env=env,
+        )
+
+    assert result.exit_code == 0, result.output
+    assert "[✓] Limitless auth" in result.output
+    assert "owner_id=12345" in result.output
+    assert "[✓] Limitless market" in result.output
+    assert "address=0xABCD...789" in result.output
+    assert "[✓] Polymarket auth" in result.output
+    assert "api_key=abcdefghi active" in result.output
+    assert "[✓] Polymarket book" in result.output
+    assert "bid=0.42 ask=0.44" in result.output
+    assert "All checks passed. Safe to go live." in result.output
+
+
+def test_test_connectivity_prints_raw_failure_and_continues(tmp_path: Path, monkeypatch) -> None:
+    class FakePolymarketClient:
+        def get_api_keys(self):
+            return [{"key": "poly-key"}]
+
+        def get_order_book(self, token_id):
+            return SimpleNamespace(
+                bids=[SimpleNamespace(price="0.42", size="12")],
+                asks=[SimpleNamespace(price="0.44", size="10")],
+            )
+
+    monkeypatch.setattr(
+        maintenance_mod,
+        "_load_limitless_credentials",
+        lambda: {
+            "key_id": "limitless-key",
+            "key_secret": "bad-secret",
+            "wallet_address": "0xWallet",
+        },
+    )
+    monkeypatch.setattr(
+        maintenance_mod,
+        "_load_polymarket_credentials",
+        lambda: {
+            "private_key": "0xprivate",
+            "api_key": "abcdefghi",
+            "api_secret": "secret",
+            "api_passphrase": "pass",
+        },
+    )
+    monkeypatch.setattr(
+        maintenance_mod,
+        "_build_polymarket_client",
+        lambda settings, creds: FakePolymarketClient(),
+    )
+    monkeypatch.setattr(
+        maintenance_mod,
+        "_first_relationship_token",
+        lambda data_root: "0x123456789",
+    )
+
+    env = {
+        **_env_for(tmp_path),
+        "POLYMARKET_ARB_LIMITLESS_HOST": "https://limitless.example",
+    }
+    with respx.mock(assert_all_called=True) as router:
+        router.get("https://limitless.example/profiles/public/0xWallet").mock(
+            return_value=Response(401, text="bad signature")
+        )
+        router.get("https://limitless.example/markets").mock(
+            return_value=Response(
+                200,
+                json={
+                    "data": [
+                        {
+                            "slug": "will-x-happen",
+                            "title": "Will X happen?",
+                            "address": "0xABCDEF123456789",
+                            "marketType": "single",
+                            "prices": [0.51, 0.49],
+                        }
+                    ]
+                },
+            )
+        )
+        result = CliRunner().invoke(
+            cli,
+            ["maintenance", "test-connectivity"],
+            env=env,
+        )
+
+    assert result.exit_code == 1
+    assert "[✗] Limitless auth" in result.output
+    assert "status=401" in result.output
+    assert "body=bad signature" in result.output
+    assert "[✓] Limitless market" in result.output
+    assert "[✓] Polymarket auth" in result.output
+    assert "[✓] Polymarket book" in result.output
+    assert "All checks passed" not in result.output

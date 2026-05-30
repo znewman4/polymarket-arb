@@ -2,18 +2,38 @@
 
 from __future__ import annotations
 
+import asyncio
+import json
+import os
+from dataclasses import dataclass
 from datetime import date, timedelta
+from decimal import Decimal, InvalidOperation
 from pathlib import Path
+from typing import Any
 
 import click
 import duckdb
 
+from ..http.client import AsyncHttpClient
+from ..ingest.limitless.parser import parse_limitless_market
+from ..limitless.signing import sign_request
+from ..live.signing import build_clob_client
 from ..settings import Settings
+from ..storage.parquet.relationship_candidates_repo import (
+    ParquetRelationshipCandidatesRepository,
+)
 
 
 @click.group(name="maintenance")
 def maintenance_cmd() -> None:
     """Lake maintenance operations."""
+
+
+@dataclass(frozen=True)
+class _ConnectivityCheck:
+    label: str
+    ok: bool
+    detail: str
 
 
 @maintenance_cmd.command(name="compact-lake")
@@ -117,6 +137,277 @@ def compact_lake(
         f"compacted {total_compacted} partition(s), "
         f"saved {total_saved_bytes / 1024 / 1024:.2f} MB total"
     )
+
+
+@maintenance_cmd.command(name="test-connectivity")
+@click.pass_context
+def test_connectivity(ctx: click.Context) -> None:
+    """Run safe end-to-end connectivity checks for Limitless and Polymarket."""
+    settings: Settings = ctx.obj["settings"]
+    checks = asyncio.run(_run_connectivity_checks(settings))
+    for check in checks:
+        icon = "✓" if check.ok else "✗"
+        click.echo(f"[{icon}] {check.label:<18} — {check.detail}")
+
+    if all(check.ok for check in checks):
+        click.echo("All checks passed. Safe to go live.")
+        return
+
+    raise SystemExit(1)
+
+
+async def _run_connectivity_checks(settings: Settings) -> list[_ConnectivityCheck]:
+    checks: list[_ConnectivityCheck] = []
+    async with AsyncHttpClient(settings.http) as http:
+        checks.append(await _check_limitless_auth(settings, http))
+        checks.append(await _check_limitless_market(settings, http))
+
+    checks.append(await asyncio.to_thread(_check_polymarket_auth, settings))
+    checks.append(await asyncio.to_thread(_check_polymarket_book, settings))
+    return checks
+
+
+async def _check_limitless_auth(
+    settings: Settings,
+    http: AsyncHttpClient,
+) -> _ConnectivityCheck:
+    label = "Limitless auth"
+    try:
+        creds = _load_limitless_credentials()
+        path = f"/profiles/public/{creds['wallet_address']}"
+        headers = sign_request(
+            key_id=creds["key_id"],
+            key_secret=creds["key_secret"],
+            method="GET",
+            path=path,
+            body="",
+        )
+        payload = await http.request_json(
+            "GET",
+            f"{settings.limitless_host.rstrip('/')}{path}",
+            headers=headers,
+        )
+        if not isinstance(payload, dict):
+            raise RuntimeError(f"profile response was not an object: {payload!r}")
+        owner_id = payload.get("owner_id", payload.get("id"))
+        if owner_id in (None, ""):
+            raise RuntimeError(f"profile response missing owner_id/id: {payload!r}")
+        return _ConnectivityCheck(label, True, f"owner_id={owner_id}")
+    except Exception as exc:
+        return _ConnectivityCheck(label, False, _format_error(exc))
+
+
+async def _check_limitless_market(
+    settings: Settings,
+    http: AsyncHttpClient,
+) -> _ConnectivityCheck:
+    label = "Limitless market"
+    try:
+        payload = await http.request_json(
+            "GET",
+            f"{settings.limitless_host.rstrip('/')}/markets",
+            params={"limit": 1},
+        )
+        raw_market = _first_market_payload(payload)
+        if raw_market is None:
+            raise RuntimeError(f"market response contained no market object: {payload!r}")
+        market = parse_limitless_market(raw_market)
+        if market is None:
+            raise RuntimeError(f"parser rejected market payload: {raw_market!r}")
+        if not market.address:
+            raise RuntimeError(f"parsed market missing address: {raw_market!r}")
+        title = market.title or market.slug
+        return _ConnectivityCheck(
+            label,
+            True,
+            f"found market {_quote_truncated(title, 32)} address={_abbrev(market.address)}",
+        )
+    except Exception as exc:
+        return _ConnectivityCheck(label, False, _format_error(exc))
+
+
+def _check_polymarket_auth(settings: Settings) -> _ConnectivityCheck:
+    label = "Polymarket auth"
+    try:
+        creds = _load_polymarket_credentials()
+        client = _build_polymarket_client(settings, creds)
+        payload = client.get_api_keys()
+        if payload in (None, ""):
+            raise RuntimeError("get_api_keys returned an empty response")
+        return _ConnectivityCheck(
+            label,
+            True,
+            f"api_key={_abbrev(creds['api_key'])} active",
+        )
+    except Exception as exc:
+        return _ConnectivityCheck(label, False, _format_error(exc))
+
+
+def _check_polymarket_book(settings: Settings) -> _ConnectivityCheck:
+    label = "Polymarket book"
+    try:
+        token_id = _first_relationship_token(settings.data_root)
+        if not token_id:
+            raise RuntimeError(
+                "no token IDs found in relationship_candidates lake "
+                f"under {settings.data_root}"
+            )
+        creds = _load_polymarket_credentials()
+        client = _build_polymarket_client(settings, creds)
+        book = client.get_order_book(token_id)
+        bid = _best_price(getattr(book, "bids", None), best=max)
+        ask = _best_price(getattr(book, "asks", None), best=min)
+        if bid is None and ask is None:
+            raise RuntimeError(f"order book contained no bids or asks: {book!r}")
+        return _ConnectivityCheck(
+            label,
+            True,
+            f"token {_abbrev(token_id)} bid={_format_price(bid)} ask={_format_price(ask)}",
+        )
+    except Exception as exc:
+        return _ConnectivityCheck(label, False, _format_error(exc))
+
+
+def _load_limitless_credentials() -> dict[str, str]:
+    lim = _load_secret_json("limitless/api_credentials")
+    poly = _load_secret_json("polymarket/api_credentials")
+    try:
+        from eth_account import Account  # type: ignore[import-untyped]
+
+        private_key = str(poly["private_key"])
+        return {
+            "key_id": str(lim["key_id"]),
+            "key_secret": str(lim["key_secret"]),
+            "wallet_address": str(poly.get("wallet_address") or Account.from_key(private_key).address),
+        }
+    except Exception as exc:
+        raise RuntimeError(
+            "failed to load Limitless credentials or derive wallet address "
+            "from polymarket/api_credentials"
+        ) from exc
+
+
+def _load_polymarket_credentials() -> dict[str, str]:
+    secret = _load_secret_json("polymarket/api_credentials")
+    field_names = ("private_key", "api_key", "api_secret", "api_passphrase")
+    missing = [name for name in field_names if not secret.get(name)]
+    if missing:
+        raise RuntimeError(
+            "polymarket/api_credentials missing required field(s): "
+            + ", ".join(missing)
+        )
+    return {name: str(secret[name]) for name in field_names}
+
+
+def _load_secret_json(secret_id: str) -> dict[str, Any]:
+    try:
+        import boto3  # type: ignore[import-untyped]
+
+        region = os.environ.get("AWS_REGION") or os.environ.get("AWS_DEFAULT_REGION") or "eu-west-1"
+        sm = boto3.client("secretsmanager", region_name=region)
+        value = sm.get_secret_value(SecretId=secret_id)
+        payload = json.loads(value["SecretString"])
+        if not isinstance(payload, dict):
+            raise RuntimeError(f"{secret_id} SecretString is not a JSON object")
+        return payload
+    except Exception as exc:
+        raise RuntimeError(f"failed to load {secret_id} from Secrets Manager") from exc
+
+
+def _build_polymarket_client(settings: Settings, creds: dict[str, str]) -> Any:
+    return build_clob_client(
+        private_key_hex=creds["private_key"],
+        api_key=creds["api_key"],
+        api_secret=creds["api_secret"],
+        api_passphrase=creds["api_passphrase"],
+        chain_id=settings.polymarket_chain_id,
+        host=settings.polymarket_clob_host,
+    )
+
+
+def _first_relationship_token(data_root: Path) -> str | None:
+    repo = ParquetRelationshipCandidatesRepository(data_root)
+    for row in repo.iter_latest():
+        for token in (
+            row.token_id_a_yes,
+            row.token_id_a_no,
+            row.token_id_b_yes,
+            row.token_id_b_no,
+        ):
+            if token:
+                return str(token)
+    return None
+
+
+def _first_market_payload(payload: Any) -> dict[str, Any] | None:
+    if isinstance(payload, list):
+        return next((item for item in payload if isinstance(item, dict)), None)
+    if isinstance(payload, dict):
+        for key in ("data", "markets", "items", "results"):
+            value = payload.get(key)
+            if isinstance(value, list):
+                return next((item for item in value if isinstance(item, dict)), None)
+        return payload if payload else None
+    return None
+
+
+def _best_price(levels: Any, *, best: Any) -> Decimal | None:
+    if not levels:
+        return None
+    prices: list[Decimal] = []
+    for level in levels:
+        price = getattr(level, "price", None)
+        if price is None and isinstance(level, dict):
+            price = level.get("price")
+        if price in (None, ""):
+            continue
+        try:
+            prices.append(Decimal(str(price)))
+        except (InvalidOperation, ValueError):
+            continue
+    return best(prices) if prices else None
+
+
+def _format_price(price: Decimal | None) -> str:
+    if price is None:
+        return "n/a"
+    return str(price.normalize())
+
+
+def _abbrev(value: str, *, prefix: int = 6, suffix: int = 3) -> str:
+    if len(value) <= prefix + suffix + 3:
+        return value
+    return f"{value[:prefix]}...{value[-suffix:]}"
+
+
+def _quote_truncated(value: str, limit: int) -> str:
+    if len(value) > limit:
+        value = f"{value[:limit - 3]}..."
+    return repr(value)
+
+
+def _format_error(exc: BaseException) -> str:
+    parts = [f"{type(exc).__name__}: {exc}"]
+    response = getattr(exc, "response", None)
+    if response is not None:
+        status_code = getattr(response, "status_code", None)
+        text = getattr(response, "text", "")
+        if status_code is not None:
+            parts.append(f"status={status_code}")
+        if text:
+            parts.append(f"body={text}")
+    cause = exc.__cause__
+    if cause is not None:
+        parts.append(f"cause={type(cause).__name__}: {cause}")
+        cause_response = getattr(cause, "response", None)
+        if cause_response is not None:
+            status_code = getattr(cause_response, "status_code", None)
+            text = getattr(cause_response, "text", "")
+            if status_code is not None:
+                parts.append(f"cause_status={status_code}")
+            if text:
+                parts.append(f"cause_body={text}")
+    return " | ".join(parts)
 
 
 __all__ = ["maintenance_cmd"]
