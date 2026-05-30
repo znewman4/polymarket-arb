@@ -17,7 +17,9 @@ from pathlib import Path
 
 import pytest
 
+from polymarket_arb.dashboard import queries as queries_mod
 from polymarket_arb.dashboard.app import create_app
+from polymarket_arb.dashboard.queries import DuckDBQueryService
 from polymarket_arb.live.models import OrdersLogRow, PositionRow
 from polymarket_arb.settings import Settings
 from polymarket_arb.storage.base import MarketRow, OrderbookLevel, OrderbookSnapshot
@@ -264,6 +266,47 @@ def test_positions_page_renders_mtm_and_locked_profit(
     assert "+1.00" in body
     assert "0.25" in body
     assert 'http-equiv="refresh" content="30"' in body
+
+
+def test_query_methods_use_method_name_ttl_cache(tmp_data_root: Path) -> None:
+    qs = DuckDBQueryService(tmp_data_root)
+    try:
+        queries_mod.clear_query_cache()
+        first = qs.overview_counters()
+        ParquetOrdersLogRepository(tmp_data_root).append(
+            _orders_log_row(intent_id="after-cache", status="paper_filled")
+        )
+        second = qs.overview_counters()
+
+        assert second == first
+        result, timestamp = queries_mod._QUERY_CACHE["overview_counters"]
+        assert result == first
+        assert isinstance(timestamp, float)
+    finally:
+        qs.close()
+
+
+def test_orderbook_snapshot_queries_filter_to_recent_dt(
+    tmp_data_root: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    qs = DuckDBQueryService(tmp_data_root)
+    captured: dict[str, str] = {}
+
+    try:
+        queries_mod.clear_query_cache()
+        monkeypatch.setattr(qs, "_has_data", lambda table: True)
+        monkeypatch.setattr(qs, "_glob_recent", lambda table, days=7: "'dummy.parquet'")
+
+        def fake_fetchall_dict(sql, params=None):
+            captured["sql"] = sql
+            return []
+
+        monkeypatch.setattr(qs, "_fetchall_dict", fake_fetchall_dict)
+        qs.open_positions_with_mtm()
+
+        assert "dt >= current_date - INTERVAL 1 DAY" in captured["sql"]
+    finally:
+        qs.close()
 
 
 def test_overview_and_tradebook_label_filled_notional_as_deployed_capital(

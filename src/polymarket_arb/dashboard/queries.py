@@ -16,13 +16,74 @@ from __future__ import annotations
 import math
 import re
 import threading
+import time
 import uuid
 from contextlib import suppress
 from datetime import date, datetime, timedelta, timezone
+from functools import wraps
 from pathlib import Path
 from typing import Any
 
 import duckdb
+
+_QUERY_CACHE_TTL_S = 60.0
+_QUERY_CACHE: dict[str, tuple[Any, float]] = {}
+_QUERY_CACHE_LOCK = threading.Lock()
+
+
+def clear_query_cache() -> None:
+    """Clear the process-local dashboard query cache."""
+    with _QUERY_CACHE_LOCK:
+        _QUERY_CACHE.clear()
+
+
+def _cache_get(key: str) -> Any | None:
+    now = time.monotonic()
+    with _QUERY_CACHE_LOCK:
+        cached = _QUERY_CACHE.get(key)
+        if cached is None:
+            return None
+        result, ts = cached
+        if now - ts >= _QUERY_CACHE_TTL_S:
+            _QUERY_CACHE.pop(key, None)
+            return None
+        return result
+
+
+def _cache_set(key: str, result: Any) -> None:
+    with _QUERY_CACHE_LOCK:
+        _QUERY_CACHE[key] = (result, time.monotonic())
+
+
+def _ttl_cached(fn):
+    """Cache a query method by method name for a short dashboard TTL."""
+
+    @wraps(fn)
+    def wrapper(self, *args, **kwargs):
+        key = fn.__name__
+        cached = _cache_get(key)
+        if cached is not None:
+            return cached
+        result = fn(self, *args, **kwargs)
+        _cache_set(key, result)
+        return result
+
+    return wrapper
+
+
+def _ttl_cached_iter(fn):
+    """Cache streamed query chunks by method name while returning a fresh iterator."""
+
+    @wraps(fn)
+    def wrapper(self, *args, **kwargs):
+        key = fn.__name__
+        chunks = _cache_get(key)
+        if chunks is None:
+            chunks = list(fn(self, *args, **kwargs))
+            _cache_set(key, chunks)
+        return iter(chunks)
+
+    return wrapper
 
 
 class DuckDBQueryService:
@@ -41,6 +102,7 @@ class DuckDBQueryService:
     # ─── housekeeping ────────────────────────────────────────────────────────
 
     def close(self) -> None:
+        clear_query_cache()
         with self._lock:
             self._con.close()
 
@@ -92,6 +154,7 @@ class DuckDBQueryService:
 
     # ─── overview ────────────────────────────────────────────────────────────
 
+    @_ttl_cached
     def overview_counters(self, today: str | None = None) -> dict[str, Any]:
         today = today or self._today()
         empty = {"total": 0, "filled": 0, "fill_rate_pct": 0.0, "by_status": {}}
@@ -113,6 +176,7 @@ class DuckDBQueryService:
             "by_status": by_status,
         }
 
+    @_ttl_cached
     def signals_by_strategy(self, today: str | None = None) -> list[dict]:
         today = today or self._today()
         if not self._has_data("orders_log"):
@@ -123,6 +187,7 @@ class DuckDBQueryService:
             [today],
         )
 
+    @_ttl_cached
     def signals_per_hour_last_24h(self) -> list[dict]:
         """One row per UTC hour for the last 24 hours, zero-filled."""
         if not self._has_data("orders_log"):
@@ -150,6 +215,7 @@ class DuckDBQueryService:
             b["n"] = observed.get(b["hour_bucket"], 0)
         return buckets
 
+    @_ttl_cached
     def top_markets_by_signal(
         self, today: str | None = None, limit: int = 10
     ) -> list[dict]:
@@ -175,6 +241,7 @@ class DuckDBQueryService:
             [today, int(limit)],
         )
 
+    @_ttl_cached
     def sharpe_ratio_stats(self) -> dict[str, Any]:
         """Annualised Sharpe of daily paper notional. None when <3 days of data.
 
@@ -217,6 +284,7 @@ class DuckDBQueryService:
             "days_of_data": n,
         }
 
+    @_ttl_cached
     def cumulative_notional_by_hour(self) -> list[dict]:
         """Cumulative deployed notional for filled paper trades over seven days."""
         if not self._has_data("orders_log"):
@@ -239,6 +307,7 @@ class DuckDBQueryService:
             })
         return series
 
+    @_ttl_cached
     def expected_pnl_stats(self) -> dict[str, Any]:
         """Expected PnL estimated from ``gross_edge=X`` in filled-order notes."""
         empty = {
@@ -281,6 +350,7 @@ class DuckDBQueryService:
 
     # ─── live monitor ────────────────────────────────────────────────────────
 
+    @_ttl_cached
     def live_monitor_data(self) -> dict:
         """Real-time trading activity for the live monitor page.
 
@@ -368,6 +438,7 @@ class DuckDBQueryService:
 
     # ─── orders ──────────────────────────────────────────────────────────────
 
+    @_ttl_cached
     def orders_page(
         self,
         *,
@@ -418,6 +489,7 @@ class DuckDBQueryService:
             "total_notional": round(total_notional, 2),
         }
 
+    @_ttl_cached_iter
     def iter_orders_for_csv(
         self,
         *,
@@ -455,6 +527,7 @@ class DuckDBQueryService:
                     return
                 yield cols, [list(r) for r in batch]
 
+    @_ttl_cached
     def tradebook_page(
         self,
         *,
@@ -515,6 +588,7 @@ class DuckDBQueryService:
             },
         }
 
+    @_ttl_cached_iter
     def iter_tradebook_for_csv(self, *, chunk_size: int = 1000):
         """Yield (cols, rows_chunk) of filled paper trades for streamed CSV export."""
         cols_static = [
@@ -584,6 +658,7 @@ class DuckDBQueryService:
 
     # ─── positions page ──────────────────────────────────────────────────────
 
+    @_ttl_cached
     def open_positions_with_mtm(self) -> list[dict]:
         """Open positions joined against latest books for mark-to-market PnL.
 
@@ -607,7 +682,8 @@ class DuckDBQueryService:
             "    row_number() OVER (PARTITION BY token_id "
             "      ORDER BY timestamp_ms DESC, ingested_ts_ms DESC) AS rn "
             f"  FROM read_parquet({books_glob}, hive_partitioning=true) "
-            "  WHERE len(bids) > 0 AND len(asks) > 0"
+            "  WHERE dt >= current_date - INTERVAL 1 DAY "
+            "  AND len(bids) > 0 AND len(asks) > 0"
             ") "
             "SELECT p.position_id, p.strategy_id, p.market_id, p.token_id, p.side, "
             "p.open_ts_ms, p.entry_price, p.size, p.notional_usdc, p.gross_edge, "
@@ -627,6 +703,7 @@ class DuckDBQueryService:
 
     # ─── signals page ────────────────────────────────────────────────────────
 
+    @_ttl_cached
     def no_fill_breakdown(self, today: str | None = None, limit: int = 25) -> list[dict]:
         today = today or self._today()
         if not self._has_data("orders_log"):
@@ -642,6 +719,7 @@ class DuckDBQueryService:
             [today, int(limit)],
         )
 
+    @_ttl_cached
     def edge_distribution(
         self, today: str | None = None, strategy_id: str = "relationship_aggressive"
     ) -> list[dict]:
@@ -662,6 +740,7 @@ class DuckDBQueryService:
             [today, strategy_id],
         )
 
+    @_ttl_cached
     def limitless_open_gaps(self, today: str | None = None, limit: int = 25) -> list[dict]:
         """Parse ``arb_gap=X similarity=Y`` out of notes for limitless_arb signals."""
         today = today or self._today()
@@ -680,6 +759,7 @@ class DuckDBQueryService:
 
     # ─── markets page ────────────────────────────────────────────────────────
 
+    @_ttl_cached
     def market_coverage(self, today: str | None = None) -> dict[str, int]:
         today = today or self._today()
         out = {"total_markets": 0, "active_markets": 0, "markets_with_book_today": 0}
@@ -696,13 +776,15 @@ class DuckDBQueryService:
             row = self._fetchall(
                 "SELECT COUNT(DISTINCT condition_id) "
                 f"FROM read_parquet({self._glob_recent('orderbook_snapshots', days=1)}, "
-                "hive_partitioning=true) WHERE dt = ?",
+                "hive_partitioning=true) "
+                "WHERE dt >= current_date - INTERVAL 1 DAY AND dt = ?",
                 [today],
             )
             if row:
                 out["markets_with_book_today"] = int(row[0][0])
         return out
 
+    @_ttl_cached
     def relationship_type_breakdown(self) -> list[dict]:
         if not self._has_data("relationship_candidates"):
             return []
@@ -712,6 +794,7 @@ class DuckDBQueryService:
             "hive_partitioning=true) GROUP BY relationship_type ORDER BY n DESC"
         )
 
+    @_ttl_cached
     def markets_with_most_relationships(self, limit: int = 20) -> list[dict]:
         if not self._has_data("relationship_candidates"):
             return []
@@ -728,6 +811,7 @@ class DuckDBQueryService:
 
     # ─── health ──────────────────────────────────────────────────────────────
 
+    @_ttl_cached
     def health_snapshot(self) -> dict[str, Any]:
         today = self._today()
         recorder_last_ms = self._max_ts("orderbook_snapshots", "timestamp_ms", today)
@@ -736,7 +820,8 @@ class DuckDBQueryService:
         if self._has_data("orderbook_snapshots"):
             row = self._fetchall(
                 f"SELECT COUNT(*) FROM read_parquet({self._glob_recent('orderbook_snapshots', days=1)}, "
-                "hive_partitioning=true) WHERE dt = ?",
+                "hive_partitioning=true) "
+                "WHERE dt >= current_date - INTERVAL 1 DAY AND dt = ?",
                 [today],
             )
             snapshot_count = int(row[0][0]) if row else 0
@@ -755,9 +840,12 @@ class DuckDBQueryService:
     def _max_ts(self, table: str, col: str, today: str) -> int | None:
         if not self._has_data(table):
             return None
+        where_sql = "dt = ?"
+        if table == "orderbook_snapshots":
+            where_sql = "dt >= current_date - INTERVAL 1 DAY AND dt = ?"
         row = self._fetchall(
             f"SELECT MAX({col}) FROM read_parquet({self._glob_recent(table, days=1)}, "
-            "hive_partitioning=true) WHERE dt = ?",
+            f"hive_partitioning=true) WHERE {where_sql}",
             [today],
         )
         if not row or row[0][0] is None:

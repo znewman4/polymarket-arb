@@ -11,7 +11,7 @@ import threading
 import time
 from typing import Any
 
-from .queries import DuckDBQueryService
+from .queries import DuckDBQueryService, clear_query_cache
 
 _log = logging.getLogger(__name__)
 
@@ -40,6 +40,7 @@ class DashboardCache:
 
     def _refresh(self) -> None:
         _log.info("DashboardCache: refresh cycle starting")
+        clear_query_cache()
         methods: dict[str, Any] = {
             "overview_counters": lambda: self._qs.overview_counters(),
             "signals_by_strategy": lambda: self._qs.signals_by_strategy(),
@@ -65,6 +66,7 @@ class DashboardCache:
                 _log.exception("DashboardCache: error refreshing %s", key)
         with self._lock:
             self._data.update(fresh)
+        clear_query_cache()
         _log.info("DashboardCache: refresh cycle complete (%d keys)", len(fresh))
 
     def _run(self) -> None:
