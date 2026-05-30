@@ -1,6 +1,6 @@
 """Background cache layer for the dashboard.
 
-Runs a daemon thread that refreshes all DuckDB query results every 300 seconds
+Runs a daemon thread that refreshes all DuckDB query results every 30 seconds
 so Flask request handlers never block on parquet I/O.
 """
 
@@ -15,7 +15,7 @@ from .queries import DuckDBQueryService, clear_query_cache
 
 _log = logging.getLogger(__name__)
 
-_REFRESH_INTERVAL_S = 300
+_REFRESH_INTERVAL_S = 30
 
 
 class DashboardCache:

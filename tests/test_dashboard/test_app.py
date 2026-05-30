@@ -268,6 +268,69 @@ def test_positions_page_renders_mtm_and_locked_profit(
     assert 'http-equiv="refresh" content="30"' in body
 
 
+def test_open_positions_excludes_snapshot_rows(app, tmp_data_root: Path) -> None:
+    positions_repo = ParquetPositionsRepository(tmp_data_root)
+    book_repo = ParquetOrderbookRepository(tmp_data_root)
+    base_ts = int(datetime.now(timezone.utc).timestamp() * 1000)
+
+    positions_repo.append(
+        _position_row(
+            position_id="p-snapshot",
+            side="buy",
+            status="open",
+            open_ts_ms=base_ts,
+            ingested_ts_ms=base_ts,
+        )
+    )
+    positions_repo.append(
+        _position_row(
+            position_id="p-snapshot",
+            side="snapshot",
+            status="open",
+            open_ts_ms=base_ts,
+            ingested_ts_ms=base_ts + 60_000,
+        )
+    )
+    book_repo.append_snapshot(_orderbook_snapshot("t1", bid="0.48", ask="0.52"))
+
+    queries_mod.clear_query_cache()
+    rows = app.extensions["dashboard_db"].open_positions_with_mtm()
+
+    assert len(rows) == 1
+    assert rows[0]["side"] == "buy"
+
+
+def test_open_positions_excludes_closed(app, tmp_data_root: Path) -> None:
+    positions_repo = ParquetPositionsRepository(tmp_data_root)
+    book_repo = ParquetOrderbookRepository(tmp_data_root)
+    base_ts = int(datetime.now(timezone.utc).timestamp() * 1000)
+
+    positions_repo.append(
+        _position_row(
+            position_id="p-closed",
+            side="buy",
+            status="open",
+            open_ts_ms=base_ts,
+            ingested_ts_ms=base_ts,
+        )
+    )
+    positions_repo.append(
+        _position_row(
+            position_id="p-closed",
+            side="sell",
+            status="closed",
+            open_ts_ms=base_ts,
+            ingested_ts_ms=base_ts + 60_000,
+        )
+    )
+    book_repo.append_snapshot(_orderbook_snapshot("t1", bid="0.48", ask="0.52"))
+
+    queries_mod.clear_query_cache()
+    rows = app.extensions["dashboard_db"].open_positions_with_mtm()
+
+    assert rows == []
+
+
 def test_query_methods_use_method_name_ttl_cache(tmp_data_root: Path) -> None:
     qs = DuckDBQueryService(tmp_data_root)
     try:

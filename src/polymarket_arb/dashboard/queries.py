@@ -675,6 +675,7 @@ class DuckDBQueryService:
             "  SELECT *, row_number() OVER (PARTITION BY position_id "
             "    ORDER BY COALESCE(ingested_ts_ms, open_ts_ms) DESC, open_ts_ms DESC) AS rn "
             f"  FROM read_parquet({positions_glob}, hive_partitioning=true, union_by_name=true)"
+            "  WHERE side != 'snapshot'"
             "), latest_books AS ("
             "  SELECT token_id, "
             "    (CAST(bids[1].price AS DOUBLE) + CAST(asks[1].price AS DOUBLE)) / 2 "
