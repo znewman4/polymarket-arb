@@ -16,6 +16,7 @@ from polymarket_arb.limitless.arb_scanner import (
     match_markets,
 )
 from polymarket_arb.limitless.models import ArbMatch, LimitlessMarketEntry, LimitlessOrderResult
+from polymarket_arb.storage.parquet.positions_repo import ParquetPositionsRepository
 
 
 def _lim(slug: str, yes_price: float) -> LimitlessMarketEntry:
@@ -453,6 +454,33 @@ async def test_execute_arb_notes_contain_all_keys(monkeypatch):
     notes = poly_client.kwargs["notes"]
     for key in ("arb_gap", "slug", "lim_entry", "poly_yes_entry", "similarity"):
         assert f"{key}=" in notes, f"missing key {key!r} in notes: {notes!r}"
+
+
+@pytest.mark.asyncio
+async def test_execute_arb_writes_position_rows(monkeypatch, tmp_data_root):
+    async def _live_ask(token_id: str) -> float:
+        return 0.57
+
+    monkeypatch.setattr(
+        "polymarket_arb.limitless.arb_scanner._fetch_live_poly_best_ask",
+        _live_ask,
+    )
+    repo = ParquetPositionsRepository(tmp_data_root)
+
+    await execute_arb(
+        _match(),
+        lim_client=_LimOrderClient(),
+        poly_client=_PolyOrderClient(),
+        stake_usdc=1.0,
+        min_net_edge=0.02,
+        positions_repo=repo,
+    )
+
+    rows = list(repo.iter_recent())
+    assert len(rows) == 2
+    assert {row.status for row in rows} == {"open"}
+    assert {row.relationship_type for row in rows} == {"limitless_poly_arb"}
+    assert {row.position_id.endswith("_lim") for row in rows} == {True, False}
 
 
 # ─── Task 4: convergence-based early exit ────────────────────────────────────

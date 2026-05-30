@@ -21,13 +21,14 @@ def _intent(
     token_id: str = "tok-a",
     size: float = 100.0,
     price: float = 1.0,
+    side: str = "buy",
     detail: dict[str, str] | None = None,
 ) -> OrderIntent:
     return OrderIntent(
         id="intent-1",
         strategy_id="strict_research",
         token_id=token_id,
-        side="buy",
+        side=side,
         price=Decimal(str(price)),
         size=Decimal(str(size)),
         detail=detail or {},
@@ -43,6 +44,23 @@ def _seed_book(data_root, token_id: str, asks: list[tuple[float, float]]) -> Non
         timestamp_ms=1_700_000_000_000,
         bids=[],
         asks=[OrderbookLevel(price=Decimal(str(p)), size=Decimal(str(s))) for p, s in asks],
+        book_hash=None,
+        source="rest",
+        schema_version=1,
+        ingested_ts_ms=1_700_000_000_000,
+    )
+    repo.append_snapshot(snap)
+
+
+def _seed_book_bids(data_root, token_id: str, bids: list[tuple[float, float]]) -> None:
+    repo = ParquetOrderbookRepository(data_root)
+    snap = OrderbookSnapshot(
+        token_id=token_id,
+        condition_id=None,
+        market_slug=None,
+        timestamp_ms=1_700_000_000_000,
+        bids=[OrderbookLevel(price=Decimal(str(p)), size=Decimal(str(s))) for p, s in bids],
+        asks=[],
         book_hash=None,
         source="rest",
         schema_version=1,
@@ -255,8 +273,88 @@ def test_unsupported_side_rejected(settings, tmp_data_root) -> None:
     _seed_book(tmp_data_root, "tok-a", [(0.51, 100.0)])
     intent = OrderIntent(
         id="i", strategy_id="s", token_id="tok-a",
-        side="sell", price=Decimal("0.49"), size=Decimal("50"),
+        side="short", price=Decimal("0.49"), size=Decimal("50"),
     )
     client = OrderClient(s)
     result = client.place_order(intent)
     assert result.status == "rejected_unsupported_side"
+
+
+def test_paper_sell_full_fill(settings, tmp_data_root) -> None:
+    s = settings.model_copy(update={"paper_mode": True})
+    _seed_book_bids(tmp_data_root, "tok-a", [(0.50, 30.0), (0.48, 30.0)])
+    client = OrderClient(s)
+
+    result = client.place_order(_intent(side="sell", size=50.0, price=0.48))
+
+    assert result.status == "paper_filled"
+    assert result.filled_size == Decimal("50.0")
+    assert result.avg_fill_price == pytest.approx(Decimal("0.492"))
+    rows = list(ParquetOrdersLogRepository(tmp_data_root).iter_recent())
+    assert len(rows) == 1
+    assert rows[0].side == "sell"
+
+
+def test_paper_sell_partial_fill(settings, tmp_data_root) -> None:
+    s = settings.model_copy(update={"paper_mode": True})
+    _seed_book_bids(tmp_data_root, "tok-a", [(0.50, 20.0)])
+    client = OrderClient(s)
+
+    result = client.place_order(_intent(side="sell", size=50.0, price=0.48))
+
+    assert result.status == "paper_partial"
+    assert result.filled_size == Decimal("20.0")
+
+
+def test_paper_sell_no_bids(settings, tmp_data_root) -> None:
+    s = settings.model_copy(update={"paper_mode": True})
+    _seed_book(tmp_data_root, "tok-a", [(0.51, 100.0)])
+    client = OrderClient(s)
+
+    result = client.place_order(_intent(side="sell", size=50.0, price=0.48))
+
+    assert result.status == "paper_no_fill"
+
+
+def test_paper_sell_no_book(settings, tmp_data_root) -> None:
+    s = settings.model_copy(update={"paper_mode": True})
+    client = OrderClient(s)
+
+    result = client.place_order(_intent(token_id="unknown", side="sell", size=50.0, price=0.48))
+
+    assert result.status == "paper_no_book"
+
+
+def test_paper_invalid_side_rejected(settings, tmp_data_root) -> None:
+    s = settings.model_copy(update={"paper_mode": True})
+    _seed_book(tmp_data_root, "tok-a", [(0.51, 100.0)])
+    client = OrderClient(s)
+
+    result = client.place_order(_intent(side="short", size=50.0, price=0.48))
+
+    assert result.status == "rejected_unsupported_side"
+
+
+def test_paper_sell_kill_switch_blocks(settings, tmp_data_root) -> None:
+    s = settings.model_copy(update={"paper_mode": True})
+    s.killswitch_path.parent.mkdir(parents=True, exist_ok=True)
+    s.killswitch_path.write_text("halt\n")
+    try:
+        _seed_book_bids(tmp_data_root, "tok-a", [(0.50, 100.0)])
+        client = OrderClient(s)
+        result = client.place_order(_intent(side="sell", size=50.0, price=0.48))
+        assert result.status == "rejected_kill_switch"
+    finally:
+        s.killswitch_path.unlink(missing_ok=True)
+        kill_switch.reset_for_tests()
+
+
+def test_paper_sell_fee_applied(settings, tmp_data_root) -> None:
+    s = settings.model_copy(update={"paper_mode": True})
+    _seed_book_bids(tmp_data_root, "tok-a", [(0.50, 100.0)])
+    client = OrderClient(s)
+
+    result = client.place_order(_intent(side="sell", size=10.0, price=0.48))
+
+    assert result.status == "paper_filled"
+    assert result.fees_usdc == pytest.approx(Decimal("0.10"))

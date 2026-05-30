@@ -29,7 +29,7 @@ from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from typing import TYPE_CHECKING
 
-from ..backtest.execution_sim import simulate_buy_from_orderbook
+from ..backtest.execution_sim import simulate_buy_from_orderbook, simulate_sell_from_orderbook
 from ..compliance.trade_gate import OrdersForbidden, raise_if_orders_disallowed
 from ..monitoring import kill_switch
 from ..risk.models import OrderIntent
@@ -47,6 +47,8 @@ from .signing import (
 
 if TYPE_CHECKING:
     from ..settings import Settings
+
+_FEE_BPS = Decimal("200")
 
 
 def _now_ms() -> int:
@@ -410,8 +412,16 @@ class OrderClient:
                 detail={},
             )
 
-        if intent.side.lower() != "buy":
-            # We only support buys on Polymarket; sells are a future feature.
+        side = intent.side.lower()
+        if side == "sell":
+            filled, notional, fees, partial, reason = simulate_sell_from_orderbook(
+                book, intent.size, limit_price=intent.limit_price, fee_bps=_FEE_BPS,
+            )
+        elif side == "buy":
+            filled, notional, fees, partial, reason = simulate_buy_from_orderbook(
+                book, intent.size, limit_price=intent.limit_price, fee_bps=_FEE_BPS,
+            )
+        else:
             return self._record_and_return(
                 intent=intent,
                 ts=ts,
@@ -426,7 +436,7 @@ class OrderClient:
                 preflight_passed=preflight_passed,
                 preflight_token_id=preflight_token_id,
                 status="rejected_unsupported_side",
-                reason=f"side={intent.side!r} is not supported (buy-only)",
+                reason=f"side={intent.side!r} is not supported (buy or sell only)",
                 filled_size=Decimal("0"),
                 avg_fill_price=None,
                 notional=Decimal("0"),
@@ -437,9 +447,6 @@ class OrderClient:
                 detail={},
             )
 
-        filled, notional, fees, partial, reason = simulate_buy_from_orderbook(
-            book, intent.size, limit_price=intent.limit_price, fee_bps=Decimal("0"),
-        )
         avg = (notional / filled) if filled > 0 else None
         if filled == 0:
             status = "paper_no_fill"
@@ -539,7 +546,13 @@ class OrderClient:
             from loguru import logger
             logger.exception("orders_log append failed for intent_id={}", intent.id)
 
-        if orders_log_written and status == "paper_filled" and avg_fill_price is not None:
+        scanner_managed_strategy = row.strategy_id in {"limitless_arb", "limitless_arb_exit"}
+        if (
+            orders_log_written
+            and status == "paper_filled"
+            and avg_fill_price is not None
+            and not scanner_managed_strategy
+        ):
             position_key = f"{row.market_id}{row.token_id}{row.strategy_id}{row.ts_ms}"
             position = PositionRow(
                 position_id=hashlib.sha256(position_key.encode("utf-8")).hexdigest()[:16],

@@ -8,7 +8,7 @@ from typing import Any
 from loguru import logger
 from py_clob_client.client import ClobClient
 from py_clob_client.clob_types import ApiCreds, OrderArgs
-from py_clob_client.order_builder.constants import BUY
+from py_clob_client.order_builder.constants import BUY, SELL
 
 
 class SigningNotConfigured(RuntimeError):
@@ -51,18 +51,18 @@ def sign_and_build_order(
 
     Raises:
         SigningNotConfigured: if client is None.
-        ValueError: if side is not "buy".
+        ValueError: if side is not "buy" or "sell".
     """
     if client is None:
         raise SigningNotConfigured("ClobClient not initialised.")
-    if side.lower() != "buy":
-        raise ValueError(f"Only 'buy' side supported, got {side!r}")
+    if side.lower() not in ("buy", "sell"):
+        raise ValueError(f"side must be 'buy' or 'sell', got {side!r}")
 
     order_args = OrderArgs(
         token_id=token_id,
         price=float(round(price, 4)),
         size=float(round(size, 2)),
-        side=BUY,
+        side=BUY if side.lower() == "buy" else SELL,
     )
     signed = client.create_order(order_args)
     logger.debug(

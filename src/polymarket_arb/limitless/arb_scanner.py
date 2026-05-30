@@ -20,8 +20,10 @@ Direction assumption:
 from __future__ import annotations
 
 import asyncio
+import hashlib
 import json
 import re
+import time
 import uuid
 from decimal import Decimal
 from typing import TYPE_CHECKING
@@ -29,7 +31,7 @@ from typing import TYPE_CHECKING
 from loguru import logger
 from rapidfuzz import fuzz
 
-from ..live.models import OrdersLogRow
+from ..live.models import OrdersLogRow, PositionRow
 from ..live.order_client import OrderClient
 from ..risk.models import OrderIntent
 from .models import (
@@ -278,6 +280,7 @@ async def execute_arb(
     stake_usdc: float,
     min_net_edge: float,
     orders_log_repo=None,
+    positions_repo=None,
 ) -> tuple[LimitlessOrderResult, object]:
     """Execute both legs of an arb simultaneously.
 
@@ -344,10 +347,90 @@ async def execute_arb(
         lim_result.status, poly_result.status, match.limitless.slug,
     )
 
+    position_id = hashlib.sha256(
+        f"{match.limitless.slug}|{match.poly.condition_id}|{int(time.time() * 1000)}".encode()
+    ).hexdigest()[:16]
+    if positions_repo is not None:
+        _write_entry_positions(
+            positions_repo=positions_repo,
+            position_id=position_id,
+            match=match,
+            stake_usdc=stake_usdc,
+            lim_result=lim_result,
+            poly_result=poly_result,
+        )
+
     if orders_log_repo is not None:
         _log_limitless_leg(lim_result, match, orders_log_repo)
 
     return lim_result, poly_result
+
+
+def _entry_notes(match: ArbMatch) -> str:
+    return (
+        f"arb_gap={match.arb_gap:.4f} slug={match.limitless.slug} "
+        f"lim_entry={match.limitless.yes_price:.4f} "
+        f"poly_yes_entry={match.poly.yes_price:.4f} "
+        f"similarity={match.similarity:.3f}"
+    )
+
+
+def _write_entry_positions(
+    *,
+    positions_repo,
+    position_id: str,
+    match: ArbMatch,
+    stake_usdc: float,
+    lim_result: LimitlessOrderResult,
+    poly_result,
+) -> None:
+    ts = int(time.time() * 1000)
+    notes = _entry_notes(match)
+    if lim_result.status in ("paper_filled", "live_submitted"):
+        try:
+            positions_repo.append(PositionRow(
+                position_id=f"{position_id}_lim",
+                strategy_id="limitless_arb",
+                market_id=match.limitless.slug,
+                token_id=match.limitless.address,
+                side="buy",
+                open_ts_ms=ts,
+                entry_price=str(round(match.limitless.yes_price, 6)),
+                size=str(round(stake_usdc, 6)),
+                notional_usdc=str(round(stake_usdc, 6)),
+                gross_edge=str(round(match.arb_gap, 6)),
+                relationship_id=position_id,
+                relationship_type="limitless_poly_arb",
+                notes=notes,
+                status="open",
+                schema_version=1,
+                ingested_ts_ms=ts,
+            ))
+        except Exception:
+            logger.exception("positions append failed for limitless leg {}", match.limitless.slug)
+
+    if poly_result is not None and poly_result.status in ("paper_filled", "live_submitted"):
+        try:
+            positions_repo.append(PositionRow(
+                position_id=f"{position_id}_poly",
+                strategy_id="limitless_arb",
+                market_id=match.poly.condition_id,
+                token_id=match.poly.token_id_no,
+                side="buy",
+                open_ts_ms=ts,
+                entry_price=str(round(1.0 - match.poly.yes_price, 6)),
+                size=str(round(stake_usdc, 6)),
+                notional_usdc=str(round(stake_usdc, 6)),
+                gross_edge=str(round(match.arb_gap, 6)),
+                relationship_id=position_id,
+                relationship_type="limitless_poly_arb",
+                notes=notes,
+                status="open",
+                schema_version=1,
+                ingested_ts_ms=ts,
+            ))
+        except Exception:
+            logger.exception("positions append failed for poly leg {}", match.limitless.slug)
 
 
 def _log_limitless_leg(
@@ -443,18 +526,15 @@ async def _exit_both_legs(
     current_poly_yes: float,
     lim_client: LimitlessOrderClient,
     orders_log_repo,
+    poly_client=None,
+    positions_repo=None,
 ) -> bool:
     """Exit both legs of an open arb position.
 
-    Sells the Limitless YES leg via lim_client.place_order (paper mode logs a
-    fill; live mode would submit to the venue). The Polymarket leg exit is not
-    yet implemented — logged as a placeholder row in orders_log so the missed
-    exit is visible later. Returns True if the Limitless leg was logged.
+    The Limitless leg is logged directly because Limitless sell support is not
+    implemented on its order client. The Polymarket leg goes through
+    OrderClient so paper/live behavior and audit logging stay centralised.
     """
-    import time as _time
-
-    # Limitless leg exit. The current paper-mode order client only places
-    # buys; we log the exit directly with realised price = current YES bid.
     realised_lim_proceeds = current_lim_yes * position.stake_usdc
     entry_cost_lim = position.lim_entry_price * position.stake_usdc
     realised_poly_proceeds = (1.0 - current_poly_yes) * position.stake_usdc
@@ -463,10 +543,23 @@ async def _exit_both_legs(
         (realised_lim_proceeds - entry_cost_lim)
         + (realised_poly_proceeds - entry_cost_poly)
     )
+    exit_ts = int(time.time() * 1000)
+    exit_notes_lim = (
+        f"exit_leg=limitless position_id={position.position_id} "
+        f"lim_entry={position.lim_entry_price:.4f} "
+        f"lim_exit={current_lim_yes:.4f} "
+        f"realised_profit={realised_profit:.4f}"
+    )
+    exit_notes_poly = (
+        f"exit_leg=polymarket position_id={position.position_id} "
+        f"poly_entry={position.poly_yes_entry:.4f} "
+        f"poly_yes_current={current_poly_yes:.4f} "
+        f"realised_profit={realised_profit:.4f}"
+    )
 
     lim_row = OrdersLogRow(
         intent_id=uuid.uuid4().hex,
-        ts_ms=int(_time.time() * 1000),
+        ts_ms=exit_ts,
         strategy_id="limitless_arb_exit",
         token_id="",
         market_id=position.limitless_slug,
@@ -486,57 +579,111 @@ async def _exit_both_legs(
         http_status=None,
         source_lane="limitless_arb_exit",
         source_relationship_id=position.position_id,
-        notes=(
-            f"exit_leg=limitless position_id={position.position_id} "
-            f"lim_entry={position.lim_entry_price:.4f} "
-            f"lim_exit={current_lim_yes:.4f} "
-            f"realised_profit={realised_profit:.4f}"
-        ),
+        notes=exit_notes_lim,
     )
 
-    poly_row = OrdersLogRow(
-        intent_id=uuid.uuid4().hex,
-        ts_ms=int(_time.time() * 1000),
-        strategy_id="limitless_arb_exit",
-        token_id=position.poly_token_id_no,
-        market_id=position.poly_condition_id,
-        side="SELL_NO",
-        requested_size=str(round(position.stake_usdc, 6)),
-        filled_size="0",
-        avg_fill_price=str(round(1.0 - current_poly_yes, 6)),
-        notional_usdc="0",
-        fees_usdc="0",
-        status="exit_not_implemented",
-        reason="polymarket leg exit not yet implemented (live signing pending)",
-        paper_mode=True,
-        kill_switch_active=False,
-        orders_allowed=True,
-        preflight_passed=True,
-        preflight_token_id=None,
-        http_status=None,
-        source_lane="limitless_arb_exit",
-        source_relationship_id=position.position_id,
-        notes=(
-            f"exit_leg=polymarket position_id={position.position_id} "
-            f"poly_entry={position.poly_yes_entry:.4f} "
-            f"poly_yes_current={current_poly_yes:.4f} "
-            f"realised_profit={realised_profit:.4f}"
-        ),
-    )
+    poly_exit_status = "exit_not_implemented"
+    if poly_client is not None and position.poly_token_id_no:
+        sell_intent = OrderIntent(
+            id=uuid.uuid4().hex,
+            strategy_id="limitless_arb_exit",
+            token_id=position.poly_token_id_no,
+            market_id=position.poly_condition_id,
+            side="sell",
+            price=Decimal(str(round(1.0 - current_poly_yes, 6))),
+            size=Decimal(str(round(position.stake_usdc, 6))),
+        )
+        poly_exit_result = poly_client.place_order(
+            sell_intent,
+            strategy_id="limitless_arb_exit",
+            market_id=position.poly_condition_id,
+            source_lane="limitless_arb_exit",
+            source_relationship_id=position.position_id,
+            notes=exit_notes_poly,
+        )
+        poly_exit_status = poly_exit_result.status
+    else:
+        poly_placeholder = OrdersLogRow(
+            intent_id=uuid.uuid4().hex,
+            ts_ms=exit_ts,
+            strategy_id="limitless_arb_exit",
+            token_id=position.poly_token_id_no,
+            market_id=position.poly_condition_id,
+            side="SELL_NO",
+            requested_size=str(round(position.stake_usdc, 6)),
+            filled_size="0",
+            avg_fill_price=str(round(1.0 - current_poly_yes, 6)),
+            notional_usdc="0",
+            fees_usdc="0",
+            status="exit_not_implemented",
+            reason="poly_client not passed to _exit_both_legs",
+            paper_mode=True,
+            kill_switch_active=False,
+            orders_allowed=True,
+            preflight_passed=True,
+            preflight_token_id=None,
+            http_status=None,
+            source_lane="limitless_arb_exit",
+            source_relationship_id=position.position_id,
+            notes=exit_notes_poly,
+        )
+        try:
+            orders_log_repo.append(poly_placeholder)
+        except Exception:
+            logger.exception("orders_log append failed for poly placeholder {}", position.limitless_slug)
 
     try:
         orders_log_repo.append(lim_row)
-        orders_log_repo.append(poly_row)
-        logger.info(
-            "convergence: exited {} — profit={:.4f} (lim {:.4f}->{:.4f}, poly_yes {:.4f}->{:.4f})",
-            position.limitless_slug, realised_profit,
-            position.lim_entry_price, current_lim_yes,
-            position.poly_yes_entry, current_poly_yes,
-        )
-        return True
     except Exception:
-        logger.exception("convergence: orders_log append failed for {}", position.limitless_slug)
+        logger.exception("orders_log append failed for limitless exit {}", position.limitless_slug)
         return False
+
+    if positions_repo is not None:
+        for suffix in ("_lim", "_poly"):
+            try:
+                is_lim = suffix == "_lim"
+                positions_repo.append(PositionRow(
+                    position_id=f"{position.position_id}{suffix}",
+                    strategy_id="limitless_arb",
+                    market_id=position.limitless_slug if is_lim else position.poly_condition_id,
+                    token_id="" if is_lim else position.poly_token_id_no,
+                    side="sell",
+                    open_ts_ms=position.open_ts_ms,
+                    entry_price=str(round(
+                        position.lim_entry_price if is_lim else (1.0 - position.poly_yes_entry),
+                        6,
+                    )),
+                    size=str(round(position.stake_usdc, 6)),
+                    notional_usdc=str(round(
+                        realised_lim_proceeds if is_lim else realised_poly_proceeds,
+                        6,
+                    )),
+                    gross_edge=str(round(realised_profit, 6)),
+                    relationship_id=position.position_id,
+                    relationship_type="limitless_poly_arb",
+                    notes=exit_notes_lim if is_lim else exit_notes_poly,
+                    status="closed",
+                    schema_version=1,
+                    ingested_ts_ms=exit_ts,
+                ))
+            except Exception:
+                logger.exception(
+                    "positions close write failed for {} {}",
+                    position.limitless_slug,
+                    suffix,
+                )
+
+    logger.info(
+        "convergence: exited {} — profit={:.4f} lim={:.4f}->{:.4f} poly_yes={:.4f}->{:.4f} poly_exit={}",
+        position.limitless_slug,
+        realised_profit,
+        position.lim_entry_price,
+        current_lim_yes,
+        position.poly_yes_entry,
+        current_poly_yes,
+        poly_exit_status,
+    )
+    return True
 
 
 async def scan_and_exit_positions(
@@ -547,6 +694,8 @@ async def scan_and_exit_positions(
     convergence_threshold: float = 0.5,
     min_realised_profit_usdc: float = 0.0,
     limitless_host: str = "https://api.limitless.exchange",
+    poly_client=None,
+    positions_repo=None,
 ) -> int:
     """Scan open arb positions and exit any that have converged enough.
 
@@ -581,6 +730,38 @@ async def scan_and_exit_positions(
         # current YES price on Polymarket is approximately 1 - ask_for_no.
         current_poly_yes = max(0.0, min(1.0, 1.0 - current_poly))
 
+        if positions_repo is not None:
+            snap_ts = int(time.time() * 1000)
+            unrealised = (
+                (current_lim - position.lim_entry_price)
+                + (position.poly_yes_entry - current_poly_yes)
+            ) * position.stake_usdc
+            snap_notes = (
+                f"snap lim_now={current_lim:.4f} poly_yes_now={current_poly_yes:.4f} "
+                f"unrealised={unrealised:.4f}"
+            )
+            try:
+                positions_repo.append(PositionRow(
+                    position_id=position.position_id,
+                    strategy_id="limitless_arb",
+                    market_id=position.limitless_slug,
+                    token_id=position.poly_token_id_no,
+                    side="snapshot",
+                    open_ts_ms=position.open_ts_ms,
+                    entry_price=str(round(position.lim_entry_price, 6)),
+                    size=str(round(position.stake_usdc, 6)),
+                    notional_usdc=str(round(position.stake_usdc, 6)),
+                    gross_edge=str(round(unrealised, 6)),
+                    relationship_id=position.position_id,
+                    relationship_type="limitless_poly_arb",
+                    notes=snap_notes,
+                    status="open",
+                    schema_version=1,
+                    ingested_ts_ms=snap_ts,
+                ))
+            except Exception:
+                logger.exception("snapshot write failed for {}", position.limitless_slug)
+
         threshold = position.arb_gap * convergence_threshold
         delta_lim = abs(current_lim - position.lim_entry_price)
         delta_poly = abs(current_poly_yes - position.poly_yes_entry)
@@ -608,6 +789,8 @@ async def scan_and_exit_positions(
             current_poly_yes=current_poly_yes,
             lim_client=lim_client,
             orders_log_repo=orders_log_repo,
+            poly_client=poly_client,
+            positions_repo=positions_repo,
         ):
             exited += 1
 

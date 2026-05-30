@@ -11,7 +11,6 @@ import asyncio
 import csv
 import json
 import os
-import re
 import time
 from datetime import datetime
 from pathlib import Path
@@ -34,6 +33,7 @@ from ..limitless.models import ArbMatch, LimitlessArbPosition
 from ..live.order_client import OrderClient
 from ..settings import Settings
 from ..storage.parquet.orders_log_repo import ParquetOrdersLogRepository
+from ..storage.parquet.positions_repo import ParquetPositionsRepository
 from ..storage.parquet.raw_writer import RawWriter
 
 console = Console()
@@ -202,7 +202,10 @@ async def _run_execute(
         key_id, key_secret, wallet_address, private_key = _load_limitless_creds()
 
     orders_log_repo = ParquetOrdersLogRepository(settings.data_root)
-    poly_client = OrderClient(settings)
+    positions_repo = ParquetPositionsRepository(settings.data_root)
+    poly_client = OrderClient(settings, positions_repo=positions_repo)
+    open_positions = _load_open_limitless_positions(settings, paper_mode=paper_mode)
+    open_pairs = {(p.limitless_slug, p.poly_condition_id) for p in open_positions}
 
     async with AsyncHttpClient(settings.http) as http:
         from ..limitless.order_client import LimitlessOrderClient
@@ -218,6 +221,19 @@ async def _run_execute(
         )
 
         for match in opps:
+            if (match.limitless.slug, match.poly.condition_id) in open_pairs:
+                console.log(f"  [dim]{match.limitless.slug[:40]}: skipped — already open[/dim]")
+                continue
+
+            max_exposure = float(os.environ.get("POLYMARKET_ARB_MAX_OPEN_NOTIONAL_USDC", "50"))
+            current_exposure = sum(p.stake_usdc for p in open_positions)
+            if current_exposure + stake_usdc > max_exposure:
+                console.log(
+                    f"  [yellow]{match.limitless.slug[:40]}: skipped — exposure cap "
+                    f"(open={current_exposure:.2f} + stake={stake_usdc:.2f} > max={max_exposure:.2f})[/yellow]"
+                )
+                continue
+
             lim_res, poly_res = await execute_arb(
                 match,
                 lim_client=lim_order_client,
@@ -225,12 +241,18 @@ async def _run_execute(
                 stake_usdc=stake_usdc,
                 min_net_edge=min_net_edge,
                 orders_log_repo=orders_log_repo,
+                positions_repo=positions_repo,
             )
             poly_status = poly_res.status if poly_res is not None else "skipped"
             console.log(
                 f"  {match.limitless.slug[:40]}: "
                 f"lim={lim_res.status} poly={poly_status}"
             )
+            if lim_res.status in ("paper_filled", "live_submitted") and (
+                poly_res is not None and poly_res.status in ("paper_filled", "live_submitted")
+            ):
+                open_positions = _load_open_limitless_positions(settings, paper_mode=paper_mode)
+                open_pairs = {(p.limitless_slug, p.poly_condition_id) for p in open_positions}
 
         # Convergence-based early-exit pass: load open positions, check whether
         # both legs have moved enough since entry to lock in profit now.
@@ -240,15 +262,14 @@ async def _run_execute(
             )
         except ValueError:
             convergence_threshold = 0.5
-        open_positions = _load_open_limitless_positions(
-            settings, paper_mode=paper_mode,
-        )
         exited = await scan_and_exit_positions(
             open_positions,
             lim_client=lim_order_client,
             orders_log_repo=orders_log_repo,
             convergence_threshold=convergence_threshold,
             limitless_host=settings.limitless_host,
+            poly_client=poly_client,
+            positions_repo=positions_repo,
         )
         console.log(
             f"[cyan]Convergence scan: {len(open_positions)} open position(s), "
@@ -258,83 +279,40 @@ async def _run_execute(
     return results
 
 
-_NOTE_KV_RE = re.compile(r"(\w+)=([^\s]+)")
-
-
-def _parse_notes_kv(notes: str) -> dict[str, str]:
-    """Parse a ``key=value key=value`` notes blob into a dict."""
-    return dict(_NOTE_KV_RE.findall(notes or ""))
-
-
 def _load_open_limitless_positions(
     settings: Settings, *, paper_mode: bool,
 ) -> list[LimitlessArbPosition]:
-    """Reconstruct currently-open limitless_arb positions from orders_log.
+    """Load open limitless_arb positions from the append-only positions table."""
+    _ = paper_mode
+    import re as _re
 
-    Reads the orders_log parquet table, filters for entry rows (strategy_id
-    'limitless_arb' with status 'paper_filled' in paper mode, or
-    'live_submitted' in live mode), excludes positions that already have a
-    recorded exit (strategy_id 'limitless_arb_exit'), and parses arb_gap, slug,
-    lim_entry, poly_yes_entry out of the notes field via regex.
-    """
-    import duckdb
-
-    lake = settings.data_root / "normalised" / "orders_log"
-    if not lake.exists():
-        return []
-    entry_status = "paper_filled" if paper_mode else "live_submitted"
-    glob = str(lake) + "/dt=*/*.parquet"
+    repo = ParquetPositionsRepository(settings.data_root)
+    positions: list[LimitlessArbPosition] = []
     try:
-        con = duckdb.connect(":memory:")
-        # Pick only the Polymarket leg of each arb pair (side='buy'); it
-        # carries the poly condition_id (market_id) and token_id_no.
-        rows = con.execute(
-            f"""
-            SELECT intent_id, ts_ms, market_id, token_id, notes,
-                   TRY_CAST(notional_usdc AS DOUBLE) AS notional
-            FROM read_parquet('{glob}', hive_partitioning=true)
-            WHERE strategy_id = 'limitless_arb' AND status = '{entry_status}'
-              AND lower(side) = 'buy'
-            ORDER BY ts_ms DESC
-            """,
-        ).fetchall()
-        exited_ids = {
-            r[0] for r in con.execute(
-                f"""
-                SELECT source_relationship_id
-                FROM read_parquet('{glob}', hive_partitioning=true)
-                WHERE strategy_id = 'limitless_arb_exit'
-                """,
-            ).fetchall()
-        }
+        for row in repo.iter_open(strategy_id="limitless_arb"):
+            if row.side == "snapshot" or row.token_id.startswith("0x"):
+                continue
+            kv = dict(_re.findall(r"(\w+)=([\S]+)", row.notes or ""))
+            try:
+                arb_gap = float(kv["arb_gap"])
+                lim_entry = float(kv["lim_entry"])
+                poly_yes_entry = float(kv["poly_yes_entry"])
+                slug = kv.get("slug", "")
+            except (KeyError, ValueError):
+                continue
+            positions.append(LimitlessArbPosition(
+                position_id=row.relationship_id,
+                limitless_slug=slug,
+                poly_condition_id=row.market_id,
+                poly_token_id_no=row.token_id,
+                lim_entry_price=lim_entry,
+                poly_yes_entry=poly_yes_entry,
+                arb_gap=arb_gap,
+                stake_usdc=float(row.notional_usdc) if row.notional_usdc else 1.0,
+                open_ts_ms=row.open_ts_ms,
+            ))
     except Exception as exc:
         console.log(f"[yellow]load_open_positions: query failed: {exc}[/yellow]")
-        return []
-
-    positions: list[LimitlessArbPosition] = []
-    for intent_id, ts_ms, market_id, token_id, notes, notional in rows:
-        kv = _parse_notes_kv(notes or "")
-        try:
-            arb_gap = float(kv["arb_gap"])
-            lim_entry = float(kv["lim_entry"])
-            poly_yes_entry = float(kv["poly_yes_entry"])
-        except (KeyError, ValueError):
-            continue
-        slug = kv.get("slug", "")
-        position_id = f"{slug}|{market_id}|{intent_id}"
-        if position_id in exited_ids:
-            continue
-        positions.append(LimitlessArbPosition(
-            position_id=position_id,
-            limitless_slug=slug,
-            poly_condition_id=str(market_id or ""),
-            poly_token_id_no=str(token_id or ""),
-            lim_entry_price=lim_entry,
-            poly_yes_entry=poly_yes_entry,
-            arb_gap=arb_gap,
-            stake_usdc=float(notional) if notional else 1.0,
-            open_ts_ms=int(ts_ms),
-        ))
     return positions
 
 

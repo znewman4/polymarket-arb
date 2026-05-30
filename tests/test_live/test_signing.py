@@ -6,6 +6,7 @@ from decimal import Decimal
 from unittest.mock import MagicMock
 
 import pytest
+from py_clob_client.order_builder.constants import SELL
 
 from polymarket_arb.live.signing import (
     SigningNotConfigured,
@@ -30,18 +31,6 @@ def test_build_clob_client_constructs_with_dummy_credentials() -> None:
         api_passphrase="dummy-passphrase",
     )
     assert client is not None
-
-
-def test_sign_and_build_order_rejects_sell_side() -> None:
-    client = MagicMock()
-    with pytest.raises(ValueError, match="Only 'buy' side supported"):
-        sign_and_build_order(
-            client,
-            token_id="tok",
-            price=Decimal("0.5"),
-            size=Decimal("10"),
-            side="sell",
-        )
 
 
 def test_sign_and_build_order_requires_client() -> None:
@@ -72,6 +61,36 @@ def test_sign_and_build_order_passes_through_create_order_result() -> None:
     assert order_args.token_id == "tok-a"
     assert order_args.price == 0.5234
     assert order_args.size == 12.5
+
+
+def test_sign_and_build_order_sell_uses_sell_constant() -> None:
+    fake_signed = {"signature": "0xbeef", "salt": "2"}
+    client = MagicMock()
+    client.create_order.return_value = fake_signed
+
+    result = sign_and_build_order(
+        client,
+        token_id="tok",
+        price=Decimal("0.50"),
+        size=Decimal("10"),
+        side="sell",
+    )
+
+    assert result is fake_signed
+    (order_args,), _ = client.create_order.call_args
+    assert order_args.side == SELL
+
+
+def test_sign_and_build_order_invalid_side_raises() -> None:
+    client = MagicMock()
+    with pytest.raises(ValueError, match="side must be 'buy' or 'sell'"):
+        sign_and_build_order(
+            client,
+            token_id="tok",
+            price=Decimal("0.5"),
+            size=Decimal("10"),
+            side="short",
+        )
 
 
 def test_post_order_returns_response_dict() -> None:
