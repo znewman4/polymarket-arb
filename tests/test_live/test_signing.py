@@ -41,6 +41,7 @@ def test_sign_and_build_order_requires_client() -> None:
             price=Decimal("0.5"),
             size=Decimal("10"),
             side="buy",
+            neg_risk=False,
         )
 
 
@@ -54,6 +55,7 @@ def test_sign_and_build_order_passes_through_create_order_result() -> None:
         price=Decimal("0.5234"),
         size=Decimal("12.5"),
         side="buy",
+        neg_risk=False,
     )
     assert result is fake_signed
     client.create_order.assert_called_once()
@@ -74,11 +76,37 @@ def test_sign_and_build_order_sell_uses_sell_constant() -> None:
         price=Decimal("0.50"),
         size=Decimal("10"),
         side="sell",
+        neg_risk=False,
     )
 
     assert result is fake_signed
     (order_args,), _ = client.create_order.call_args
     assert order_args.side == SELL
+
+
+def test_sign_and_build_order_neg_risk_sets_flag(monkeypatch) -> None:
+    captured: dict[str, object] = {}
+
+    class FakeOrderArgs:
+        def __init__(self, **kwargs) -> None:
+            captured.update(kwargs)
+
+    fake_signed = {"signature": "0xneg", "salt": "3"}
+    client = MagicMock()
+    client.create_order.return_value = fake_signed
+    monkeypatch.setattr("polymarket_arb.live.signing.OrderArgs", FakeOrderArgs)
+
+    result = sign_and_build_order(
+        client,
+        token_id="tok",
+        price=Decimal("0.50"),
+        size=Decimal("10"),
+        side="buy",
+        neg_risk=True,
+    )
+
+    assert result is fake_signed
+    assert captured["neg_risk"] is True
 
 
 def test_sign_and_build_order_invalid_side_raises() -> None:
@@ -90,6 +118,7 @@ def test_sign_and_build_order_invalid_side_raises() -> None:
             price=Decimal("0.5"),
             size=Decimal("10"),
             side="short",
+            neg_risk=False,
         )
 
 

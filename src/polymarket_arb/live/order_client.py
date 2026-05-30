@@ -29,6 +29,8 @@ from decimal import Decimal, InvalidOperation
 from pathlib import Path
 from typing import TYPE_CHECKING
 
+from loguru import logger
+
 from ..backtest.execution_sim import simulate_buy_from_orderbook, simulate_sell_from_orderbook
 from ..compliance.trade_gate import OrdersForbidden, raise_if_orders_disallowed
 from ..monitoring import kill_switch
@@ -258,19 +260,28 @@ class OrderClient:
                 chain_id=self._settings.polymarket_chain_id,
                 host=self._settings.polymarket_clob_host,
             )
+            try:
+                market_info = clob_client.get_market(intent.market_id)
+                neg_risk = bool(market_info.get("neg_risk", False))
+            except Exception:
+                neg_risk = False
+                logger.warning(
+                    "could not fetch neg_risk for market {}, defaulting to False",
+                    intent.market_id,
+                )
             signed_order = sign_and_build_order(
                 clob_client,
                 token_id=intent.token_id,
                 price=intent.price,
                 size=intent.size,
                 side=intent.side,
+                neg_risk=neg_risk,
             )
             resp = post_order(clob_client, signed_order)
             order_id = resp.get("orderID") or resp.get("order_id") or resp.get("id", "")
             http_status_code = 200 if order_id else 400
             status = "live_submitted" if order_id else "live_failed"
             reason = "" if order_id else f"CLOB response: {resp}"
-            from loguru import logger
             logger.info(
                 "live order submitted: token_id={} order_id={} status={}",
                 intent.token_id, order_id, status,
@@ -325,7 +336,6 @@ class OrderClient:
                 detail={},
             )
         except Exception as exc:
-            from loguru import logger
             logger.exception("live order submission failed for intent_id={}", intent.id)
             return self._record_and_return(
                 intent=intent,

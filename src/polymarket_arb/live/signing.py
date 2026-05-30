@@ -46,6 +46,7 @@ def sign_and_build_order(
     price: Decimal,
     size: Decimal,
     side: str,
+    neg_risk: bool = False,
 ) -> Any:
     """Sign an order intent and return the signed order payload.
 
@@ -58,12 +59,21 @@ def sign_and_build_order(
     if side.lower() not in ("buy", "sell"):
         raise ValueError(f"side must be 'buy' or 'sell', got {side!r}")
 
-    order_args = OrderArgs(
-        token_id=token_id,
-        price=float(round(price, 4)),
-        size=float(round(size, 2)),
-        side=BUY if side.lower() == "buy" else SELL,
-    )
+    order_kwargs = {
+        "token_id": token_id,
+        "price": float(round(price, 4)),
+        "size": float(round(size, 2)),
+        "side": BUY if side.lower() == "buy" else SELL,
+        "neg_risk": neg_risk,
+    }
+    try:
+        order_args = OrderArgs(**order_kwargs)
+    except TypeError as exc:
+        if "neg_risk" not in str(exc):
+            raise
+        order_kwargs.pop("neg_risk")
+        order_args = OrderArgs(**order_kwargs)
+        order_args.neg_risk = neg_risk
     signed = client.create_order(order_args)
     logger.debug(
         "signed order: token_id={} price={} size={}",
