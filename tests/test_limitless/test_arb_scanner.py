@@ -98,6 +98,17 @@ class _PolyOrderClient:
         return SimpleNamespace(status="paper_filled")
 
 
+@pytest.fixture(autouse=True)
+def _no_poly_token_refresh(monkeypatch):
+    async def _token_ids(condition_id: str, clob_host: str = "https://clob.polymarket.com"):
+        return None
+
+    monkeypatch.setattr(
+        "polymarket_arb.limitless.arb_scanner._fetch_poly_token_ids",
+        _token_ids,
+    )
+
+
 # ─── _arb_status ─────────────────────────────────────────────────────────────
 
 
@@ -457,6 +468,37 @@ async def test_execute_arb_fetches_address_when_missing(monkeypatch):
     )
 
     assert lim_client.market.address == "0xABC"
+
+
+@pytest.mark.asyncio
+async def test_execute_arb_refreshes_poly_token_ids(monkeypatch):
+    async def _token_ids(condition_id: str, clob_host: str = "https://clob.polymarket.com"):
+        assert condition_id == "0xPOLY"
+        return "YES_TOKEN", "NO_TOKEN"
+
+    async def _live_ask(token_id: str) -> float:
+        assert token_id == "NO_TOKEN"
+        return 0.57
+
+    monkeypatch.setattr(
+        "polymarket_arb.limitless.arb_scanner._fetch_poly_token_ids",
+        _token_ids,
+    )
+    monkeypatch.setattr(
+        "polymarket_arb.limitless.arb_scanner._fetch_live_poly_best_ask",
+        _live_ask,
+    )
+    poly_client = _PolyOrderClient()
+
+    await execute_arb(
+        _match(),
+        lim_client=_LimOrderClient(),
+        poly_client=poly_client,
+        stake_usdc=1.0,
+        min_net_edge=0.02,
+    )
+
+    assert poly_client.intent.token_id == "NO_TOKEN"
 
 
 # ─── Task 2: tokenID capital-D + clobTokenIds plain list ─────────────────────

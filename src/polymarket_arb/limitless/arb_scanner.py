@@ -337,6 +337,25 @@ async def execute_arb(
             )
             return dummy_lim, None
 
+    # Refresh Polymarket token IDs from CLOB — Gamma clobTokenIds can be stale.
+    clob_tokens = await _fetch_poly_token_ids(match.poly.condition_id)
+    if clob_tokens:
+        token_id_yes, token_id_no = clob_tokens
+        from dataclasses import replace as _replace
+        match = _replace(
+            match,
+            poly=_replace(
+                match.poly,
+                token_id_yes=token_id_yes,
+                token_id_no=token_id_no,
+            ),
+        )
+    else:
+        logger.warning(
+            "execute_arb: could not refresh CLOB token IDs for {}, using Gamma values",
+            match.poly.condition_id,
+        )
+
     live_ask = await _fetch_live_poly_best_ask(match.poly.token_id_no)
     if live_ask is None:
         logger.warning("execute_arb: no live poly book for {}", match.limitless.slug)
@@ -582,6 +601,48 @@ async def _fetch_limitless_market_address(
     except Exception as exc:
         logger.warning("limitless detail fetch failed for {}: {}", slug, exc)
         return ""
+
+
+async def _fetch_poly_token_ids(
+    condition_id: str,
+    clob_host: str = "https://clob.polymarket.com",
+) -> tuple[str, str] | None:
+    """Fetch YES and NO token IDs from the Polymarket CLOB API.
+
+    The Gamma API sometimes returns stale or incorrect clobTokenIds.
+    The CLOB API is authoritative.
+
+    Returns (token_id_yes, token_id_no) or None if lookup fails.
+    """
+    import httpx
+
+    url = f"{clob_host.rstrip('/')}/markets/{condition_id}"
+    try:
+        async with httpx.AsyncClient(timeout=5.0) as client:
+            r = await client.get(url)
+            r.raise_for_status()
+            data = r.json()
+            tokens = data.get("tokens", [])
+            token_id_yes = ""
+            token_id_no = ""
+            for t in tokens:
+                outcome = str(t.get("outcome", "")).lower()
+                tid = str(t.get("token_id", ""))
+                if outcome == "yes":
+                    token_id_yes = tid
+                elif outcome == "no":
+                    token_id_no = tid
+            if token_id_yes and token_id_no:
+                logger.debug(
+                    "clob token lookup: {} YES={} NO={}",
+                    condition_id, token_id_yes[:8], token_id_no[:8],
+                )
+                return token_id_yes, token_id_no
+            logger.warning("clob token lookup: missing tokens for {}", condition_id)
+            return None
+    except Exception as exc:
+        logger.warning("clob token lookup failed for {}: {}", condition_id, exc)
+        return None
 
 
 async def _exit_both_legs(
