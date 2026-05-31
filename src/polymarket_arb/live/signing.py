@@ -35,7 +35,7 @@ def build_clob_client(
         key=private_key_hex,
         chain_id=chain_id,
         creds=creds,
-        signature_type=0,
+        signature_type=1,
     )
 
 
