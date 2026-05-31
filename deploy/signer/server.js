@@ -27,10 +27,8 @@ let client;
 function getClient() {
   if (client) return client;
   const account = privateKeyToAccount(PRIVATE_KEY);
-  const walletClient = createWalletClient({
-    account,
-    transport: http(),
-  });
+  const walletClient = createWalletClient({ account, chain: polygon, transport: http("https://polygon-rpc.com") });
+
   const creds = API_KEY ? new ApiKeyCreds({
     api_key: API_KEY,
     api_secret: API_SECRET || "",
