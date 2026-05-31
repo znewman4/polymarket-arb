@@ -1,15 +1,16 @@
 "use strict";
 
 const express = require("express");
-const { ethers } = require("ethers");
-const { ClobClient, Side, OrderType, PartialCreateOrderOptions, OrderArgs } = require("@polymarket/clob-client-v2");
+const { createWalletClient, http } = require("viem");
+const { privateKeyToAccount } = require("viem/accounts");
+const { polygon } = require("viem/chains");
+const { ClobClient, Chain, OrderType, Side, ApiKeyCreds } = require("@polymarket/clob-client-v2");
 
 const app = express();
 app.use(express.json());
 
 const PORT = parseInt(process.env.SIGNER_PORT || "7777", 10);
 const HOST = "https://clob.polymarket.com";
-const CHAIN_ID = 137;
 
 const PRIVATE_KEY = process.env.POLYMARKET_SIGNER_PRIVATE_KEY;
 const API_KEY = process.env.POLYMARKET_SIGNER_API_KEY;
@@ -25,14 +26,20 @@ if (!PRIVATE_KEY) {
 let client;
 function getClient() {
   if (client) return client;
-  const wallet = new ethers.Wallet(PRIVATE_KEY);
-  const creds = API_KEY
-    ? { api_key: API_KEY, api_secret: API_SECRET || "", api_passphrase: API_PASSPHRASE || "" }
-    : undefined;
+  const account = privateKeyToAccount(PRIVATE_KEY);
+  const walletClient = createWalletClient({
+    account,
+    transport: http(),
+  });
+  const creds = API_KEY ? new ApiKeyCreds({
+    api_key: API_KEY,
+    api_secret: API_SECRET || "",
+    api_passphrase: API_PASSPHRASE || "",
+  }) : undefined;
   client = new ClobClient({
     host: HOST,
-    chain: CHAIN_ID,
-    signer: wallet,
+    chain: Chain.POLYGON,
+    signer: walletClient,
     creds,
     signatureType: 1,
     funderAddress: FUNDER || undefined,
@@ -42,29 +49,21 @@ function getClient() {
 
 app.post("/order", async (req, res) => {
   const { token_id, price, size, side, tick_size = "0.01", neg_risk = false } = req.body;
-
   if (!token_id || price == null || size == null || !side) {
     return res.status(400).json({ error: "Missing required fields: token_id, price, size, side" });
   }
   if (!["buy", "sell"].includes(side.toLowerCase())) {
     return res.status(400).json({ error: `Invalid side: ${side}` });
   }
-
   try {
     const c = getClient();
     const orderSide = side.toLowerCase() === "buy" ? Side.BUY : Side.SELL;
-    const orderArgs = new OrderArgs({
-      tokenID: token_id,
-      price: parseFloat(price),
-      size: parseFloat(size),
-      side: orderSide,
-    });
-    const options = new PartialCreateOrderOptions({
-      tickSize: tick_size,
-      negRisk: neg_risk,
-    });
-    const resp = await c.createAndPostOrder(orderArgs, options, OrderType.GTC);
-    console.log(`[signer] order posted: ${side} ${size} @ ${price} token=${token_id.slice(0, 8)}... resp=${JSON.stringify(resp).slice(0, 100)}`);
+    const resp = await c.createAndPostOrder(
+      { tokenID: token_id, price: parseFloat(price), size: parseFloat(size), side: orderSide },
+      { tickSize: tick_size, negRisk: neg_risk },
+      OrderType.GTC,
+    );
+    console.log(`[signer] order posted: ${side} ${size} @ ${price} token=${token_id.slice(0, 8)}...`);
     return res.json(resp);
   } catch (err) {
     console.error(`[signer] order failed: ${err.message}`);
@@ -87,6 +86,6 @@ app.get("/balance", async (req, res) => {
 });
 
 app.listen(PORT, "0.0.0.0", () => {
-  console.log(`[signer] Polymarket Magic wallet signer running on port ${PORT}`);
+  console.log(`[signer] running on port ${PORT}`);
   console.log(`[signer] funder=${FUNDER || "not set"}`);
 });
