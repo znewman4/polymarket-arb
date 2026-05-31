@@ -110,6 +110,27 @@ services:
         max-size: "10m"
         max-file: "3"
 
+  poly-signer:
+    build:
+      context: ..
+      dockerfile: deploy/signer/Dockerfile
+    container_name: polymarket-arb-poly-signer
+    restart: unless-stopped
+    env_file:
+      - ../.env
+    environment:
+      - POLYMARKET_SIGNER_PRIVATE_KEY=${POLYMARKET_ARB_POLYMARKET_PRIVATE_KEY}
+      - POLYMARKET_SIGNER_API_KEY=${POLYMARKET_ARB_POLYMARKET_API_KEY}
+      - POLYMARKET_SIGNER_API_SECRET=${POLYMARKET_ARB_POLYMARKET_API_SECRET}
+      - POLYMARKET_SIGNER_API_PASSPHRASE=${POLYMARKET_ARB_POLYMARKET_API_PASSPHRASE}
+      - POLYMARKET_SIGNER_FUNDER=${POLYMARKET_ARB_POLYMARKET_FUNDER}
+      - SIGNER_PORT=7777
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+
   limitless-arb:
     build:
       context: ..
@@ -117,6 +138,8 @@ services:
     image: polymarket-arb:agent
     container_name: polymarket-arb-limitless-arb
     restart: unless-stopped
+    depends_on:
+      - poly-signer
     env_file:
       - ../.env
     environment:

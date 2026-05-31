@@ -185,12 +185,16 @@ def test_live_mode_with_orders_disallowed_rejects(settings, tmp_data_root) -> No
     assert rows[0].status == "rejected_orders_disallowed"
 
 
-def test_live_mode_with_orders_allowed_and_no_credentials_rejected(
+def test_live_mode_with_orders_allowed_and_no_signer_url_rejected(
     settings, tmp_data_root
 ) -> None:
-    """paper_mode=False AND orders_allowed=True but no credentials →
+    """paper_mode=False AND orders_allowed=True but no signer URL →
     rejected_credentials_missing (no network attempt)."""
-    s = settings.model_copy(update={"paper_mode": False, "orders_allowed": True})
+    s = settings.model_copy(update={
+        "paper_mode": False,
+        "orders_allowed": True,
+        "polymarket_signer_url": "",
+    })
     client = OrderClient(s)
     result = client.place_order(_intent())
     assert result.status == "rejected_credentials_missing"
@@ -199,29 +203,14 @@ def test_live_mode_with_orders_allowed_and_no_credentials_rejected(
     assert rows[0].status == "rejected_credentials_missing"
 
 
-def test_live_mode_submits_when_credentials_configured(
+def test_live_mode_submits_via_signer(
     settings, tmp_data_root, monkeypatch
 ) -> None:
-    """With credentials present and CLOB client mocked, status → live_submitted."""
+    """With signer service mocked, status → live_submitted."""
     s = settings.model_copy(update={
         "paper_mode": False,
         "orders_allowed": True,
-        "polymarket_private_key": "0xkey",
-        "polymarket_api_key": "k",
-        "polymarket_api_secret": "s",
-        "polymarket_api_passphrase": "p",
-        "polymarket_funder": "0xFUNDER",
     })
-    build_kwargs: dict[str, object] = {}
-
-    def _build_client(**kw):
-        build_kwargs.update(kw)
-        return object()
-
-    monkeypatch.setattr(
-        "polymarket_arb.live.order_client.build_clob_client",
-        _build_client,
-    )
     monkeypatch.setattr(
         "httpx.get",
         lambda *a, **kw: type(
@@ -234,7 +223,7 @@ def test_live_mode_submits_when_credentials_configured(
         )(),
     )
     monkeypatch.setattr(
-        "polymarket_arb.live.order_client.create_and_post_order",
+        "polymarket_arb.live.order_client.post_order_via_signer",
         lambda *a, **kw: {"orderID": "abc123"},
     )
     client = OrderClient(s)
@@ -244,29 +233,20 @@ def test_live_mode_submits_when_credentials_configured(
     assert result.http_status == 200
     assert result.filled_size == Decimal("10")
     assert result.notional_usdc == Decimal("5.0")
-    assert build_kwargs["funder"] == "0xFUNDER"
 
 
-def test_live_mode_failed_when_create_and_post_order_raises(
+def test_live_mode_failed_when_signer_raises(
     settings, tmp_data_root, monkeypatch
 ) -> None:
     """Exception inside the live path → live_failed, no re-raise."""
     s = settings.model_copy(update={
         "paper_mode": False,
         "orders_allowed": True,
-        "polymarket_private_key": "0xkey",
-        "polymarket_api_key": "k",
-        "polymarket_api_secret": "s",
-        "polymarket_api_passphrase": "p",
     })
 
     def _boom(*a, **kw):
         raise RuntimeError("CLOB unreachable")
 
-    monkeypatch.setattr(
-        "polymarket_arb.live.order_client.build_clob_client",
-        lambda **kw: object(),
-    )
     monkeypatch.setattr(
         "httpx.get",
         lambda *a, **kw: type(
@@ -279,7 +259,7 @@ def test_live_mode_failed_when_create_and_post_order_raises(
         )(),
     )
     monkeypatch.setattr(
-        "polymarket_arb.live.order_client.create_and_post_order",
+        "polymarket_arb.live.order_client.post_order_via_signer",
         _boom,
     )
     client = OrderClient(s)

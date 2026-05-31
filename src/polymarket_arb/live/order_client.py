@@ -6,9 +6,8 @@ against the latest recorded orderbook snapshot via
 opened, no signing key is loaded.  Every call writes one row to ``orders_log``
 so the agent's behaviour is fully auditable.
 
-When ``paper_mode=False`` AND ``orders_allowed=True`` AND Polymarket credentials
-are configured, the client routes through ``signing.create_and_post_order`` to
-submit to the CLOB API.
+When ``paper_mode=False`` AND ``orders_allowed=True`` AND the signer service URL
+is configured, the client routes through that service to submit to the CLOB API.
 
 Safety order (every place_order checks these BEFORE doing anything else):
     1. kill switch — file or SIGUSR1
@@ -16,7 +15,7 @@ Safety order (every place_order checks these BEFORE doing anything else):
     3. preflight gate — produces a token or raises
     4. paper_mode branch:
        - True  → simulate via execution_sim + write orders_log
-       - False → call signing stub (currently raises) + would_submit
+       - False → call signer service + write orders_log
 """
 
 from __future__ import annotations
@@ -42,8 +41,7 @@ from ..storage.parquet.positions_repo import ParquetPositionsRepository
 from .models import OrderResult, OrdersLogRow, PositionRow
 from .signing import (
     SigningNotConfigured,
-    build_clob_client,
-    create_and_post_order,
+    post_order_via_signer,
 )
 
 if TYPE_CHECKING:
@@ -192,7 +190,7 @@ class OrderClient:
                 preflight_token_id=preflight_token_id,
                 live_best_ask=live_best_ask,
                 notes=notes,
-            )
+        )
 
         # ── Gate 3: live mode — compliance must permit it ────────────────────
         try:
@@ -223,8 +221,7 @@ class OrderClient:
                 detail={},
             )
 
-        # ── Live: build client, sign, submit ────────────────────────────────
-        if not self._settings.polymarket_credentials_configured:
+        if not self._settings.polymarket_signer_url:
             return self._record_and_return(
                 intent=intent,
                 ts=ts,
@@ -239,7 +236,7 @@ class OrderClient:
                 preflight_passed=preflight_passed,
                 preflight_token_id=preflight_token_id,
                 status="rejected_credentials_missing",
-                reason="polymarket credentials not configured in settings",
+                reason="polymarket_signer_url is not configured",
                 filled_size=Decimal("0"),
                 avg_fill_price=None,
                 notional=Decimal("0"),
@@ -251,22 +248,12 @@ class OrderClient:
             )
 
         try:
-            clob_client = build_clob_client(
-                private_key_hex=self._settings.polymarket_private_key,
-                api_key=self._settings.polymarket_api_key,
-                api_secret=self._settings.polymarket_api_secret,
-                api_passphrase=self._settings.polymarket_api_passphrase,
-                funder=self._settings.polymarket_funder,
-                chain_id=self._settings.polymarket_chain_id,
-                host=self._settings.polymarket_clob_host,
-            )
             try:
                 import httpx as _httpx
                 _r = _httpx.get(
-                    f"{self._settings.polymarket_clob_host.rstrip('/')}/markets/{intent.market_id}",
+                    f"https://clob.polymarket.com/markets/{intent.market_id}",
                     timeout=5.0,
                 )
-                _r.raise_for_status()
                 _market = _r.json()
                 neg_risk = bool(_market.get("neg_risk", False))
                 tick_size = str(_market.get("minimum_tick_size", "0.01"))
@@ -277,8 +264,8 @@ class OrderClient:
                     "could not fetch market info for {}, using defaults",
                     intent.market_id,
                 )
-            resp = create_and_post_order(
-                clob_client,
+            resp = post_order_via_signer(
+                self._settings.polymarket_signer_url,
                 token_id=intent.token_id,
                 price=intent.price,
                 size=intent.size,

@@ -5,14 +5,11 @@ from __future__ import annotations
 from decimal import Decimal
 from typing import Any
 
+import httpx
 from loguru import logger
 from py_clob_client_v2 import (
     ApiCreds,
     ClobClient,
-    OrderArgs,
-    OrderType,
-    PartialCreateOrderOptions,
-    Side,
 )
 
 
@@ -46,8 +43,8 @@ def build_clob_client(
     )
 
 
-def create_and_post_order(
-    client: ClobClient,
+def post_order_via_signer(
+    signer_url: str,
     *,
     token_id: str,
     price: Decimal,
@@ -55,38 +52,58 @@ def create_and_post_order(
     side: str,
     tick_size: str = "0.01",
     neg_risk: bool = False,
+    timeout: float = 15.0,
 ) -> dict[str, Any]:
-    """Create and post a GTC limit order to the Polymarket CLOB V2.
+    """Post an order via the Node.js Polymarket signer microservice.
 
-    Returns the API response dict.
+    The signer service handles EIP-712 signing for Magic/proxy wallet accounts,
+    which is broken in py-clob-client-v2 for non-EOA accounts.
+
+    Args:
+        signer_url: Base URL of the signer service, e.g. "http://poly-signer:7777"
+        token_id: Polymarket CLOB token ID for the outcome to buy/sell
+        price: Limit price (0-1)
+        size: Order size in shares
+        side: "buy" or "sell"
+        tick_size: Market tick size from CLOB API, default "0.01"
+        neg_risk: Whether the market is a neg-risk market
+        timeout: HTTP timeout in seconds
+
+    Returns:
+        API response dict from the signer service
 
     Raises:
-        SigningNotConfigured: if client is None.
-        ValueError: if side is not 'buy' or 'sell'.
+        SigningNotConfigured: if signer_url is empty
+        httpx.HTTPError: on network failure
+        RuntimeError: if the signer returns an error response
     """
-    if client is None:
-        raise SigningNotConfigured("ClobClient not initialised.")
-    if side.lower() not in ("buy", "sell"):
-        raise ValueError(f"side must be 'buy' or 'sell', got {side!r}")
+    if not signer_url:
+        raise SigningNotConfigured("polymarket_signer_url is not configured")
 
-    order_side = Side.BUY if side.lower() == "buy" else Side.SELL
-    order_args = OrderArgs(
-        token_id=token_id,
-        price=float(round(price, 4)),
-        size=float(round(size, 2)),
-        side=order_side,
-    )
-    options = PartialCreateOrderOptions(
-        tick_size=tick_size,
-        neg_risk=neg_risk,
-    )
-    resp = client.create_and_post_order(
-        order_args=order_args,
-        options=options,
-        order_type=OrderType.GTC,
-    )
-    logger.debug(
-        "v2 order posted: token_id={} price={} size={} side={}",
-        token_id, price, size, side,
-    )
-    return resp if isinstance(resp, dict) else {"raw": resp}
+    payload = {
+        "token_id": token_id,
+        "price": float(round(price, 4)),
+        "size": float(round(size, 2)),
+        "side": side.lower(),
+        "tick_size": tick_size,
+        "neg_risk": neg_risk,
+    }
+    try:
+        response = httpx.post(
+            f"{signer_url.rstrip('/')}/order",
+            json=payload,
+            timeout=timeout,
+        )
+        result = response.json()
+        if response.status_code >= 400:
+            raise RuntimeError(
+                f"signer returned {response.status_code}: {result.get('error', result)}"
+            )
+        logger.debug(
+            "signer order posted: token_id={} price={} size={} side={}",
+            token_id, price, size, side,
+        )
+        return result
+    except httpx.HTTPError as exc:
+        logger.error("signer HTTP error for token {}: {}", token_id, exc)
+        raise

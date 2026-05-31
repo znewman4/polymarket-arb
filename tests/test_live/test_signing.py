@@ -1,179 +1,103 @@
-"""Tests for the Polymarket CLOB V2 signing wrapper."""
+"""Tests for the Polymarket signer microservice wrapper."""
 
 from __future__ import annotations
 
+import json
 from decimal import Decimal
-from unittest.mock import MagicMock
 
+import httpx
 import pytest
+import respx
 
-from polymarket_arb.live.signing import (
-    SigningNotConfigured,
-    build_clob_client,
-    create_and_post_order,
-)
+from polymarket_arb.live.signing import SigningNotConfigured, post_order_via_signer
 
-
-def test_build_clob_client_constructs_with_dummy_credentials() -> None:
-    """build_clob_client should construct without error given dummy creds.
-
-    The dummy hex key is a valid 32-byte secp256k1 scalar, so the underlying
-    eth-account loader accepts it; no network call is made at construction.
-    """
-    client = build_clob_client(
-        private_key_hex=(
-            "0x59c6995e998f97a5a0044966f0945389dc9e86dae88c7a8412f4603b6b78690d"
-        ),
-        api_key="dummy-api-key",
-        api_secret="dummy-secret",
-        api_passphrase="dummy-passphrase",
-    )
-    assert client is not None
+SIGNER_URL = "http://poly-signer:7777"
 
 
-def test_build_clob_client_passes_signature_type_and_funder(monkeypatch) -> None:
-    captured: dict[str, object] = {}
-
-    class FakeClobClient:
-        def __init__(self, **kwargs) -> None:
-            captured.update(kwargs)
-
-    monkeypatch.setattr("polymarket_arb.live.signing.ClobClient", FakeClobClient)
-
-    client = build_clob_client(
-        private_key_hex="0xkey",
-        api_key="api",
-        api_secret="secret",
-        api_passphrase="passphrase",
-        funder="0xFUNDER",
+@respx.mock
+def test_post_order_via_signer_success() -> None:
+    """Successful order returns the signer response dict."""
+    respx.post(f"{SIGNER_URL}/order").mock(
+        return_value=httpx.Response(200, json={"order_id": "abc123", "status": "live"})
     )
 
-    assert isinstance(client, FakeClobClient)
-    assert captured["signature_type"] == 1
-    assert captured["funder"] == "0xFUNDER"
-    assert captured["creds"] is not None
-
-
-def test_build_clob_client_allows_missing_api_creds(monkeypatch) -> None:
-    captured: dict[str, object] = {}
-
-    class FakeClobClient:
-        def __init__(self, **kwargs) -> None:
-            captured.update(kwargs)
-
-    monkeypatch.setattr("polymarket_arb.live.signing.ClobClient", FakeClobClient)
-
-    build_clob_client(
-        private_key_hex="0xkey",
-        api_key="",
-        api_secret="",
-        api_passphrase="",
+    resp = post_order_via_signer(
+        SIGNER_URL,
+        token_id="tok123",
+        price=Decimal("0.45"),
+        size=Decimal("5.0"),
+        side="buy",
     )
 
-    assert captured["creds"] is None
-    assert captured["funder"] is None
+    assert resp["order_id"] == "abc123"
 
 
-def test_create_and_post_order_requires_client() -> None:
-    with pytest.raises(SigningNotConfigured):
-        create_and_post_order(
-            None,
-            token_id="tok",
-            price=Decimal("0.5"),
-            size=Decimal("10"),
+@respx.mock
+def test_post_order_via_signer_400_raises() -> None:
+    """Signer 400 response raises RuntimeError with error message."""
+    respx.post(f"{SIGNER_URL}/order").mock(
+        return_value=httpx.Response(400, json={"error": "maker address not allowed"})
+    )
+
+    with pytest.raises(RuntimeError, match="maker address not allowed"):
+        post_order_via_signer(
+            SIGNER_URL,
+            token_id="tok123",
+            price=Decimal("0.45"),
+            size=Decimal("5.0"),
             side="buy",
-            neg_risk=False,
         )
 
 
-def test_create_and_post_order_passes_through_response() -> None:
-    fake_response = {"orderID": "abc123", "success": True}
-    client = MagicMock()
-    client.create_and_post_order.return_value = fake_response
+def test_post_order_via_signer_no_url_raises() -> None:
+    """Empty signer_url raises SigningNotConfigured."""
+    with pytest.raises(SigningNotConfigured):
+        post_order_via_signer(
+            "",
+            token_id="tok123",
+            price=Decimal("0.45"),
+            size=Decimal("5.0"),
+            side="buy",
+        )
 
-    result = create_and_post_order(
-        client,
-        token_id="tok-a",
-        price=Decimal("0.5234"),
-        size=Decimal("12.5"),
-        side="buy",
-        tick_size="0.01",
-        neg_risk=False,
+
+@respx.mock
+def test_post_order_via_signer_payload_format() -> None:
+    """Verify the payload sent to the signer has correct field names and types."""
+    route = respx.post(f"{SIGNER_URL}/order").mock(
+        return_value=httpx.Response(200, json={"order_id": "xyz"})
     )
 
-    assert result is fake_response
-    client.create_and_post_order.assert_called_once()
-    _, kwargs = client.create_and_post_order.call_args
-    assert kwargs["order_args"].token_id == "tok-a"
-    assert kwargs["order_args"].price == 0.5234
-    assert kwargs["order_args"].size == 12.5
-    assert kwargs["order_args"].side.name == "BUY"
-    assert kwargs["options"].tick_size == "0.01"
-    assert kwargs["options"].neg_risk is False
-    assert kwargs["order_type"] == "GTC"
-
-
-def test_create_and_post_order_sell_uses_sell_side() -> None:
-    fake_response = {"orderID": "sell-1"}
-    client = MagicMock()
-    client.create_and_post_order.return_value = fake_response
-
-    result = create_and_post_order(
-        client,
-        token_id="tok",
-        price=Decimal("0.50"),
-        size=Decimal("10"),
+    post_order_via_signer(
+        SIGNER_URL,
+        token_id="tok456",
+        price=Decimal("0.6312"),
+        size=Decimal("5.5"),
         side="sell",
-        neg_risk=False,
-    )
-
-    assert result is fake_response
-    _, kwargs = client.create_and_post_order.call_args
-    assert kwargs["order_args"].side.name == "SELL"
-
-
-def test_create_and_post_order_neg_risk_sets_option() -> None:
-    fake_response = {"orderID": "neg-1"}
-    client = MagicMock()
-    client.create_and_post_order.return_value = fake_response
-
-    result = create_and_post_order(
-        client,
-        token_id="tok",
-        price=Decimal("0.50"),
-        size=Decimal("10"),
-        side="buy",
-        tick_size="0.001",
+        tick_size="0.01",
         neg_risk=True,
     )
 
-    assert result is fake_response
-    _, kwargs = client.create_and_post_order.call_args
-    assert kwargs["options"].tick_size == "0.001"
-    assert kwargs["options"].neg_risk is True
+    sent = route.calls[0].request
+    body = json.loads(sent.content)
+    assert body["token_id"] == "tok456"
+    assert body["price"] == 0.6312
+    assert body["size"] == 5.5
+    assert body["side"] == "sell"
+    assert body["tick_size"] == "0.01"
+    assert body["neg_risk"] is True
 
 
-def test_create_and_post_order_invalid_side_raises() -> None:
-    client = MagicMock()
-    with pytest.raises(ValueError, match="side must be 'buy' or 'sell'"):
-        create_and_post_order(
-            client,
-            token_id="tok",
-            price=Decimal("0.5"),
-            size=Decimal("10"),
-            side="short",
-            neg_risk=False,
+@respx.mock
+def test_post_order_via_signer_network_error_propagates() -> None:
+    """Network failure raises httpx.HTTPError."""
+    respx.post(f"{SIGNER_URL}/order").mock(side_effect=httpx.ConnectError("refused"))
+
+    with pytest.raises(httpx.HTTPError):
+        post_order_via_signer(
+            SIGNER_URL,
+            token_id="tok123",
+            price=Decimal("0.45"),
+            size=Decimal("5.0"),
+            side="buy",
         )
-
-
-def test_create_and_post_order_wraps_non_dict_response() -> None:
-    client = MagicMock()
-    client.create_and_post_order.return_value = "raw-text"
-    resp = create_and_post_order(
-        client,
-        token_id="tok",
-        price=Decimal("0.5"),
-        size=Decimal("10"),
-        side="buy",
-    )
-    assert resp == {"raw": "raw-text"}
