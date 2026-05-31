@@ -146,6 +146,7 @@ class Settings(BaseSettings):
     polymarket_api_key: str = ""
     polymarket_api_secret: str = ""
     polymarket_api_passphrase: str = ""
+    polymarket_funder: str = ""
 
     # Polymarket CLOB host (override for testnet if needed)
     polymarket_clob_host: str = "https://clob.polymarket.com"

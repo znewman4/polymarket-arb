@@ -26,6 +26,7 @@ def build_clob_client(
     api_key: str,
     api_secret: str,
     api_passphrase: str,
+    funder: str = "",
     chain_id: int = 137,
     host: str = "https://clob.polymarket.com",
 ) -> ClobClient:
@@ -34,12 +35,14 @@ def build_clob_client(
         api_key=api_key,
         api_secret=api_secret,
         api_passphrase=api_passphrase,
-    )
+    ) if api_key else None
     return ClobClient(
         host=host,
         chain_id=chain_id,
         key=private_key_hex,
         creds=creds,
+        signature_type=1,
+        funder=funder or None,
     )
 
 

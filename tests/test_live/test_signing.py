@@ -31,6 +31,49 @@ def test_build_clob_client_constructs_with_dummy_credentials() -> None:
     assert client is not None
 
 
+def test_build_clob_client_passes_signature_type_and_funder(monkeypatch) -> None:
+    captured: dict[str, object] = {}
+
+    class FakeClobClient:
+        def __init__(self, **kwargs) -> None:
+            captured.update(kwargs)
+
+    monkeypatch.setattr("polymarket_arb.live.signing.ClobClient", FakeClobClient)
+
+    client = build_clob_client(
+        private_key_hex="0xkey",
+        api_key="api",
+        api_secret="secret",
+        api_passphrase="passphrase",
+        funder="0xFUNDER",
+    )
+
+    assert isinstance(client, FakeClobClient)
+    assert captured["signature_type"] == 1
+    assert captured["funder"] == "0xFUNDER"
+    assert captured["creds"] is not None
+
+
+def test_build_clob_client_allows_missing_api_creds(monkeypatch) -> None:
+    captured: dict[str, object] = {}
+
+    class FakeClobClient:
+        def __init__(self, **kwargs) -> None:
+            captured.update(kwargs)
+
+    monkeypatch.setattr("polymarket_arb.live.signing.ClobClient", FakeClobClient)
+
+    build_clob_client(
+        private_key_hex="0xkey",
+        api_key="",
+        api_secret="",
+        api_passphrase="",
+    )
+
+    assert captured["creds"] is None
+    assert captured["funder"] is None
+
+
 def test_create_and_post_order_requires_client() -> None:
     with pytest.raises(SigningNotConfigured):
         create_and_post_order(

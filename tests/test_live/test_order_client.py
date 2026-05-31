@@ -210,11 +210,17 @@ def test_live_mode_submits_when_credentials_configured(
         "polymarket_api_key": "k",
         "polymarket_api_secret": "s",
         "polymarket_api_passphrase": "p",
+        "polymarket_funder": "0xFUNDER",
     })
+    build_kwargs: dict[str, object] = {}
+
+    def _build_client(**kw):
+        build_kwargs.update(kw)
+        return object()
 
     monkeypatch.setattr(
         "polymarket_arb.live.order_client.build_clob_client",
-        lambda **kw: object(),
+        _build_client,
     )
     monkeypatch.setattr(
         "httpx.get",
@@ -238,6 +244,7 @@ def test_live_mode_submits_when_credentials_configured(
     assert result.http_status == 200
     assert result.filled_size == Decimal("10")
     assert result.notional_usdc == Decimal("5.0")
+    assert build_kwargs["funder"] == "0xFUNDER"
 
 
 def test_live_mode_failed_when_create_and_post_order_raises(

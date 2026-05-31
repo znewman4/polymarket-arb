@@ -256,6 +256,7 @@ class OrderClient:
                 api_key=self._settings.polymarket_api_key,
                 api_secret=self._settings.polymarket_api_secret,
                 api_passphrase=self._settings.polymarket_api_passphrase,
+                funder=self._settings.polymarket_funder,
                 chain_id=self._settings.polymarket_chain_id,
                 host=self._settings.polymarket_clob_host,
             )

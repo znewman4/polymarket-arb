@@ -388,6 +388,11 @@ def _load_poly_creds_into_settings(settings: Settings) -> Settings:
             "polymarket_api_key": poly_secret.get("api_key", ""),
             "polymarket_api_secret": poly_secret.get("api_secret", ""),
             "polymarket_api_passphrase": poly_secret.get("api_passphrase", ""),
+            "polymarket_funder": (
+                poly_secret.get("funder", "")
+                or poly_secret.get("funder_address", "")
+                or poly_secret.get("proxy_wallet_address", "")
+            ),
         })
     except Exception as exc:
         raise click.ClickException(

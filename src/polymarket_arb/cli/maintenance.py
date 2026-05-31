@@ -379,6 +379,12 @@ def _build_polymarket_client(settings: Settings, creds: dict[str, str]) -> Any:
         api_key=creds["api_key"],
         api_secret=creds["api_secret"],
         api_passphrase=creds["api_passphrase"],
+        funder=(
+            creds.get("funder", "")
+            or creds.get("funder_address", "")
+            or creds.get("proxy_wallet_address", "")
+            or settings.polymarket_funder
+        ),
         chain_id=settings.polymarket_chain_id,
         host=settings.polymarket_clob_host,
     )
