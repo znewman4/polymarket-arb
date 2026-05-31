@@ -217,12 +217,19 @@ def test_live_mode_submits_when_credentials_configured(
         lambda **kw: object(),
     )
     monkeypatch.setattr(
-        "polymarket_arb.live.order_client.sign_and_build_order",
-        lambda *a, **kw: {"signed": True},
+        "httpx.get",
+        lambda *a, **kw: type(
+            "Response",
+            (),
+            {
+                "raise_for_status": lambda self: None,
+                "json": lambda self: {"neg_risk": True, "minimum_tick_size": "0.01"},
+            },
+        )(),
     )
     monkeypatch.setattr(
-        "polymarket_arb.live.order_client.post_order",
-        lambda client, signed: {"orderID": "abc123"},
+        "polymarket_arb.live.order_client.create_and_post_order",
+        lambda *a, **kw: {"orderID": "abc123"},
     )
     client = OrderClient(s)
     result = client.place_order(_intent(size=10.0, price=0.5))
@@ -233,7 +240,7 @@ def test_live_mode_submits_when_credentials_configured(
     assert result.notional_usdc == Decimal("5.0")
 
 
-def test_live_mode_failed_when_post_order_raises(
+def test_live_mode_failed_when_create_and_post_order_raises(
     settings, tmp_data_root, monkeypatch
 ) -> None:
     """Exception inside the live path → live_failed, no re-raise."""
@@ -254,11 +261,18 @@ def test_live_mode_failed_when_post_order_raises(
         lambda **kw: object(),
     )
     monkeypatch.setattr(
-        "polymarket_arb.live.order_client.sign_and_build_order",
-        lambda *a, **kw: {"signed": True},
+        "httpx.get",
+        lambda *a, **kw: type(
+            "Response",
+            (),
+            {
+                "raise_for_status": lambda self: None,
+                "json": lambda self: {"neg_risk": False, "minimum_tick_size": "0.01"},
+            },
+        )(),
     )
     monkeypatch.setattr(
-        "polymarket_arb.live.order_client.post_order",
+        "polymarket_arb.live.order_client.create_and_post_order",
         _boom,
     )
     client = OrderClient(s)

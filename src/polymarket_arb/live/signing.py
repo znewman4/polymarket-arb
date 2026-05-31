@@ -1,4 +1,4 @@
-"""Polymarket CLOB API L2 order signing using py-clob-client."""
+"""Polymarket CLOB API V2 order signing using py-clob-client-v2."""
 
 from __future__ import annotations
 
@@ -6,9 +6,14 @@ from decimal import Decimal
 from typing import Any
 
 from loguru import logger
-from py_clob_client.client import ClobClient
-from py_clob_client.clob_types import ApiCreds, OrderArgs
-from py_clob_client.order_builder.constants import BUY, SELL
+from py_clob_client_v2 import (
+    ApiCreds,
+    ClobClient,
+    OrderArgs,
+    OrderType,
+    PartialCreateOrderOptions,
+    Side,
+)
 
 
 class SigningNotConfigured(RuntimeError):
@@ -24,7 +29,7 @@ def build_clob_client(
     chain_id: int = 137,
     host: str = "https://clob.polymarket.com",
 ) -> ClobClient:
-    """Build an authenticated ClobClient for the Polymarket CLOB API."""
+    """Build an authenticated ClobClient for the Polymarket CLOB V2 API."""
     creds = ApiCreds(
         api_key=api_key,
         api_secret=api_secret,
@@ -32,57 +37,53 @@ def build_clob_client(
     )
     return ClobClient(
         host=host,
-        key=private_key_hex,
         chain_id=chain_id,
+        key=private_key_hex,
         creds=creds,
-        signature_type=1,
     )
 
 
-def sign_and_build_order(
+def create_and_post_order(
     client: ClobClient,
     *,
     token_id: str,
     price: Decimal,
     size: Decimal,
     side: str,
+    tick_size: str = "0.01",
     neg_risk: bool = False,
-) -> Any:
-    """Sign an order intent and return the signed order payload.
+) -> dict[str, Any]:
+    """Create and post a GTC limit order to the Polymarket CLOB V2.
+
+    Returns the API response dict.
 
     Raises:
         SigningNotConfigured: if client is None.
-        ValueError: if side is not "buy" or "sell".
+        ValueError: if side is not 'buy' or 'sell'.
     """
     if client is None:
         raise SigningNotConfigured("ClobClient not initialised.")
     if side.lower() not in ("buy", "sell"):
         raise ValueError(f"side must be 'buy' or 'sell', got {side!r}")
 
-    order_kwargs = {
-        "token_id": token_id,
-        "price": float(round(price, 4)),
-        "size": float(round(size, 2)),
-        "side": BUY if side.lower() == "buy" else SELL,
-        "neg_risk": neg_risk,
-    }
-    try:
-        order_args = OrderArgs(**order_kwargs)
-    except TypeError as exc:
-        if "neg_risk" not in str(exc):
-            raise
-        order_kwargs.pop("neg_risk")
-        order_args = OrderArgs(**order_kwargs)
-        order_args.neg_risk = neg_risk
-    signed = client.create_order(order_args)
-    logger.debug(
-        "signed order: token_id={} price={} size={}",
-        token_id, price, size,
+    order_side = Side.BUY if side.lower() == "buy" else Side.SELL
+    order_args = OrderArgs(
+        token_id=token_id,
+        price=float(round(price, 4)),
+        size=float(round(size, 2)),
+        side=order_side,
     )
-    return signed
-
-
-def post_order(client: ClobClient, signed_order: Any) -> dict[str, Any]:
-    """Submit a signed order to the CLOB. Returns the API response dict."""
-    resp = client.post_order(signed_order)
+    options = PartialCreateOrderOptions(
+        tick_size=tick_size,
+        neg_risk=neg_risk,
+    )
+    resp = client.create_and_post_order(
+        order_args=order_args,
+        options=options,
+        order_type=OrderType.GTC,
+    )
+    logger.debug(
+        "v2 order posted: token_id={} price={} size={} side={}",
+        token_id, price, size, side,
+    )
     return resp if isinstance(resp, dict) else {"raw": resp}

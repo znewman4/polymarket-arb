@@ -1,4 +1,4 @@
-"""Tests for the Polymarket CLOB signing wrapper."""
+"""Tests for the Polymarket CLOB V2 signing wrapper."""
 
 from __future__ import annotations
 
@@ -6,13 +6,11 @@ from decimal import Decimal
 from unittest.mock import MagicMock
 
 import pytest
-from py_clob_client.order_builder.constants import SELL
 
 from polymarket_arb.live.signing import (
     SigningNotConfigured,
     build_clob_client,
-    post_order,
-    sign_and_build_order,
+    create_and_post_order,
 )
 
 
@@ -33,9 +31,9 @@ def test_build_clob_client_constructs_with_dummy_credentials() -> None:
     assert client is not None
 
 
-def test_sign_and_build_order_requires_client() -> None:
+def test_create_and_post_order_requires_client() -> None:
     with pytest.raises(SigningNotConfigured):
-        sign_and_build_order(
+        create_and_post_order(
             None,
             token_id="tok",
             price=Decimal("0.5"),
@@ -45,32 +43,39 @@ def test_sign_and_build_order_requires_client() -> None:
         )
 
 
-def test_sign_and_build_order_passes_through_create_order_result() -> None:
-    fake_signed = {"signature": "0xdead", "salt": "1"}
+def test_create_and_post_order_passes_through_response() -> None:
+    fake_response = {"orderID": "abc123", "success": True}
     client = MagicMock()
-    client.create_order.return_value = fake_signed
-    result = sign_and_build_order(
+    client.create_and_post_order.return_value = fake_response
+
+    result = create_and_post_order(
         client,
         token_id="tok-a",
         price=Decimal("0.5234"),
         size=Decimal("12.5"),
         side="buy",
+        tick_size="0.01",
         neg_risk=False,
     )
-    assert result is fake_signed
-    client.create_order.assert_called_once()
-    (order_args,), _ = client.create_order.call_args
-    assert order_args.token_id == "tok-a"
-    assert order_args.price == 0.5234
-    assert order_args.size == 12.5
+
+    assert result is fake_response
+    client.create_and_post_order.assert_called_once()
+    _, kwargs = client.create_and_post_order.call_args
+    assert kwargs["order_args"].token_id == "tok-a"
+    assert kwargs["order_args"].price == 0.5234
+    assert kwargs["order_args"].size == 12.5
+    assert kwargs["order_args"].side.name == "BUY"
+    assert kwargs["options"].tick_size == "0.01"
+    assert kwargs["options"].neg_risk is False
+    assert kwargs["order_type"] == "GTC"
 
 
-def test_sign_and_build_order_sell_uses_sell_constant() -> None:
-    fake_signed = {"signature": "0xbeef", "salt": "2"}
+def test_create_and_post_order_sell_uses_sell_side() -> None:
+    fake_response = {"orderID": "sell-1"}
     client = MagicMock()
-    client.create_order.return_value = fake_signed
+    client.create_and_post_order.return_value = fake_response
 
-    result = sign_and_build_order(
+    result = create_and_post_order(
         client,
         token_id="tok",
         price=Decimal("0.50"),
@@ -79,40 +84,36 @@ def test_sign_and_build_order_sell_uses_sell_constant() -> None:
         neg_risk=False,
     )
 
-    assert result is fake_signed
-    (order_args,), _ = client.create_order.call_args
-    assert order_args.side == SELL
+    assert result is fake_response
+    _, kwargs = client.create_and_post_order.call_args
+    assert kwargs["order_args"].side.name == "SELL"
 
 
-def test_sign_and_build_order_neg_risk_sets_flag(monkeypatch) -> None:
-    captured: dict[str, object] = {}
-
-    class FakeOrderArgs:
-        def __init__(self, **kwargs) -> None:
-            captured.update(kwargs)
-
-    fake_signed = {"signature": "0xneg", "salt": "3"}
+def test_create_and_post_order_neg_risk_sets_option() -> None:
+    fake_response = {"orderID": "neg-1"}
     client = MagicMock()
-    client.create_order.return_value = fake_signed
-    monkeypatch.setattr("polymarket_arb.live.signing.OrderArgs", FakeOrderArgs)
+    client.create_and_post_order.return_value = fake_response
 
-    result = sign_and_build_order(
+    result = create_and_post_order(
         client,
         token_id="tok",
         price=Decimal("0.50"),
         size=Decimal("10"),
         side="buy",
+        tick_size="0.001",
         neg_risk=True,
     )
 
-    assert result is fake_signed
-    assert captured["neg_risk"] is True
+    assert result is fake_response
+    _, kwargs = client.create_and_post_order.call_args
+    assert kwargs["options"].tick_size == "0.001"
+    assert kwargs["options"].neg_risk is True
 
 
-def test_sign_and_build_order_invalid_side_raises() -> None:
+def test_create_and_post_order_invalid_side_raises() -> None:
     client = MagicMock()
     with pytest.raises(ValueError, match="side must be 'buy' or 'sell'"):
-        sign_and_build_order(
+        create_and_post_order(
             client,
             token_id="tok",
             price=Decimal("0.5"),
@@ -122,17 +123,14 @@ def test_sign_and_build_order_invalid_side_raises() -> None:
         )
 
 
-def test_post_order_returns_response_dict() -> None:
+def test_create_and_post_order_wraps_non_dict_response() -> None:
     client = MagicMock()
-    client.post_order.return_value = {"orderID": "abc123", "success": True}
-    signed = {"signature": "0xfeed"}
-    resp = post_order(client, signed)
-    assert resp == {"orderID": "abc123", "success": True}
-    client.post_order.assert_called_once_with(signed)
-
-
-def test_post_order_wraps_non_dict_response() -> None:
-    client = MagicMock()
-    client.post_order.return_value = "raw-text"
-    resp = post_order(client, {"sig": "x"})
+    client.create_and_post_order.return_value = "raw-text"
+    resp = create_and_post_order(
+        client,
+        token_id="tok",
+        price=Decimal("0.5"),
+        size=Decimal("10"),
+        side="buy",
+    )
     assert resp == {"raw": "raw-text"}

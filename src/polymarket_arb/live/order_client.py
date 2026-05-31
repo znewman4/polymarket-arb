@@ -7,8 +7,8 @@ opened, no signing key is loaded.  Every call writes one row to ``orders_log``
 so the agent's behaviour is fully auditable.
 
 When ``paper_mode=False`` AND ``orders_allowed=True`` AND Polymarket credentials
-are configured, the client routes through ``signing.sign_and_build_order`` +
-``signing.post_order`` to submit to the CLOB API.
+are configured, the client routes through ``signing.create_and_post_order`` to
+submit to the CLOB API.
 
 Safety order (every place_order checks these BEFORE doing anything else):
     1. kill switch — file or SIGUSR1
@@ -43,8 +43,7 @@ from .models import OrderResult, OrdersLogRow, PositionRow
 from .signing import (
     SigningNotConfigured,
     build_clob_client,
-    post_order,
-    sign_and_build_order,
+    create_and_post_order,
 )
 
 if TYPE_CHECKING:
@@ -261,23 +260,31 @@ class OrderClient:
                 host=self._settings.polymarket_clob_host,
             )
             try:
-                market_info = clob_client.get_market(intent.market_id)
-                neg_risk = bool(market_info.get("neg_risk", False))
+                import httpx as _httpx
+                _r = _httpx.get(
+                    f"{self._settings.polymarket_clob_host.rstrip('/')}/markets/{intent.market_id}",
+                    timeout=5.0,
+                )
+                _r.raise_for_status()
+                _market = _r.json()
+                neg_risk = bool(_market.get("neg_risk", False))
+                tick_size = str(_market.get("minimum_tick_size", "0.01"))
             except Exception:
                 neg_risk = False
+                tick_size = "0.01"
                 logger.warning(
-                    "could not fetch neg_risk for market {}, defaulting to False",
+                    "could not fetch market info for {}, using defaults",
                     intent.market_id,
                 )
-            signed_order = sign_and_build_order(
+            resp = create_and_post_order(
                 clob_client,
                 token_id=intent.token_id,
                 price=intent.price,
                 size=intent.size,
                 side=intent.side,
+                tick_size=tick_size,
                 neg_risk=neg_risk,
             )
-            resp = post_order(clob_client, signed_order)
             order_id = resp.get("orderID") or resp.get("order_id") or resp.get("id", "")
             http_status_code = 200 if order_id else 400
             status = "live_submitted" if order_id else "live_failed"
