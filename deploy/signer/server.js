@@ -4,7 +4,7 @@ const express = require("express");
 const { createWalletClient, http } = require("viem");
 const { privateKeyToAccount } = require("viem/accounts");
 const { polygon } = require("viem/chains");
-const { ClobClient, Chain, OrderType, Side } = require("@polymarket/clob-client-v2");
+const { ClobClient, Chain, OrderType, Side, SignatureTypeV2 } = require("@polymarket/clob-client-v2");
 
 const app = express();
 app.use(express.json());
@@ -39,7 +39,7 @@ function getClient() {
     chain: Chain.POLYGON,
     signer: walletClient,
     creds,
-    signatureType: 1,
+    signatureType: SignatureTypeV2.POLY_PROXY,
     funderAddress: FUNDER || undefined,
   });
   return client;
