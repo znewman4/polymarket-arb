@@ -34,10 +34,15 @@ if (!PRIVATE_KEY) {
   process.exit(1);
 }
 
+function normalizePrivateKey(rawValue) {
+  const raw = String(rawValue || "").trim();
+  return raw.startsWith("0x") ? raw : `0x${raw}`;
+}
+
 let client;
 function getClient() {
   if (client) return client;
-  const account = privateKeyToAccount(PRIVATE_KEY);
+  const account = privateKeyToAccount(normalizePrivateKey(PRIVATE_KEY));
   const walletClient = createWalletClient({ account, chain: polygon, transport: http("https://polygon-rpc.com") });
 
   // clob-client-v2 expects ApiKeyCreds = { key, secret, passphrase }
