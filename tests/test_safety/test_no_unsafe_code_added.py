@@ -53,9 +53,10 @@ _FORBIDDEN_CLOB_AUTH = re.compile(
 # scaffold and are EXEMPT from the wallet/order safety scan.  Backfill /
 # reports / relationships / strategies / backtest / context are still scanned.
 _PHASE3_LIVE_EXEMPT = {
-    "live.py",       # cli/live.py
-    "limitless.py",  # cli/limitless.py — dual-leg arb executor, uses OrderClient
-    "_aliases.py",   # cli aliasing layer
+    "live.py",        # cli/live.py
+    "limitless.py",   # cli/limitless.py — dual-leg arb executor, uses OrderClient
+    "maintenance.py", # cli/maintenance.py — live-credential setup + CLOB connectivity check
+    "_aliases.py",    # cli aliasing layer
 }
 
 

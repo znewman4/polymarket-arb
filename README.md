@@ -107,6 +107,18 @@ POLYMARKET_ARB_POLYMARKET_FUNDER=...   # proxy wallet / funder address
 POLYMARKET_ARB_POLYMARKET_SIGNATURE_TYPE=1  # use 3 for deposit-wallet / POLY_1271 accounts
 ```
 
+> **Identity must be consistent.** For a deposit-wallet / proxy account
+> (`SIGNATURE_TYPE=3`), the `FUNDER` is the on-chain proxy that holds the USDC,
+> and `PRIVATE_KEY` **must** be the key of that proxy's *owner* EOA (the address
+> returned by the proxy's `owner()`).  The `API_KEY`/`API_SECRET`/`API_PASSPHRASE`
+> must also be the CLOB credentials **derived by that same owner EOA**
+> (`createOrDeriveApiKey`).  If the key, the API creds, and the proxy owner do
+> not all resolve to the same EOA, the CLOB rejects orders with
+> *"the order signer address has to be the address of the API KEY"* (creds belong
+> to a different EOA) or *"maker address not allowed, please use the deposit
+> wallet flow"* (wrong signature type for the funder).  The signer logs the
+> derived signer address and runs an owner-match self-check on boot.
+
 See [docs/trade_gate.md](docs/trade_gate.md) for the full threat model.
 
 ---

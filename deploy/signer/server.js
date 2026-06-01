@@ -1,7 +1,7 @@
 "use strict";
 
 const express = require("express");
-const { createWalletClient, http } = require("viem");
+const { createWalletClient, createPublicClient, http } = require("viem");
 const { privateKeyToAccount } = require("viem/accounts");
 const { polygon } = require("viem/chains");
 const { ClobClient, Chain, OrderType, Side, SignatureTypeV2, AssetType } = require("@polymarket/clob-client-v2");
@@ -11,6 +11,10 @@ app.use(express.json());
 
 const PORT = parseInt(process.env.SIGNER_PORT || "7777", 10);
 const HOST = "https://clob.polymarket.com";
+// polygon-rpc.com now returns 401 ("tenant disabled"); use a keyless public RPC
+// by default.  Order signing is off-chain and does not need this, but the
+// /balance endpoint and the boot-time owner self-check do.
+const RPC_URL = process.env.POLYMARKET_SIGNER_RPC_URL || "https://polygon-bor-rpc.publicnode.com";
 
 const PRIVATE_KEY = process.env.POLYMARKET_SIGNER_PRIVATE_KEY;
 const API_KEY = process.env.POLYMARKET_SIGNER_API_KEY;
@@ -39,11 +43,16 @@ function normalizePrivateKey(rawValue) {
   return raw.startsWith("0x") ? raw : `0x${raw}`;
 }
 
+// Derive the signer EOA address once at boot so it can be logged, exposed on
+// /health, and checked against the funder's owner.  This is the address the
+// CLOB requires the API key to belong to.
+const SIGNER_ADDRESS = privateKeyToAccount(normalizePrivateKey(PRIVATE_KEY)).address;
+
 let client;
 function getClient() {
   if (client) return client;
   const account = privateKeyToAccount(normalizePrivateKey(PRIVATE_KEY));
-  const walletClient = createWalletClient({ account, chain: polygon, transport: http("https://polygon-rpc.com") });
+  const walletClient = createWalletClient({ account, chain: polygon, transport: http(RPC_URL) });
 
   // clob-client-v2 expects ApiKeyCreds = { key, secret, passphrase }
   // (NOT the snake_case api_key/api_secret/api_passphrase used by the v1 client).
@@ -88,7 +97,12 @@ app.post("/order", async (req, res) => {
 });
 
 app.get("/health", (req, res) => {
-  res.json({ status: "ok", funder: FUNDER || "not set", signatureType: SIGNATURE_TYPE });
+  res.json({
+    status: "ok",
+    signer: SIGNER_ADDRESS,
+    funder: FUNDER || "not set",
+    signatureType: SIGNATURE_TYPE,
+  });
 });
 
 app.get("/balance", async (req, res) => {
@@ -103,8 +117,54 @@ app.get("/balance", async (req, res) => {
   }
 });
 
+// Best-effort boot-time sanity check.  The most common live-trading
+// misconfiguration is a signer key / API key / funder that resolve to different
+// EOAs, which the CLOB rejects only at order time with a cryptic message.  We
+// surface it loudly at startup instead.  Never fatal — purely diagnostic.
+async function selfCheck() {
+  console.log(`[signer] signer EOA=${SIGNER_ADDRESS}`);
+  if (!FUNDER) return;
+  if (FUNDER.toLowerCase() === SIGNER_ADDRESS.toLowerCase()) return; // EOA funder
+  try {
+    const pc = createPublicClient({ chain: polygon, transport: http(RPC_URL) });
+    let owner;
+    try {
+      owner = await pc.readContract({
+        address: FUNDER,
+        abi: [{ name: "owner", type: "function", stateMutability: "view", inputs: [], outputs: [{ type: "address" }] }],
+        functionName: "owner",
+      });
+    } catch {
+      // Gnosis-Safe style funders expose getOwners() instead of owner().
+      try {
+        const owners = await pc.readContract({
+          address: FUNDER,
+          abi: [{ name: "getOwners", type: "function", stateMutability: "view", inputs: [], outputs: [{ type: "address[]" }] }],
+          functionName: "getOwners",
+        });
+        owner = owners.find((o) => o.toLowerCase() === SIGNER_ADDRESS.toLowerCase()) || owners[0];
+      } catch {
+        console.log(`[signer] WARN could not read funder ${FUNDER} owner() for self-check (skipping)`);
+        return;
+      }
+    }
+    if (owner && owner.toLowerCase() === SIGNER_ADDRESS.toLowerCase()) {
+      console.log(`[signer] OK funder ${FUNDER} is owned by signer EOA`);
+    } else {
+      console.error(
+        `[signer] CONFIG ERROR: funder ${FUNDER} owner is ${owner}, but signer EOA is ` +
+        `${SIGNER_ADDRESS}. The signer key is NOT the owner of this deposit wallet — ` +
+        `orders will be rejected. Set POLYMARKET_SIGNER_PRIVATE_KEY to the proxy owner's key.`,
+      );
+    }
+  } catch (err) {
+    console.log(`[signer] WARN self-check skipped: ${err.message}`);
+  }
+}
+
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`[signer] running on port ${PORT}`);
   console.log(`[signer] funder=${FUNDER || "not set"}`);
   console.log(`[signer] signatureType=${SIGNATURE_TYPE}`);
+  selfCheck();
 });
