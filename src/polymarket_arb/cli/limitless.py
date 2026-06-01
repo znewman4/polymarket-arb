@@ -334,9 +334,8 @@ def _load_limitless_creds() -> tuple[str, str, str, str]:
     Returns:
         (key_id, key_secret, wallet_address, private_key)
 
-    key_id and key_secret come from the ``limitless/api_credentials`` secret.
-    private_key and wallet_address come from ``polymarket/api_credentials``
-    (private_key field); wallet_address is derived via
+    key_id, key_secret, and private_key come from the
+    ``limitless/api_credentials`` secret. wallet_address is derived via
     ``eth_account.Account.from_key(private_key).address``.
     """
     try:
@@ -356,15 +355,13 @@ def _load_limitless_creds() -> tuple[str, str, str, str]:
 
     try:
         from eth_account import Account  # type: ignore[import-untyped]
-        poly_secret = json.loads(
-            sm.get_secret_value(SecretId="polymarket/api_credentials")["SecretString"]
-        )
-        private_key: str = poly_secret["private_key"]
+
+        private_key: str = creds["private_key"]
         wallet_address: str = Account.from_key(private_key).address
     except Exception as exc:
         raise click.ClickException(
-            f"Failed to derive wallet address from polymarket/api_credentials: {exc}\n"
-            "Ensure the 'polymarket/api_credentials' secret contains a 'private_key' field."
+            f"Failed to derive wallet address from limitless/api_credentials: {exc}\n"
+            "Ensure the 'limitless/api_credentials' secret contains a 'private_key' field."
         ) from exc
 
     return key_id, key_secret, wallet_address, private_key
@@ -392,6 +389,10 @@ def _load_poly_creds_into_settings(settings: Settings) -> Settings:
                 poly_secret.get("funder", "")
                 or poly_secret.get("funder_address", "")
                 or poly_secret.get("proxy_wallet_address", "")
+                or poly_secret.get("deposit_wallet_address", "")
+            ),
+            "polymarket_signature_type": int(
+                poly_secret.get("signature_type") or settings.polymarket_signature_type
             ),
         })
     except Exception as exc:

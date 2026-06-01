@@ -15,6 +15,7 @@ import click
 import duckdb
 
 from ..http.client import AsyncHttpClient
+from ..ingest.limitless._endpoints import ACTIVE_MARKETS_PATH
 from ..ingest.limitless.parser import parse_limitless_market
 from ..limitless.signing import sign_request
 from ..live.signing import build_clob_client
@@ -264,7 +265,7 @@ async def _check_limitless_market(
     try:
         payload = await http.request_json(
             "GET",
-            f"{settings.limitless_host.rstrip('/')}/markets",
+            f"{settings.limitless_host.rstrip('/')}{ACTIVE_MARKETS_PATH}",
             params={"limit": 1},
         )
         raw_market = _first_market_payload(payload)
@@ -329,20 +330,19 @@ def _check_polymarket_book(settings: Settings) -> _ConnectivityCheck:
 
 def _load_limitless_credentials() -> dict[str, str]:
     lim = _load_secret_json("limitless/api_credentials")
-    poly = _load_secret_json("polymarket/api_credentials")
     try:
         from eth_account import Account  # type: ignore[import-untyped]
 
-        private_key = str(poly["private_key"])
+        private_key = str(lim["private_key"])
         return {
             "key_id": str(lim["key_id"]),
             "key_secret": str(lim["key_secret"]),
-            "wallet_address": str(poly.get("wallet_address") or Account.from_key(private_key).address),
+            "wallet_address": str(lim.get("wallet_address") or Account.from_key(private_key).address),
         }
     except Exception as exc:
         raise RuntimeError(
             "failed to load Limitless credentials or derive wallet address "
-            "from polymarket/api_credentials"
+            "from limitless/api_credentials"
         ) from exc
 
 
@@ -355,7 +355,17 @@ def _load_polymarket_credentials() -> dict[str, str]:
             "polymarket/api_credentials missing required field(s): "
             + ", ".join(missing)
         )
-    return {name: str(secret[name]) for name in field_names}
+    creds = {name: str(secret[name]) for name in field_names}
+    for optional_name in (
+        "funder",
+        "funder_address",
+        "proxy_wallet_address",
+        "deposit_wallet_address",
+        "signature_type",
+    ):
+        if secret.get(optional_name) not in (None, ""):
+            creds[optional_name] = str(secret[optional_name])
+    return creds
 
 
 def _load_secret_json(secret_id: str) -> dict[str, Any]:
@@ -383,8 +393,10 @@ def _build_polymarket_client(settings: Settings, creds: dict[str, str]) -> Any:
             creds.get("funder", "")
             or creds.get("funder_address", "")
             or creds.get("proxy_wallet_address", "")
+            or creds.get("deposit_wallet_address", "")
             or settings.polymarket_funder
         ),
+        signature_type=int(creds.get("signature_type") or settings.polymarket_signature_type),
         chain_id=settings.polymarket_chain_id,
         host=settings.polymarket_clob_host,
     )

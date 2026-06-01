@@ -160,7 +160,7 @@ def test_test_connectivity_passes_all_checks(tmp_path: Path, monkeypatch) -> Non
         router.get("https://limitless.example/profiles/public/0xWallet").mock(
             return_value=Response(200, json={"id": 12345})
         )
-        router.get("https://limitless.example/markets").mock(
+        router.get("https://limitless.example/markets/active").mock(
             return_value=Response(
                 200,
                 json={
@@ -243,7 +243,7 @@ def test_test_connectivity_prints_raw_failure_and_continues(tmp_path: Path, monk
         router.get("https://limitless.example/profiles/public/0xWallet").mock(
             return_value=Response(401, text="bad signature")
         )
-        router.get("https://limitless.example/markets").mock(
+        router.get("https://limitless.example/markets/active").mock(
             return_value=Response(
                 200,
                 json={

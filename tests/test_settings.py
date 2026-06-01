@@ -45,6 +45,7 @@ def test_polymarket_credentials_configured_requires_all_four_fields() -> None:
     base = Settings()
     assert base.polymarket_credentials_configured is False
     assert base.polymarket_funder == ""
+    assert base.polymarket_signature_type == 1
     assert base.polymarket_signer_url == "http://poly-signer:7777"
 
     # Each missing field individually keeps the property False.

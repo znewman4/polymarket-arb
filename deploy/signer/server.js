@@ -17,6 +17,17 @@ const API_KEY = process.env.POLYMARKET_SIGNER_API_KEY;
 const API_SECRET = process.env.POLYMARKET_SIGNER_API_SECRET;
 const API_PASSPHRASE = process.env.POLYMARKET_SIGNER_API_PASSPHRASE;
 const FUNDER = process.env.POLYMARKET_SIGNER_FUNDER;
+const SIGNATURE_TYPE_RAW = process.env.POLYMARKET_SIGNER_SIGNATURE_TYPE || "1";
+
+function resolveSignatureType(rawValue) {
+  const raw = String(rawValue || "1").trim();
+  if (/^[0-3]$/.test(raw)) return parseInt(raw, 10);
+  const key = raw.toUpperCase();
+  if (SignatureTypeV2[key] !== undefined) return SignatureTypeV2[key];
+  throw new Error(`Unsupported POLYMARKET_SIGNER_SIGNATURE_TYPE: ${rawValue}`);
+}
+
+const SIGNATURE_TYPE = resolveSignatureType(SIGNATURE_TYPE_RAW);
 
 if (!PRIVATE_KEY) {
   console.error("POLYMARKET_SIGNER_PRIVATE_KEY is required");
@@ -41,7 +52,7 @@ function getClient() {
     chain: Chain.POLYGON,
     signer: walletClient,
     creds,
-    signatureType: SignatureTypeV2.POLY_PROXY,
+    signatureType: SIGNATURE_TYPE,
     funderAddress: FUNDER || undefined,
   });
   return client;
@@ -72,7 +83,7 @@ app.post("/order", async (req, res) => {
 });
 
 app.get("/health", (req, res) => {
-  res.json({ status: "ok", funder: FUNDER || "not set" });
+  res.json({ status: "ok", funder: FUNDER || "not set", signatureType: SIGNATURE_TYPE });
 });
 
 app.get("/balance", async (req, res) => {
@@ -90,4 +101,5 @@ app.get("/balance", async (req, res) => {
 app.listen(PORT, "0.0.0.0", () => {
   console.log(`[signer] running on port ${PORT}`);
   console.log(`[signer] funder=${FUNDER || "not set"}`);
+  console.log(`[signer] signatureType=${SIGNATURE_TYPE}`);
 });
