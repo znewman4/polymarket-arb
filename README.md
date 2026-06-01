@@ -1,8 +1,8 @@
 # polymarket-arb
 
-Fully automated Polymarket arbitrage bot running in **paper-trading mode** on AWS EC2 (eu-west-1). The bot ingests live orderbook data, detects pricing inefficiencies across related markets (nesting, contradiction, inverse, sports-progression), and paper-trades signals via an authenticated order client. A Limitless × Polymarket cross-market arb scanner runs in parallel. A read-only Flask dashboard is served over an SSM port-forward.
+Fully automated Polymarket arbitrage bot running on AWS EC2 (eu-west-1), with **paper-trading as the safe default**. The bot ingests live orderbook data, detects pricing inefficiencies across related markets (nesting, contradiction, inverse, sports-progression), and routes all order attempts through a single audited `OrderClient`. A Limitless × Polymarket cross-market arb scanner runs in parallel. A read-only Flask dashboard is served over an SSM port-forward.
 
-Live trading infrastructure is complete but gated: the signing path is a stub and two env flags (`POLYMARKET_ARB_PAPER_MODE=false` + `POLYMARKET_ARB_ORDERS_ALLOWED=true`) must both be flipped explicitly.
+Live trading infrastructure is now wired through a local Node.js signer microservice (`poly-signer`) for Polymarket CLOB V2 Magic/proxy wallet order submission. Live orders are still gated by explicit env flags (`POLYMARKET_ARB_PAPER_MODE=false` + `POLYMARKET_ARB_ORDERS_ALLOWED=true`), the kill switch, compliance checks, and signer service availability.
 
 ---
 
@@ -41,19 +41,21 @@ Phase 7   VPS deployment — Docker Compose (recorder + agent), systemd, healthc
 Phase 8   Limitless × Polymarket cross-market arb scanner
 Phase 9   Relationship-miner Docker service (6-hour validate loop)
 Phase 10  Read-only Flask dashboard — overview / orders / signals / markets / health
+Phase 11  Polymarket CLOB V2 live submission via Node signer sidecar
 ```
 
 ---
 
 ## Services (Docker Compose)
 
-Five services run on the EC2 instance, all sharing the same `/app/data` parquet lake:
+Six services run on the EC2 instance. Python services share the same `/app/data` parquet lake, and live Polymarket submission goes through the signer sidecar:
 
 | Service | Role |
 |---------|------|
 | `recorder` | Continuously snapshots live orderbooks + refreshes markets (30s loop) |
 | `agent` | Paper-trades relationship signals via `live agent --strategy-auto-tokens` |
 | `limitless-arb` | Paper-trades Limitless × Polymarket arb gaps every 5 minutes |
+| `poly-signer` | Node.js signer/submitter for Polymarket CLOB V2 Magic/proxy wallet accounts |
 | `relationship-miner` | Scores and promotes relationship candidates every 6 hours |
 | `dashboard` | Flask read-only UI at container port 5000, accessed via SSM port-forward |
 
@@ -89,7 +91,20 @@ Pages: `/` overview, `/orders` filterable orders log + CSV export, `/signals` no
 
 `POLYMARKET_ARB_ORDERS_ALLOWED` defaults to `false`. `POLYMARKET_ARB_PAPER_MODE` defaults to `true`. All order attempts pass through `OrderClient`, which enforces both flags before any network socket is opened.
 
-The signing path (`src/polymarket_arb/live/signing.py`) is a stub that always raises — live orders cannot be submitted even if both flags are flipped, until EIP-712 signing is implemented.
+For live Polymarket orders, Python calls the signer sidecar at `POLYMARKET_ARB_POLYMARKET_SIGNER_URL` (default `http://poly-signer:7777`). The signer container owns EIP-712 signing and CLOB V2 submission using `@polymarket/clob-client-v2`, `viem`, and the configured Magic/proxy wallet funder.
+
+Required live env values:
+
+```bash
+POLYMARKET_ARB_PAPER_MODE=false
+POLYMARKET_ARB_ORDERS_ALLOWED=true
+POLYMARKET_ARB_POLYMARKET_SIGNER_URL=http://poly-signer:7777
+POLYMARKET_ARB_POLYMARKET_PRIVATE_KEY=...
+POLYMARKET_ARB_POLYMARKET_API_KEY=...
+POLYMARKET_ARB_POLYMARKET_API_SECRET=...
+POLYMARKET_ARB_POLYMARKET_API_PASSPHRASE=...
+POLYMARKET_ARB_POLYMARKET_FUNDER=...   # proxy wallet / funder address
+```
 
 See [docs/trade_gate.md](docs/trade_gate.md) for the full threat model.
 
@@ -130,14 +145,15 @@ polymarket-arb inspect orders-log --limit 50
 ```
 configs/                dev.yaml, approved_strategies.yaml, semantic_rules/
 data/                   raw/ normalised/ account/ derived/ logs/ debug/  (gitignored)
-deploy/                 Dockerfile.agent, docker-compose.yml, README.md, healthcheck.sh
+deploy/                 Dockerfile.agent, docker-compose.yml, README.md, healthcheck.sh,
+                        signer/ Node.js CLOB V2 signer sidecar
 docs/                   trade_gate, connectivity, storage, live_trading_checklist
 src/polymarket_arb/
     cli/                Click subgroups: gamma, clob, live, limitless, dashboard,
                         record, backtest, research, relationships, inspect, …
     settings.py         Pydantic-settings — yaml + env var loader (POLYMARKET_ARB_*)
     compliance/         geo_check + trade_gate (orders_allowed flag)
-    live/               agent_loop, order_client, models, signing stub
+    live/               agent_loop, order_client, models, signer HTTP wrapper
     strategies/         evaluate_relationship_at_tick (nesting/contradiction logic)
     limitless/          cross-market arb scanner (Limitless × Polymarket)
     dashboard/          Flask app factory, DuckDBQueryService, routes, Jinja templates
@@ -150,18 +166,24 @@ src/polymarket_arb/
     storage/            DTOs, parquet repos, DuckDB views
     risk/               PreflightGate (10 checks before every order)
     monitoring/         kill_switch (file-based: touch data/.killswitch)
-tests/                  mirror of src/ — 821 tests, pytest + respx + tmp_path
+tests/                  mirror of src/ — pytest + respx + tmp_path
 ```
 
 ---
 
-## Current State (2026-05-24)
+## Current State (2026-05-31)
 
-- EC2 running: all 5 services healthy
-- Orderbook coverage: ~93 markets (recorder growing the lake daily)
-- Relationship candidates: 2,990 pairs synced from local S3
-- Signals: not yet firing — waiting for overlap between relationships and live orderbooks
-- Orders log: empty — will populate once coverage reaches relationship pairs
-- Dashboard: live, accessible via SSM port-forward
+- EC2 deployment is Docker Compose based, with recorder, agent, limitless-arb, poly-signer, relationship-miner, and dashboard services.
+- Polymarket live order submission has moved off Python signing and into the `poly-signer` Node.js sidecar because the Python CLOB V2 SDK path fails for Magic/proxy wallet accounts.
+- `OrderClient` remains the choke point: kill switch, preflight, paper/live mode, compliance gate, then signer HTTP call.
+- Limitless × Polymarket arb now refreshes authoritative Polymarket token IDs from CLOB, fetches missing Limitless exchange addresses from market detail, guards against live-Limitless/paper-Polymarket execution, and tracks open positions through the positions lake.
+- Dashboard positions now ignore snapshot rows when selecting open position state, and dashboard refresh is 30s.
+- Live trading is deployable but intentionally gated. Keep paper mode and orders disallowed until `.env`, Secrets Manager, signer health, and a small end-to-end test order are confirmed.
 
-The `/markets` dashboard page shows coverage progress in real time.
+Useful live-signer checks after deploy:
+
+```bash
+sudo docker logs polymarket-arb-poly-signer --tail=20
+sudo docker exec polymarket-arb-poly-signer wget -qO- http://localhost:7777/health
+sudo docker exec polymarket-arb-limitless-arb python3 -c "import httpx; print(httpx.get('http://poly-signer:7777/health', timeout=5).json())"
+```

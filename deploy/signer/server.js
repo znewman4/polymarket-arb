@@ -4,7 +4,7 @@ const express = require("express");
 const { createWalletClient, http } = require("viem");
 const { privateKeyToAccount } = require("viem/accounts");
 const { polygon } = require("viem/chains");
-const { ClobClient, Chain, OrderType, Side, ApiKeyCreds } = require("@polymarket/clob-client-v2");
+const { ClobClient, Chain, OrderType, Side } = require("@polymarket/clob-client-v2");
 
 const app = express();
 app.use(express.json());
@@ -29,11 +29,11 @@ function getClient() {
   const account = privateKeyToAccount(PRIVATE_KEY);
   const walletClient = createWalletClient({ account, chain: polygon, transport: http("https://polygon-rpc.com") });
 
-  const creds = API_KEY ? new ApiKeyCreds({
+  const creds = API_KEY ? {
     api_key: API_KEY,
     api_secret: API_SECRET || "",
     api_passphrase: API_PASSPHRASE || "",
-  }) : undefined;
+  } : undefined;
   client = new ClobClient({
     host: HOST,
     chain: Chain.POLYGON,
