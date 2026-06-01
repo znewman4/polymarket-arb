@@ -4,7 +4,7 @@ const express = require("express");
 const { createWalletClient, http } = require("viem");
 const { privateKeyToAccount } = require("viem/accounts");
 const { polygon } = require("viem/chains");
-const { ClobClient, Chain, OrderType, Side, SignatureTypeV2 } = require("@polymarket/clob-client-v2");
+const { ClobClient, Chain, OrderType, Side, SignatureTypeV2, AssetType } = require("@polymarket/clob-client-v2");
 
 const app = express();
 app.use(express.json());
@@ -29,10 +29,12 @@ function getClient() {
   const account = privateKeyToAccount(PRIVATE_KEY);
   const walletClient = createWalletClient({ account, chain: polygon, transport: http("https://polygon-rpc.com") });
 
+  // clob-client-v2 expects ApiKeyCreds = { key, secret, passphrase }
+  // (NOT the snake_case api_key/api_secret/api_passphrase used by the v1 client).
   const creds = API_KEY ? {
-    api_key: API_KEY,
-    api_secret: API_SECRET || "",
-    api_passphrase: API_PASSPHRASE || "",
+    key: API_KEY,
+    secret: API_SECRET || "",
+    passphrase: API_PASSPHRASE || "",
   } : undefined;
   client = new ClobClient({
     host: HOST,
@@ -76,7 +78,9 @@ app.get("/health", (req, res) => {
 app.get("/balance", async (req, res) => {
   try {
     const c = getClient();
-    const balance = await c.getBalance();
+    // clob-client-v2 exposes getBalanceAllowance (there is no getBalance).
+    // COLLATERAL = USDC balance for the configured funder.
+    const balance = await c.getBalanceAllowance({ asset_type: AssetType.COLLATERAL });
     return res.json({ balance });
   } catch (err) {
     return res.status(500).json({ error: err.message });
