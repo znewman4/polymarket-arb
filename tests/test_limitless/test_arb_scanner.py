@@ -98,6 +98,16 @@ class _PolyOrderClient:
         return SimpleNamespace(status="paper_filled")
 
 
+class _LowCollateralLimOrderClient:
+    paper_mode = False
+
+    def collateral_balance_usdc(self) -> Decimal:
+        return Decimal("0.371868")
+
+    async def place_order(self, market, *, side: str, size_usdc: float):
+        raise AssertionError("place_order should not run when collateral preflight fails")
+
+
 @pytest.fixture(autouse=True)
 def _no_poly_token_refresh(monkeypatch):
     async def _token_ids(condition_id: str, clob_host: str = "https://clob.polymarket.com"):
@@ -426,6 +436,31 @@ async def test_execute_arb_falls_back_when_live_book_unavailable(monkeypatch):
 
     assert poly_client.intent.price == Decimal("0.55")
     assert poly_client.kwargs["preflight_book"] is None
+
+
+@pytest.mark.asyncio
+async def test_execute_arb_skips_poly_when_limitless_collateral_insufficient(monkeypatch):
+    async def _live_ask(token_id: str) -> float:
+        raise AssertionError("Polymarket book should not be fetched after failed collateral preflight")
+
+    monkeypatch.setattr(
+        "polymarket_arb.limitless.arb_scanner._fetch_live_poly_best_ask",
+        _live_ask,
+    )
+    poly_client = _PolyOrderClient()
+
+    lim_result, poly_result = await execute_arb(
+        _match(),
+        lim_client=_LowCollateralLimOrderClient(),
+        poly_client=poly_client,
+        stake_usdc=1.0,
+        min_net_edge=0.02,
+    )
+
+    assert lim_result.status == "failed"
+    assert "insufficient Limitless collateral balance" in (lim_result.error or "")
+    assert poly_result is None
+    assert poly_client.intent is None
 
 
 @pytest.mark.asyncio

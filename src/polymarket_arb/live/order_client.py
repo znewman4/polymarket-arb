@@ -54,6 +54,34 @@ def _now_ms() -> int:
     return int(time.time() * 1000)
 
 
+def _extract_order_id(resp: dict) -> str:
+    """Extract a stable order identifier from known CLOB signer responses."""
+    for key in ("orderID", "order_id", "id", "orderHash", "hash"):
+        value = resp.get(key)
+        if value:
+            return str(value)
+    order_hashes = resp.get("orderHashes") or resp.get("order_hashes")
+    if isinstance(order_hashes, list) and order_hashes:
+        return str(order_hashes[0])
+    if isinstance(order_hashes, str) and order_hashes:
+        return order_hashes
+    order = resp.get("order")
+    if isinstance(order, dict):
+        for key in ("id", "orderID", "order_id", "orderHash", "hash"):
+            value = order.get(key)
+            if value:
+                return str(value)
+    orders = resp.get("orders")
+    if isinstance(orders, list) and orders and isinstance(orders[0], dict):
+        for key in ("id", "orderID", "order_id", "orderHash", "hash"):
+            value = orders[0].get(key)
+            if value:
+                return str(value)
+    if resp.get("success") is True:
+        return "success"
+    return ""
+
+
 def _best_ask_from_preflight_book(preflight_book: dict | None) -> Decimal | None:
     if preflight_book is None:
         return None
@@ -273,7 +301,7 @@ class OrderClient:
                 tick_size=tick_size,
                 neg_risk=neg_risk,
             )
-            order_id = resp.get("orderID") or resp.get("order_id") or resp.get("id", "")
+            order_id = _extract_order_id(resp)
             http_status_code = 200 if order_id else 400
             status = "live_submitted" if order_id else "live_failed"
             reason = "" if order_id else f"CLOB response: {resp}"

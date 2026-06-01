@@ -337,6 +337,47 @@ async def execute_arb(
             )
             return dummy_lim, None
 
+    if not getattr(lim_client, "paper_mode", True):
+        try:
+            lim_balance = await asyncio.to_thread(lim_client.collateral_balance_usdc)
+        except Exception as exc:
+            logger.warning(
+                "execute_arb: skipping {} — could not check Limitless collateral balance: {}",
+                match.limitless.slug,
+                exc,
+            )
+            dummy_lim = LimitlessOrderResult(
+                status="failed",
+                order_id=None,
+                side="YES",
+                price=match.limitless.yes_price,
+                size_usdc=stake_usdc,
+                market_slug=match.limitless.slug,
+                error=f"could not check Limitless collateral balance: {exc}",
+            )
+            return dummy_lim, None
+        required = Decimal(str(stake_usdc))
+        if lim_balance < required:
+            logger.warning(
+                "execute_arb: skipping {} — Limitless collateral balance {} < stake {}",
+                match.limitless.slug,
+                lim_balance,
+                required,
+            )
+            dummy_lim = LimitlessOrderResult(
+                status="failed",
+                order_id=None,
+                side="YES",
+                price=match.limitless.yes_price,
+                size_usdc=stake_usdc,
+                market_slug=match.limitless.slug,
+                error=(
+                    "insufficient Limitless collateral balance "
+                    f"({lim_balance} USDC < {required} USDC)"
+                ),
+            )
+            return dummy_lim, None
+
     # Refresh Polymarket token IDs from CLOB — Gamma clobTokenIds can be stale.
     clob_tokens = await _fetch_poly_token_ids(match.poly.condition_id)
     if clob_tokens:

@@ -101,6 +101,10 @@ class LimitlessOrderClient:
         self._owner_id: int | None = None  # cached after first fetch
         self._approved: set[str] = set()
 
+    @property
+    def paper_mode(self) -> bool:
+        return self._paper_mode
+
     async def place_order(
         self,
         market: LimitlessMarketEntry,
@@ -245,6 +249,28 @@ class LimitlessOrderClient:
             )
 
         self._approved.add(spender)
+
+    def collateral_balance_usdc(self) -> Decimal:
+        """Return Base USDC balance for the configured Limitless wallet."""
+        if not self._wallet_address:
+            raise RuntimeError("wallet_address not configured")
+
+        owner = Web3.to_checksum_address(self._wallet_address)
+        w3 = Web3(Web3.HTTPProvider(_BASE_MAINNET_RPC_URL, request_kwargs={"timeout": 10}))
+        usdc = w3.eth.contract(
+            address=Web3.to_checksum_address(_BASE_USDC_ADDRESS),
+            abi=[
+                {
+                    "inputs": [{"name": "account", "type": "address"}],
+                    "name": "balanceOf",
+                    "outputs": [{"name": "", "type": "uint256"}],
+                    "stateMutability": "view",
+                    "type": "function",
+                }
+            ],
+        )
+        balance = int(usdc.functions.balanceOf(owner).call())
+        return Decimal(balance) / _USDC_SCALE
 
     async def _live_submit(
         self,
