@@ -517,6 +517,14 @@ def test_arb_monitor_page_renders_positions_exits_and_kill_switches(
             ingested_ts_ms=now_ms - 600_000,
         ),
     ])
+    csv_dir = tmp_data_root / "cross_market_arb"
+    csv_dir.mkdir(parents=True, exist_ok=True)
+    (csv_dir / "arb_20260602_120000.csv").write_text(
+        "limitless_slug,limitless_title,poly_condition_id,poly_question,"
+        "limitless_yes,poly_yes,total,arb_gap,similarity,status\n"
+        f"{slug},Question,0xCOND,Question,0.4800,0.4800,0.9600,0.0400,0.9000,ARB_OPPORTUNITY\n",
+        encoding="utf-8",
+    )
     orders_repo.append_many([
         _orders_log_row(
             intent_id="lim-exit",
@@ -560,7 +568,10 @@ def test_arb_monitor_page_renders_positions_exits_and_kill_switches(
     assert open_rows[0]["lim_entry_price"] == pytest.approx(0.35)
     assert open_rows[0]["poly_yes_entry_price"] == pytest.approx(0.40)
     assert open_rows[0]["stake_usdc"] == pytest.approx(1.0)
-    assert open_rows[0]["current_mtm"] == pytest.approx(0.10)
+    assert open_rows[0]["current_lim_yes"] == pytest.approx(0.48)
+    assert open_rows[0]["current_poly_yes"] == pytest.approx(0.48)
+    assert open_rows[0]["current_gap"] == pytest.approx(0.04)
+    assert open_rows[0]["current_mtm"] == pytest.approx(0.05)
     assert len(closed_rows) == 1
     assert closed_rows[0]["realised_profit"] == pytest.approx(0.01)
     assert closed_rows[0]["lim_exit_price"] == pytest.approx(0.48)
@@ -575,6 +586,11 @@ def test_arb_monitor_page_renders_positions_exits_and_kill_switches(
     assert "Limitless arb" in body
     assert "Active" in body
     assert "0.2500" in body
-    assert "0.1000" in body
+    assert "Current Lim" in body
+    assert "Current Poly YES" in body
+    assert "Current Gap" in body
+    assert "0.0400" in body
+    assert "was 0.2500" in body
+    assert "+0.0500" in body
     assert 'href="/arb" class="active"' in body
     assert 'http-equiv="refresh" content="30"' in body

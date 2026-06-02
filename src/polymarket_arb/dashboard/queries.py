@@ -13,6 +13,7 @@ new day, not an error.
 
 from __future__ import annotations
 
+import csv
 import math
 import re
 import threading
@@ -915,6 +916,7 @@ class DuckDBQueryService:
                     snapshots_by_relationship[rel_id] = row
 
         grouped: dict[str, dict] = {}
+        lim_token_ids: set[str] = set()
         for row in latest_by_position.values():
             if row.get("status") != "open" or row.get("side") == "snapshot":
                 continue
@@ -933,7 +935,11 @@ class DuckDBQueryService:
                     "poly_yes_entry_price": _note_float(notes, "poly_yes_entry"),
                     "stake_usdc": 0.0,
                     "open_ts_ms": int(row.get("open_ts_ms") or 0),
+                    "lim_token_id": "",
                     "current_mtm": None,
+                    "current_lim_yes": None,
+                    "current_poly_yes": None,
+                    "current_gap": None,
                     "snapshot_ts_ms": None,
                 },
             )
@@ -950,24 +956,104 @@ class DuckDBQueryService:
                 float(group["stake_usdc"] or 0.0),
                 _float_or_none(row.get("notional_usdc")) or _float_or_none(row.get("size")) or 0.0,
             )
+            if str(row.get("position_id") or "").endswith("_lim"):
+                group["lim_token_id"] = str(row.get("token_id") or "")
+                if group["lim_token_id"]:
+                    lim_token_ids.add(group["lim_token_id"])
 
         now_ms = int(datetime.now(timezone.utc).timestamp() * 1000)
+        quote_by_slug = self._latest_cross_market_quotes()
+        lim_mid_by_token = self._latest_orderbook_mid_by_token(lim_token_ids)
         out: list[dict] = []
         for rel_id, group in grouped.items():
             snap = snapshots_by_relationship.get(rel_id)
+            snapshot_notes = ""
             if snap is not None:
-                notes = snap.get("notes") or ""
-                group["current_mtm"] = (
-                    _float_or_none(snap.get("gross_edge"))
-                    if snap.get("gross_edge") not in (None, "")
-                    else _note_float(notes, "unrealised")
-                )
+                snapshot_notes = snap.get("notes") or ""
                 group["snapshot_ts_ms"] = int(snap.get("ingested_ts_ms") or snap.get("open_ts_ms") or 0)
+            quote = quote_by_slug.get(str(group.get("market_slug") or ""))
+            current_lim_yes = (
+                lim_mid_by_token.get(str(group.get("lim_token_id") or ""))
+                or (quote or {}).get("current_lim_yes")
+                or _note_float(snapshot_notes, "lim_now")
+            )
+            current_poly_yes = (
+                (quote or {}).get("current_poly_yes")
+                or _note_float(snapshot_notes, "poly_yes_now")
+            )
+            current_gap = (quote or {}).get("current_gap")
+            if current_gap is None and current_lim_yes is not None and current_poly_yes is not None:
+                current_gap = 1.0 - (current_lim_yes + current_poly_yes)
+            group["current_lim_yes"] = current_lim_yes
+            group["current_poly_yes"] = current_poly_yes
+            group["current_gap"] = current_gap
+            group["current_mtm"] = _arb_mtm(
+                lim_entry=group.get("lim_entry_price"),
+                poly_yes_entry=group.get("poly_yes_entry_price"),
+                current_lim_yes=current_lim_yes,
+                current_poly_yes=current_poly_yes,
+                stake=group.get("stake_usdc"),
+            )
             open_ms = int(group["open_ts_ms"] or 0)
             group["time_open_seconds"] = max(0, (now_ms - open_ms) // 1000) if open_ms else None
             group["time_open_label"] = _format_duration(group["time_open_seconds"])
             out.append(group)
         return sorted(out, key=lambda row: int(row.get("open_ts_ms") or 0), reverse=True)
+
+    def _latest_orderbook_mid_by_token(self, token_ids: set[str]) -> dict[str, float]:
+        if not token_ids or not self._has_data("orderbook_snapshots"):
+            return {}
+        rows = self._fetchall_dict(
+            "WITH latest_books AS ("
+            "  SELECT token_id, "
+            "    (CAST(bids[1].price AS DOUBLE) + CAST(asks[1].price AS DOUBLE)) / 2 AS mid, "
+            "    row_number() OVER (PARTITION BY token_id "
+            "      ORDER BY timestamp_ms DESC, ingested_ts_ms DESC) AS rn "
+            f"  FROM read_parquet({self._glob_recent('orderbook_snapshots', days=1)}, "
+            "hive_partitioning=true) "
+            "  WHERE dt >= current_date - INTERVAL 1 DAY "
+            "  AND len(bids) > 0 AND len(asks) > 0 "
+            "  AND token_id IN (" + ", ".join(["?"] * len(token_ids)) + ")"
+            ") SELECT token_id, mid FROM latest_books WHERE rn = 1",
+            list(token_ids),
+        )
+        return {
+            str(row["token_id"]): float(row["mid"])
+            for row in rows
+            if row.get("mid") is not None
+        }
+
+    def _latest_cross_market_quotes(self) -> dict[str, dict]:
+        base = self._data_root / "cross_market_arb"
+        if not base.exists():
+            return {}
+
+        quotes: dict[str, dict] = {}
+        files = sorted(
+            [*base.rglob("*.parquet"), *base.rglob("*.csv")],
+            key=lambda p: p.stat().st_mtime,
+            reverse=True,
+        )
+        for path in files:
+            if path.suffix == ".parquet":
+                try:
+                    rows = self._fetchall_dict(
+                        "SELECT limitless_slug, limitless_yes, poly_yes, arb_gap "
+                        "FROM read_parquet(?)",
+                        [str(path)],
+                    )
+                except Exception:
+                    continue
+                for row in rows:
+                    _record_arb_quote(quotes, row)
+            elif path.suffix == ".csv":
+                try:
+                    with path.open("r", encoding="utf-8", newline="") as fh:
+                        for row in csv.DictReader(fh):
+                            _record_arb_quote(quotes, row)
+                except OSError:
+                    continue
+        return quotes
 
     def closed_arb_positions(self) -> list[dict]:
         """Closed positions with realised PnL parsed from orders_log exit rows."""
@@ -1085,6 +1171,46 @@ def _format_duration(seconds: int | None) -> str:
     if hours:
         return f"{hours}h {minutes}m"
     return f"{minutes}m"
+
+
+def _record_arb_quote(quotes: dict[str, dict], row: dict) -> None:
+    slug = str(row.get("limitless_slug") or "")
+    if not slug or slug in quotes:
+        return
+    current_lim_yes = _float_or_none(row.get("limitless_yes"))
+    current_poly_yes = _float_or_none(row.get("poly_yes"))
+    current_gap = _float_or_none(row.get("arb_gap"))
+    if current_gap is None and current_lim_yes is not None and current_poly_yes is not None:
+        current_gap = 1.0 - (current_lim_yes + current_poly_yes)
+    quotes[slug] = {
+        "current_lim_yes": current_lim_yes,
+        "current_poly_yes": current_poly_yes,
+        "current_gap": current_gap,
+    }
+
+
+def _arb_mtm(
+    *,
+    lim_entry: Any,
+    poly_yes_entry: Any,
+    current_lim_yes: Any,
+    current_poly_yes: Any,
+    stake: Any,
+) -> float | None:
+    lim_entry_f = _float_or_none(lim_entry)
+    poly_entry_f = _float_or_none(poly_yes_entry)
+    current_lim_f = _float_or_none(current_lim_yes)
+    current_poly_f = _float_or_none(current_poly_yes)
+    stake_f = _float_or_none(stake)
+    if (
+        lim_entry_f is None
+        or poly_entry_f is None
+        or current_lim_f is None
+        or current_poly_f is None
+        or stake_f is None
+    ):
+        return None
+    return ((current_lim_f - lim_entry_f) + (poly_entry_f - current_poly_f)) * stake_f
 
 
 __all__ = ["DuckDBQueryService"]

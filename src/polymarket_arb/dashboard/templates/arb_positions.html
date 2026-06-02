@@ -55,7 +55,10 @@
         <th style="text-align:right">Poly YES Entry</th>
         <th style="text-align:right">Stake</th>
         <th>Time Open</th>
-        <th style="text-align:right">Current MTM</th>
+        <th style="text-align:right">Current Lim</th>
+        <th style="text-align:right">Current Poly YES</th>
+        <th style="text-align:right">Current Gap</th>
+        <th style="text-align:right">MTM PnL</th>
       </tr>
     </thead>
     <tbody>
@@ -79,6 +82,22 @@
           <span class="sub mono" style="display:block;">
             {{ (p.open_ts_ms // 1000) | int | datetimeformat if p.open_ts_ms else "-" }}
           </span>
+        </td>
+        <td style="text-align:right; color: {{ 'var(--good)' if p.current_lim_yes is not none and p.lim_entry_price is not none and p.current_lim_yes < p.lim_entry_price else 'var(--bad)' if p.current_lim_yes is not none and p.lim_entry_price is not none and p.current_lim_yes > p.lim_entry_price else 'var(--fg-dim)' }}" class="mono">
+          {{ "%.4f"|format(p.current_lim_yes) if p.current_lim_yes is not none else "-" }}
+        </td>
+        <td style="text-align:right; color: {{ 'var(--good)' if p.current_poly_yes is not none and p.poly_yes_entry_price is not none and p.current_poly_yes > p.poly_yes_entry_price else 'var(--bad)' if p.current_poly_yes is not none and p.poly_yes_entry_price is not none and p.current_poly_yes < p.poly_yes_entry_price else 'var(--fg-dim)' }}" class="mono">
+          {{ "%.4f"|format(p.current_poly_yes) if p.current_poly_yes is not none else "-" }}
+        </td>
+        <td style="text-align:right; color: {{ 'var(--good)' if p.current_gap is not none and p.entry_arb_gap is not none and p.current_gap < p.entry_arb_gap else 'var(--bad)' if p.current_gap is not none and p.entry_arb_gap is not none and p.current_gap > p.entry_arb_gap else 'var(--fg-dim)' }}" class="mono">
+          {% if p.current_gap is not none %}
+            {{ "%.4f"|format(p.current_gap) }}
+            {% if p.entry_arb_gap is not none %}
+              <span class="sub" style="display:block;">was {{ "%.4f"|format(p.entry_arb_gap) }}</span>
+            {% endif %}
+          {% else %}
+            -
+          {% endif %}
         </td>
         <td style="text-align:right; color: {{ 'var(--good)' if p.current_mtm is not none and p.current_mtm > 0 else 'var(--bad)' if p.current_mtm is not none and p.current_mtm < 0 else 'var(--fg-dim)' }}" class="mono">
           {{ "%+.4f"|format(p.current_mtm) if p.current_mtm is not none else "-" }}
