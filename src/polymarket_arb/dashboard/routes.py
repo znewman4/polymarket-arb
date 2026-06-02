@@ -35,30 +35,18 @@ _LOADING_PAGE = (
 
 @bp.route("/")
 def overview() -> str:
-    cache = _cache()
-    counters = cache.get("overview_counters")
-    if counters is None:
-        # Cache still warming — auto-refresh every 10s
-        return _LOADING_PAGE, 202
+    qs = _qs()
+    summary = qs.overview_summary()
+    summary["limitless_arb"]["mode"] = (
+        "PAPER" if current_app.config.get("LIMITLESS_PAPER_MODE", True) else "LIVE"
+    )
+    summary["relationship_agent"]["mode"] = (
+        "PAPER" if current_app.config.get("RELATIONSHIP_PAPER_MODE", True) else "LIVE"
+    )
     return render_template(
         "overview.html",
-        counters=counters,
-        by_strategy=cache.get("signals_by_strategy", []),
-        per_hour=cache.get("signals_per_hour_last_24h", []),
-        top_markets=cache.get("top_markets_by_signal", []),
-        health=cache.get("health_snapshot", {}),
-        cumulative_notional=cache.get("cumulative_notional", []),
-        expected_pnl=cache.get(
-            "expected_pnl",
-            {
-                "total_expected_pnl": 0.0,
-                "total_cost_basis": 0.0,
-                "expected_return_pct": 0.0,
-                "trade_count": 0,
-            },
-        ),
-        sharpe=cache.get("sharpe_stats", {"sharpe": None, "days_of_data": 0}),
-        auto_refresh_seconds=30,
+        summary=summary,
+        auto_refresh_seconds=60,
         active_page="overview",
     )
 
@@ -92,6 +80,7 @@ def orders() -> str:
             "date_to": date_to or "",
         },
         active_page="orders",
+        auto_refresh_seconds=60,
     )
 
 
@@ -139,7 +128,12 @@ def trades() -> str:
     except ValueError:
         page = 1
     data = qs.tradebook_page(page=page, per_page=50)
-    return render_template("tradebook.html", data=data, active_page="trades")
+    return render_template(
+        "tradebook.html",
+        data=data,
+        active_page="trades",
+        auto_refresh_seconds=60,
+    )
 
 
 @bp.route("/trades.csv")
@@ -182,7 +176,7 @@ def positions() -> str:
         "positions.html",
         positions=data,
         summary=summary,
-        auto_refresh_seconds=30,
+        auto_refresh_seconds=60,
         active_page="positions",
     )
 
@@ -195,7 +189,7 @@ def live_monitor() -> str:
         "live_monitor.html",
         data=data,
         active_page="live",
-        auto_refresh_seconds=10,
+        auto_refresh_seconds=60,
     )
 
 
@@ -222,7 +216,43 @@ def arb_positions() -> str:
         closed_positions=closed_positions,
         summary=summary,
         active_page="arb",
-        auto_refresh_seconds=30,
+        auto_refresh_seconds=60,
+    )
+
+
+@bp.route("/relationships")
+def relationships() -> str:
+    qs = _qs()
+    try:
+        page = max(1, int(request.args.get("page", "1")))
+    except ValueError:
+        page = 1
+    try:
+        min_confidence = float(request.args.get("min_confidence", "0.85"))
+    except ValueError:
+        min_confidence = 0.85
+    open_trades = qs.relationship_open_trades()
+    closed_trades = qs.relationship_closed_trades()
+    realised = [float(row.get("realised_pnl") or 0.0) for row in closed_trades]
+    wins = sum(1 for pnl in realised if pnl > 0)
+    return render_template(
+        "relationships.html",
+        candidate_summary=qs.relationship_candidates_summary(min_confidence=min_confidence),
+        open_trades=open_trades,
+        closed_trades=closed_trades,
+        browser=qs.relationship_browser(
+            min_confidence=min_confidence,
+            page=page,
+            per_page=50,
+        ),
+        stats={
+            "open_count": len(open_trades),
+            "closed_count": len(closed_trades),
+            "total_realised_pnl": round(sum(realised), 4),
+            "win_rate_pct": round((wins / len(realised) * 100.0) if realised else 0.0, 1),
+        },
+        active_page="relationships",
+        auto_refresh_seconds=60,
     )
 
 
@@ -235,6 +265,7 @@ def signals() -> str:
         edge_dist=cache.get("edge_distribution", []),
         limitless_gaps=cache.get("limitless_open_gaps", []),
         active_page="signals",
+        auto_refresh_seconds=60,
     )
 
 
@@ -247,6 +278,7 @@ def markets() -> str:
         by_type=cache.get("relationship_type_breakdown", []),
         top_pairs=cache.get("markets_with_most_relationships", []),
         active_page="markets",
+        auto_refresh_seconds=60,
     )
 
 

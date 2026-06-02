@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <title>{% block title %}polymarket-arb dashboard{% endblock %}</title>
-  {% if auto_refresh_seconds and active_page in ('overview', 'positions', 'live', 'arb') %}
+  {% if auto_refresh_seconds %}
   <meta http-equiv="refresh" content="{{ auto_refresh_seconds }}">
   {% endif %}
   <style>
@@ -32,19 +32,26 @@
     header {
       display: flex;
       align-items: center;
+      flex-wrap: wrap;
       gap: 24px;
       padding: 12px 24px;
       background: var(--bg-card);
       border-bottom: 1px solid var(--border);
     }
     header .brand { font-weight: 700; letter-spacing: 0.02em; }
+    nav {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 4px;
+    }
     nav a {
       padding: 4px 8px;
       border-radius: 6px;
       color: var(--fg-dim);
     }
     nav a.active, nav a:hover { color: var(--fg); background: var(--bg-card-2); }
-    main { padding: 24px; max-width: 1400px; margin: 0 auto; }
+    main { padding: 24px; max-width: 1400px; min-height: calc(100vh - 120px); margin: 0 auto; }
     h1, h2 { margin: 0 0 12px; }
     h1 { font-size: 20px; }
     h2 { font-size: 16px; color: var(--fg-dim); font-weight: 600; }
@@ -52,9 +59,12 @@
     .card { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 16px; }
     .card .label { color: var(--fg-dim); font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; }
     .card .value { font-size: 28px; font-weight: 700; margin-top: 4px; font-variant-numeric: tabular-nums; }
+    .sub { color: var(--fg-dim); font-size: 12px; margin-top: 4px; }
     .card .sub { color: var(--fg-dim); font-size: 12px; margin-top: 4px; }
     .grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap: 16px; margin-bottom: 24px; }
     .panel { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 16px; }
+    .table-scroll { width: 100%; overflow-x: auto; }
+    .table-scroll table { min-width: 820px; }
     table { width: 100%; border-collapse: collapse; font-size: 13px; }
     th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); }
     th { color: var(--fg-dim); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; }
@@ -67,6 +77,29 @@
     .pill.warn { background: rgba(210,153,34,0.15); color: var(--warn); }
     .pill.info { background: rgba(88,166,255,0.15); color: var(--accent); }
     .pill.neutral { background: var(--bg-card-2); color: var(--fg-dim); }
+    .pill.inverse { background: rgba(88,166,255,0.15); color: var(--accent); }
+    .pill.nested { background: rgba(188,140,255,0.16); color: #bc8cff; }
+    .pill.exclusive { background: rgba(210,153,34,0.16); color: var(--warn); }
+    .pill.clock { background: rgba(63,185,80,0.14); color: var(--good); }
+    .strategy-card { display: flex; flex-direction: column; gap: 12px; min-height: 240px; }
+    .strategy-card .topline { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; }
+    .strategy-card .metrics { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+    .metric { background: var(--bg-card-2); border: 1px solid var(--border); border-radius: 6px; padding: 10px; }
+    .metric .label { color: var(--fg-dim); font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; }
+    .metric .value { font-size: 20px; font-weight: 700; margin-top: 2px; font-variant-numeric: tabular-nums; }
+    .progress { height: 7px; overflow: hidden; background: var(--bg-card-2); border: 1px solid var(--border); border-radius: 999px; margin-top: 6px; }
+    .progress > span { display: block; height: 100%; width: 0; }
+    .progress.good > span { background: var(--good); }
+    .progress.warn > span { background: var(--warn); }
+    .progress.bad > span { background: var(--bad); }
+    .progress.neutral > span { background: var(--fg-dim); }
+    footer {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 0 24px 20px;
+      color: var(--fg-dim);
+      font-size: 12px;
+    }
     form.filters { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 12px; align-items: end; }
     form.filters label { font-size: 12px; color: var(--fg-dim); display: block; }
     form.filters input, form.filters select {
@@ -77,6 +110,13 @@
     .btn.secondary { background: var(--bg-card-2); color: var(--fg); border: 1px solid var(--border); }
     .pagination { display: flex; gap: 8px; margin-top: 12px; align-items: center; color: var(--fg-dim); font-size: 12px; }
     canvas { max-width: 100%; }
+    @media (max-width: 720px) {
+      header { padding: 12px 16px; gap: 10px; }
+      main { padding: 16px; }
+      .grid-2 { grid-template-columns: 1fr; }
+      .cards { grid-template-columns: 1fr; }
+      .strategy-card .metrics { grid-template-columns: 1fr; }
+    }
   </style>
 </head>
 <body>
@@ -84,17 +124,14 @@
     <div class="brand">polymarket-arb</div>
     <nav>
       <a href="/" class="{{ 'active' if active_page == 'overview' else '' }}">Overview</a>
+      <a href="/arb" class="{{ 'active' if active_page == 'arb' else '' }}">Arb Monitor</a>
+      <a href="/relationships" class="{{ 'active' if active_page == 'relationships' else '' }}">Relationship Monitor</a>
       <a href="/orders" class="{{ 'active' if active_page == 'orders' else '' }}">Orders</a>
-      <a href="/trades" class="{{ 'active' if active_page == 'trades' else '' }}">Tradebook</a>
-      <a href="/positions" class="{{ 'active' if active_page == 'positions' else '' }}">Positions</a>
-      <a href="/live" class="{{ 'active' if active_page == 'live' else '' }}">Live Monitor</a>
-      <a href="/arb" class="{{ 'active' if active_page == 'arb' else '' }}">Arb</a>
-      <a href="/signals" class="{{ 'active' if active_page == 'signals' else '' }}">Signals</a>
-      <a href="/markets" class="{{ 'active' if active_page == 'markets' else '' }}">Markets</a>
       <a href="/health">Health (JSON)</a>
     </nav>
   </header>
   <main>{% block content %}{% endblock %}</main>
+  <footer>Last updated: <span class="mono">{{ last_updated_utc }}</span></footer>
   {% block scripts %}{% endblock %}
 </body>
 </html>

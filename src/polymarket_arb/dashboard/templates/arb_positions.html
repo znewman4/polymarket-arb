@@ -46,6 +46,7 @@
 <div class="panel" style="margin-bottom: 16px;">
   <h2>Open Positions</h2>
   {% if open_positions %}
+  <div class="table-scroll">
   <table>
     <thead>
       <tr>
@@ -95,6 +96,12 @@
             {% if p.entry_arb_gap is not none %}
               <span class="sub" style="display:block;">was {{ "%.4f"|format(p.entry_arb_gap) }}</span>
             {% endif %}
+            <div class="progress {{ p.convergence_state }}">
+              <span style="width: {{ p.convergence_fill_pct }}%;"></span>
+            </div>
+            {% if p.convergence_pct is not none %}
+              <span class="sub" style="display:block;">{{ "%.1f"|format(p.convergence_pct) }}% converged</span>
+            {% endif %}
           {% else %}
             -
           {% endif %}
@@ -109,14 +116,16 @@
       {% endfor %}
     </tbody>
   </table>
+  </div>
   {% else %}
-    <div class="empty">No open limitless_arb positions.</div>
+    <div class="empty">No open positions yet - scanner runs every 5 minutes.</div>
   {% endif %}
 </div>
 
 <div class="panel">
   <h2>Closed Positions</h2>
   {% if closed_positions %}
+  <div class="table-scroll">
   <table>
     <thead>
       <tr>
@@ -147,8 +156,9 @@
       {% endfor %}
     </tbody>
   </table>
+  </div>
   {% else %}
-    <div class="empty">No closed limitless_arb exits.</div>
+    <div class="empty">No closed limitless_arb exits yet.</div>
   {% endif %}
 </div>
 {% endblock %}

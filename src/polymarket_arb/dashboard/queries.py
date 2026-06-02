@@ -351,6 +351,568 @@ class DuckDBQueryService:
             "trade_count": trade_count,
         }
 
+    def overview_summary(self) -> dict[str, Any]:
+        """Operational overview scoped to the two paper strategies."""
+        kill_switches = self.arb_kill_switch_status()
+        kill_by_label = {str(row["label"]): row for row in kill_switches}
+
+        open_arb = self.open_arb_positions()
+        closed_arb = self.closed_arb_positions()
+        arb_realised = [float(row.get("realised_profit") or 0.0) for row in closed_arb]
+
+        relationship_candidates = self.relationship_candidates_summary()
+        relationship_open = self.relationship_open_trades()
+        relationship_closed = self.relationship_closed_trades()
+        relationship_realised = [
+            float(row.get("realised_pnl") or 0.0) for row in relationship_closed
+        ]
+        last_limitless_scan_ts_ms = self._max_order_ts_for_strategy("limitless_arb")
+        last_relationship_mine_ts_ms = self._latest_relationship_mine_ts()
+
+        health = self.health_snapshot()
+        global_active = bool(kill_by_label.get("Global", {}).get("active"))
+        limitless_active = bool(kill_by_label.get("Limitless arb", {}).get("active"))
+        relationship_active = bool(kill_by_label.get("Relationship agent", {}).get("active"))
+
+        return {
+            "today_utc": health.get("today_utc"),
+            "limitless_arb": {
+                "display_name": "Limitless Arb",
+                "mode": "PAPER",
+                "kill_switch_active": global_active or limitless_active,
+                "kill_switches": [
+                    kill_by_label.get("Global"),
+                    kill_by_label.get("Limitless arb"),
+                ],
+                "open_positions": len(open_arb),
+                "closed_positions": len(closed_arb),
+                "realised_pnl": round(sum(arb_realised), 4),
+                "last_scan_ts_ms": last_limitless_scan_ts_ms,
+            },
+            "relationship_agent": {
+                "display_name": "Relationship Aggressive",
+                "mode": "PAPER",
+                "kill_switch_active": global_active or relationship_active,
+                "kill_switches": [
+                    kill_by_label.get("Global"),
+                    kill_by_label.get("Relationship agent"),
+                ],
+                "active_relationships": relationship_candidates["total_accepted"],
+                "open_trades": len(relationship_open),
+                "closed_trades": len(relationship_closed),
+                "realised_pnl": round(sum(relationship_realised), 4),
+                "last_mine_ts_ms": last_relationship_mine_ts_ms,
+            },
+            "health": {
+                "orderbook_snapshots_today": health.get("orderbook_snapshots_today", 0),
+                "last_limitless_scan_ts_ms": last_limitless_scan_ts_ms,
+                "last_relationship_mine_ts_ms": last_relationship_mine_ts_ms,
+                "last_orderbook_snapshot_ts_ms": health.get("recorder_last_cycle_ts_ms"),
+                "last_agent_tick_ts_ms": health.get("agent_last_tick_ts_ms"),
+                "orders_log_writable": health.get("orders_log_writable", False),
+            },
+        }
+
+    def relationship_candidates_summary(self, min_confidence: float = 0.85) -> dict[str, Any]:
+        """Accepted relationship candidates grouped by type for dashboard summary."""
+        rows = self._latest_relationship_candidate_rows()
+        by_type = {
+            "inverse": 0,
+            "nested": 0,
+            "mutually_exclusive": 0,
+            "same_reference_clock": 0,
+            "other": 0,
+        }
+        confidence_buckets = {
+            "0.95+": 0,
+            "0.90-0.95": 0,
+            "0.85-0.90": 0,
+        }
+        accepted: list[dict] = []
+        for row in rows:
+            if row.get("validation_status") != "accepted":
+                continue
+            confidence = _float_or_none(row.get("final_confidence")) or 0.0
+            if confidence < min_confidence:
+                continue
+            accepted.append(row)
+            by_type[_relationship_type_bucket(row.get("relationship_type"))] += 1
+            if confidence >= 0.95:
+                confidence_buckets["0.95+"] += 1
+            elif confidence >= 0.90:
+                confidence_buckets["0.90-0.95"] += 1
+            else:
+                confidence_buckets["0.85-0.90"] += 1
+        return {
+            "min_confidence": min_confidence,
+            "total_accepted": len(accepted),
+            "by_type": by_type,
+            "confidence_buckets": confidence_buckets,
+        }
+
+    def relationship_open_trades(self) -> list[dict]:
+        """Open relationship_aggressive paper trades with no exit."""
+        rows = [
+            row for row in self._latest_strategy_position_rows("relationship_aggressive")
+            if row.get("status") == "open"
+        ]
+        if not rows:
+            return self._relationship_open_trades_from_orders()
+
+        rel_lookup = {
+            str(row.get("relationship_id") or ""): row
+            for row in self._latest_relationship_candidate_rows()
+        }
+        token_ids = {str(row.get("token_id") or "") for row in rows if row.get("token_id")}
+        mid_by_token = self._latest_orderbook_mid_by_token(token_ids)
+        now_ms = int(datetime.now(timezone.utc).timestamp() * 1000)
+
+        grouped: dict[str, dict] = {}
+        market_ids: set[str] = set()
+        for row in rows:
+            rel_id = str(row.get("relationship_id") or _note_value(row.get("notes") or "", "relationship_id") or "")
+            if not rel_id:
+                rel_id = f"{row.get('market_id') or ''}:{row.get('token_id') or ''}"
+            rel = rel_lookup.get(rel_id, {})
+            market_ids.update(
+                mid
+                for mid in (
+                    str(rel.get("market_id_a") or ""),
+                    str(rel.get("market_id_b") or ""),
+                    str(row.get("market_id") or ""),
+                )
+                if mid
+            )
+            group = grouped.setdefault(
+                rel_id,
+                {
+                    "relationship_id": rel_id,
+                    "relationship_type": rel.get("relationship_type")
+                    or row.get("relationship_type")
+                    or "",
+                    "type_bucket": _relationship_type_bucket(
+                        rel.get("relationship_type") or row.get("relationship_type")
+                    ),
+                    "confidence": _float_or_none(rel.get("final_confidence")),
+                    "question_a": rel.get("question_a") or row.get("market_id") or "",
+                    "question_b": rel.get("question_b") or "",
+                    "market_id_a": rel.get("market_id_a") or "",
+                    "market_id_b": rel.get("market_id_b") or "",
+                    "open_ts_ms": int(row.get("open_ts_ms") or 0),
+                    "gross_edge": _float_or_none(row.get("gross_edge"))
+                    or _note_float(row.get("notes") or "", "gross_edge"),
+                    "stake_usdc": 0.0,
+                    "_mtm_values": [],
+                },
+            )
+            group["open_ts_ms"] = min(
+                int(group.get("open_ts_ms") or 0), int(row.get("open_ts_ms") or 0)
+            )
+            if group.get("gross_edge") is None:
+                group["gross_edge"] = (
+                    _float_or_none(row.get("gross_edge"))
+                    or _note_float(row.get("notes") or "", "gross_edge")
+                )
+
+            slot, outcome_label = _relationship_position_slot(row, rel)
+            leg_key = f"leg_{slot}"
+            if slot not in {"a", "b"}:
+                leg_key = "leg_a" if not group.get("leg_a") else "leg_b"
+                outcome_label = str(row.get("side") or "").upper() or "-"
+            entry_price = _float_or_none(row.get("entry_price"))
+            size = _float_or_none(row.get("size"))
+            notional = _float_or_none(row.get("notional_usdc")) or 0.0
+            current_mid = mid_by_token.get(str(row.get("token_id") or ""))
+            leg_mtm = _position_leg_mtm(
+                side=row.get("side"),
+                entry_price=entry_price,
+                current_price=current_mid,
+                size=size,
+            )
+            if leg_mtm is not None:
+                group["_mtm_values"].append(leg_mtm)
+            group["stake_usdc"] = float(group.get("stake_usdc") or 0.0) + notional
+            group[leg_key] = {
+                "side": outcome_label,
+                "entry_price": entry_price,
+                "current_price": current_mid,
+                "token_id": row.get("token_id") or "",
+                "market_id": row.get("market_id") or "",
+            }
+
+        expiry_by_market = self._market_end_date_ms_by_id(market_ids)
+        out: list[dict] = []
+        for group in grouped.values():
+            leg_a = group.get("leg_a") or {}
+            leg_b = group.get("leg_b") or {}
+            group["side_a"] = leg_a.get("side") or "-"
+            group["side_b"] = leg_b.get("side") or "-"
+            group["entry_price_a"] = leg_a.get("entry_price")
+            group["entry_price_b"] = leg_b.get("entry_price")
+            group["current_price_a"] = leg_a.get("current_price")
+            group["current_price_b"] = leg_b.get("current_price")
+            mtm_values = group.pop("_mtm_values", [])
+            group["current_mtm"] = round(sum(mtm_values), 4) if mtm_values else None
+            open_ms = int(group.get("open_ts_ms") or 0)
+            group["time_open_seconds"] = max(0, (now_ms - open_ms) // 1000) if open_ms else None
+            group["time_open_label"] = _format_duration(group["time_open_seconds"])
+            expiry_candidates = [
+                expiry_by_market.get(str(group.get("market_id_a") or "")),
+                expiry_by_market.get(str(group.get("market_id_b") or "")),
+            ]
+            expiry_candidates = [int(ts) for ts in expiry_candidates if ts]
+            expiry_ts = min(expiry_candidates) if expiry_candidates else None
+            group["expiry_ts_ms"] = expiry_ts
+            group["days_to_expiry"] = (
+                round(max(0, expiry_ts - now_ms) / 86_400_000, 1)
+                if expiry_ts is not None
+                else None
+            )
+            out.append(group)
+        return sorted(out, key=lambda row: int(row.get("open_ts_ms") or 0), reverse=True)
+
+    def _relationship_open_trades_from_orders(self) -> list[dict]:
+        if not self._has_data("orders_log"):
+            return []
+        rows = self._fetchall_dict(
+            "SELECT ts_ms, market_id, token_id, side, filled_size, avg_fill_price, "
+            "notional_usdc, source_relationship_id, notes "
+            f"FROM read_parquet({self._glob_recent('orders_log', days=90)}, "
+            "hive_partitioning=true, union_by_name=true) "
+            "WHERE strategy_id = 'relationship_aggressive' AND status = 'paper_filled' "
+            "ORDER BY ts_ms DESC"
+        )
+        if not rows:
+            return []
+
+        closed_ids = {
+            str(row.get("relationship_id") or "") for row in self.relationship_closed_trades()
+        }
+        rel_lookup = {
+            str(row.get("relationship_id") or ""): row
+            for row in self._latest_relationship_candidate_rows()
+        }
+        token_ids = {str(row.get("token_id") or "") for row in rows if row.get("token_id")}
+        mid_by_token = self._latest_orderbook_mid_by_token(token_ids)
+        now_ms = int(datetime.now(timezone.utc).timestamp() * 1000)
+
+        grouped: dict[str, dict] = {}
+        market_ids: set[str] = set()
+        for row in rows:
+            notes = row.get("notes") or ""
+            rel_id = str(row.get("source_relationship_id") or _note_value(notes, "relationship_id") or "")
+            if not rel_id or rel_id in closed_ids:
+                continue
+            rel = rel_lookup.get(rel_id, {})
+            market_ids.update(
+                mid
+                for mid in (
+                    str(rel.get("market_id_a") or ""),
+                    str(rel.get("market_id_b") or ""),
+                    str(row.get("market_id") or ""),
+                )
+                if mid
+            )
+            group = grouped.setdefault(
+                rel_id,
+                {
+                    "relationship_id": rel_id,
+                    "relationship_type": rel.get("relationship_type") or "",
+                    "type_bucket": _relationship_type_bucket(rel.get("relationship_type")),
+                    "confidence": _float_or_none(rel.get("final_confidence")),
+                    "question_a": rel.get("question_a") or row.get("market_id") or "",
+                    "question_b": rel.get("question_b") or "",
+                    "market_id_a": rel.get("market_id_a") or "",
+                    "market_id_b": rel.get("market_id_b") or "",
+                    "open_ts_ms": int(row.get("ts_ms") or 0),
+                    "gross_edge": _note_float(notes, "gross_edge"),
+                    "stake_usdc": 0.0,
+                    "_mtm_values": [],
+                },
+            )
+            group["open_ts_ms"] = min(int(group["open_ts_ms"] or 0), int(row.get("ts_ms") or 0))
+            if group.get("gross_edge") is None:
+                group["gross_edge"] = _note_float(notes, "gross_edge")
+
+            slot, outcome_label = _relationship_position_slot(row, rel)
+            leg_key = f"leg_{slot}"
+            if slot not in {"a", "b"}:
+                leg_key = "leg_a" if not group.get("leg_a") else "leg_b"
+                outcome_label = str(row.get("side") or "").upper() or "-"
+            entry_price = _float_or_none(row.get("avg_fill_price"))
+            size = _float_or_none(row.get("filled_size"))
+            notional = _float_or_none(row.get("notional_usdc")) or 0.0
+            current_mid = mid_by_token.get(str(row.get("token_id") or ""))
+            leg_mtm = _position_leg_mtm(
+                side=row.get("side"),
+                entry_price=entry_price,
+                current_price=current_mid,
+                size=size,
+            )
+            if leg_mtm is not None:
+                group["_mtm_values"].append(leg_mtm)
+            group["stake_usdc"] = float(group.get("stake_usdc") or 0.0) + notional
+            group[leg_key] = {
+                "side": outcome_label,
+                "entry_price": entry_price,
+                "current_price": current_mid,
+                "token_id": row.get("token_id") or "",
+                "market_id": row.get("market_id") or "",
+            }
+
+        expiry_by_market = self._market_end_date_ms_by_id(market_ids)
+        out: list[dict] = []
+        for group in grouped.values():
+            leg_a = group.get("leg_a") or {}
+            leg_b = group.get("leg_b") or {}
+            group["side_a"] = leg_a.get("side") or "-"
+            group["side_b"] = leg_b.get("side") or "-"
+            group["entry_price_a"] = leg_a.get("entry_price")
+            group["entry_price_b"] = leg_b.get("entry_price")
+            group["current_price_a"] = leg_a.get("current_price")
+            group["current_price_b"] = leg_b.get("current_price")
+            mtm_values = group.pop("_mtm_values", [])
+            group["current_mtm"] = round(sum(mtm_values), 4) if mtm_values else None
+            open_ms = int(group.get("open_ts_ms") or 0)
+            group["time_open_seconds"] = max(0, (now_ms - open_ms) // 1000) if open_ms else None
+            group["time_open_label"] = _format_duration(group["time_open_seconds"])
+            expiry_candidates = [
+                expiry_by_market.get(str(group.get("market_id_a") or "")),
+                expiry_by_market.get(str(group.get("market_id_b") or "")),
+            ]
+            expiry_candidates = [int(ts) for ts in expiry_candidates if ts]
+            expiry_ts = min(expiry_candidates) if expiry_candidates else None
+            group["expiry_ts_ms"] = expiry_ts
+            group["days_to_expiry"] = (
+                round(max(0, expiry_ts - now_ms) / 86_400_000, 1)
+                if expiry_ts is not None
+                else None
+            )
+            out.append(group)
+        return sorted(out, key=lambda row: int(row.get("open_ts_ms") or 0), reverse=True)
+
+    def relationship_closed_trades(self) -> list[dict]:
+        """Closed/resolved relationship_aggressive trades with PnL."""
+        rows = [
+            row for row in self._latest_strategy_position_rows("relationship_aggressive")
+            if row.get("status") in {"closed", "resolved"}
+        ]
+        if not rows:
+            return []
+
+        rel_lookup = {
+            str(row.get("relationship_id") or ""): row
+            for row in self._latest_relationship_candidate_rows()
+        }
+        grouped: dict[str, dict] = {}
+        for row in rows:
+            notes = row.get("notes") or ""
+            rel_id = str(row.get("relationship_id") or _note_value(notes, "relationship_id") or "")
+            if not rel_id:
+                rel_id = f"{row.get('market_id') or ''}:{row.get('token_id') or ''}"
+            rel = rel_lookup.get(rel_id, {})
+            group = grouped.setdefault(
+                rel_id,
+                {
+                    "relationship_id": rel_id,
+                    "relationship_type": rel.get("relationship_type")
+                    or row.get("relationship_type")
+                    or "",
+                    "type_bucket": _relationship_type_bucket(
+                        rel.get("relationship_type") or row.get("relationship_type")
+                    ),
+                    "confidence": _float_or_none(rel.get("final_confidence")),
+                    "question_a": rel.get("question_a") or row.get("market_id") or "",
+                    "question_b": rel.get("question_b") or "",
+                    "open_ts_ms": int(row.get("open_ts_ms") or 0),
+                    "exit_ts_ms": int(row.get("ingested_ts_ms") or row.get("open_ts_ms") or 0),
+                    "_pnl_values": [],
+                },
+            )
+            group["open_ts_ms"] = min(
+                int(group.get("open_ts_ms") or 0), int(row.get("open_ts_ms") or 0)
+            )
+            group["exit_ts_ms"] = max(
+                int(group.get("exit_ts_ms") or 0),
+                int(row.get("ingested_ts_ms") or row.get("open_ts_ms") or 0),
+            )
+            realised = (
+                _note_float(notes, "realised_pnl")
+                or _note_float(notes, "realised_profit")
+                or _note_float(notes, "pnl")
+            )
+            if realised is not None:
+                group["_pnl_values"].append(realised)
+
+            slot, outcome_label = _relationship_position_slot(row, rel)
+            leg_key = f"leg_{slot}"
+            if slot not in {"a", "b"}:
+                leg_key = "leg_a" if not group.get("leg_a") else "leg_b"
+                outcome_label = str(row.get("side") or "").upper() or "-"
+            group[leg_key] = {
+                "side": outcome_label,
+                "entry_price": _float_or_none(row.get("entry_price")),
+                "exit_price": _note_float(notes, "exit_price")
+                or _note_float(notes, "close_price")
+                or _float_or_none(row.get("entry_price")),
+            }
+
+        out: list[dict] = []
+        for group in grouped.values():
+            leg_a = group.get("leg_a") or {}
+            leg_b = group.get("leg_b") or {}
+            group["side_a"] = leg_a.get("side") or "-"
+            group["side_b"] = leg_b.get("side") or "-"
+            group["entry_price_a"] = leg_a.get("entry_price")
+            group["entry_price_b"] = leg_b.get("entry_price")
+            group["exit_price_a"] = leg_a.get("exit_price")
+            group["exit_price_b"] = leg_b.get("exit_price")
+            pnl_values = group.pop("_pnl_values", [])
+            group["realised_pnl"] = round(sum(pnl_values), 4) if pnl_values else 0.0
+            hold_seconds = None
+            if group.get("open_ts_ms") and group.get("exit_ts_ms"):
+                hold_seconds = max(
+                    0,
+                    (int(group["exit_ts_ms"]) - int(group["open_ts_ms"])) // 1000,
+                )
+            group["hold_duration_label"] = _format_duration(hold_seconds)
+            out.append(group)
+        return sorted(out, key=lambda row: int(row.get("exit_ts_ms") or 0), reverse=True)
+
+    def relationship_browser(
+        self,
+        *,
+        min_confidence: float = 0.85,
+        page: int = 1,
+        per_page: int = 50,
+    ) -> dict[str, Any]:
+        """Paginated browser of accepted relationship candidates."""
+        rows = []
+        for row in self._latest_relationship_candidate_rows():
+            confidence = _float_or_none(row.get("final_confidence")) or 0.0
+            if row.get("validation_status") != "accepted" or confidence < min_confidence:
+                continue
+            row = dict(row)
+            row["final_confidence"] = confidence
+            row["type_bucket"] = _relationship_type_bucket(row.get("relationship_type"))
+            row["question_a_short"] = _question_excerpt(row.get("question_a"))
+            row["question_b_short"] = _question_excerpt(row.get("question_b"))
+            rows.append(row)
+
+        open_ids = {str(row.get("relationship_id") or "") for row in self.relationship_open_trades()}
+        closed_ids = {str(row.get("relationship_id") or "") for row in self.relationship_closed_trades()}
+        for row in rows:
+            rel_id = str(row.get("relationship_id") or "")
+            if rel_id in open_ids:
+                row["trade_status"] = "open"
+            elif rel_id in closed_ids:
+                row["trade_status"] = "closed"
+            else:
+                row["trade_status"] = "untraded"
+
+        rows.sort(
+            key=lambda row: (
+                float(row.get("final_confidence") or 0.0),
+                int(row.get("ingested_ts_ms") or 0),
+            ),
+            reverse=True,
+        )
+        page = max(1, int(page))
+        per_page = max(1, int(per_page))
+        total = len(rows)
+        pages = (total + per_page - 1) // per_page if per_page else 0
+        offset = (page - 1) * per_page
+        return {
+            "rows": rows[offset: offset + per_page],
+            "total": total,
+            "page": page,
+            "per_page": per_page,
+            "pages": pages,
+            "min_confidence": min_confidence,
+        }
+
+    def _latest_relationship_candidate_rows(self) -> list[dict]:
+        if not self._has_data("relationship_candidates"):
+            return []
+        return self._fetchall_dict(
+            "WITH latest AS ("
+            "  SELECT relationship_id, market_id_a, market_id_b, token_id_a_yes, "
+            "  token_id_a_no, token_id_b_yes, token_id_b_no, question_a, question_b, "
+            "  relationship_type, TRY_CAST(final_confidence AS DOUBLE) AS final_confidence, "
+            "  validation_status, ingested_ts_ms, "
+            "  row_number() OVER (PARTITION BY relationship_id ORDER BY ingested_ts_ms DESC) AS rn "
+            f"  FROM read_parquet('{self._glob('relationship_candidates')}', "
+            "  hive_partitioning=true, union_by_name=true)"
+            ") SELECT relationship_id, market_id_a, market_id_b, token_id_a_yes, token_id_a_no, "
+            "token_id_b_yes, token_id_b_no, question_a, question_b, relationship_type, "
+            "final_confidence, validation_status, ingested_ts_ms "
+            "FROM latest WHERE rn = 1"
+        )
+
+    def _latest_strategy_position_rows(self, strategy_id: str) -> list[dict]:
+        if not self._has_data("positions"):
+            return []
+        return self._fetchall_dict(
+            "WITH latest AS ("
+            "  SELECT position_id, strategy_id, market_id, token_id, side, open_ts_ms, "
+            "  entry_price, size, notional_usdc, gross_edge, relationship_id, "
+            "  relationship_type, notes, status, ingested_ts_ms, "
+            "  row_number() OVER (PARTITION BY position_id "
+            "    ORDER BY COALESCE(ingested_ts_ms, open_ts_ms) DESC, open_ts_ms DESC) AS rn "
+            f"  FROM read_parquet({self._glob_recent('positions', days=90)}, "
+            "  hive_partitioning=true, union_by_name=true) "
+            "  WHERE strategy_id = ? AND side != 'snapshot'"
+            ") SELECT position_id, strategy_id, market_id, token_id, side, open_ts_ms, "
+            "entry_price, size, notional_usdc, gross_edge, relationship_id, relationship_type, "
+            "notes, status, ingested_ts_ms FROM latest WHERE rn = 1",
+            [strategy_id],
+        )
+
+    def _market_end_date_ms_by_id(self, market_ids: set[str]) -> dict[str, int]:
+        if not market_ids or not self._has_data("markets"):
+            return {}
+        ids = sorted(mid for mid in market_ids if mid)
+        if not ids:
+            return {}
+        rows = self._fetchall_dict(
+            "WITH latest AS ("
+            "  SELECT id, TRY_CAST(end_date_ms AS BIGINT) AS end_date_ms, "
+            "  row_number() OVER (PARTITION BY id ORDER BY ingested_ts_ms DESC) AS rn "
+            f"  FROM read_parquet({self._glob_recent('markets', days=30)}, "
+            "  hive_partitioning=true, union_by_name=true) "
+            "  WHERE id IN (" + ", ".join(["?"] * len(ids)) + ")"
+            ") SELECT id, end_date_ms FROM latest WHERE rn = 1",
+            ids,
+        )
+        return {
+            str(row["id"]): int(row["end_date_ms"])
+            for row in rows
+            if row.get("end_date_ms") is not None
+        }
+
+    def _max_order_ts_for_strategy(self, strategy_id: str) -> int | None:
+        if not self._has_data("orders_log"):
+            return None
+        row = self._fetchall(
+            f"SELECT MAX(ts_ms) FROM read_parquet({self._glob_recent('orders_log', days=30)}, "
+            "hive_partitioning=true) WHERE strategy_id = ?",
+            [strategy_id],
+        )
+        if not row or row[0][0] is None:
+            return None
+        return int(row[0][0])
+
+    def _latest_relationship_mine_ts(self) -> int | None:
+        if not self._has_data("relationship_candidates"):
+            return None
+        row = self._fetchall(
+            f"SELECT MAX(ingested_ts_ms) FROM read_parquet('{self._glob('relationship_candidates')}', "
+            "hive_partitioning=true, union_by_name=true)"
+        )
+        if not row or row[0][0] is None:
+            return None
+        return int(row[0][0])
+
     # ─── live monitor ────────────────────────────────────────────────────────
 
     @_ttl_cached
@@ -994,6 +1556,7 @@ class DuckDBQueryService:
                 current_poly_yes=current_poly_yes,
                 stake=group.get("stake_usdc"),
             )
+            group.update(_convergence_progress(group.get("entry_arb_gap"), current_gap))
             open_ms = int(group["open_ts_ms"] or 0)
             group["time_open_seconds"] = max(0, (now_ms - open_ms) // 1000) if open_ms else None
             group["time_open_label"] = _format_duration(group["time_open_seconds"])
@@ -1211,6 +1774,85 @@ def _arb_mtm(
     ):
         return None
     return ((current_lim_f - lim_entry_f) + (poly_entry_f - current_poly_f)) * stake_f
+
+
+def _convergence_progress(entry_gap: Any, current_gap: Any) -> dict[str, Any]:
+    entry = _float_or_none(entry_gap)
+    current = _float_or_none(current_gap)
+    if entry is None or current is None or entry == 0:
+        return {
+            "convergence_pct": None,
+            "convergence_fill_pct": 0.0,
+            "convergence_state": "neutral",
+        }
+    pct = (entry - current) / abs(entry) * 100.0
+    if pct < 0:
+        state = "bad"
+    elif pct < 5:
+        state = "warn"
+    else:
+        state = "good"
+    return {
+        "convergence_pct": round(pct, 1),
+        "convergence_fill_pct": round(max(0.0, min(100.0, pct)), 1),
+        "convergence_state": state,
+    }
+
+
+def _relationship_type_bucket(value: Any) -> str:
+    rel_type = str(value or "").lower()
+    if "mutually_exclusive" in rel_type or "exclusive" in rel_type:
+        return "mutually_exclusive"
+    if "same_reference_clock" in rel_type or "reference_clock" in rel_type:
+        return "same_reference_clock"
+    if "inverse" in rel_type or "contrapositive" in rel_type or "contradiction" in rel_type:
+        return "inverse"
+    if "nested" in rel_type or "implies" in rel_type:
+        return "nested"
+    return "other"
+
+
+def _relationship_position_slot(row: dict, rel: dict) -> tuple[str, str]:
+    token_id = str(row.get("token_id") or "")
+    market_id = str(row.get("market_id") or "")
+    side = str(row.get("side") or "").upper() or "-"
+    token_map = {
+        str(rel.get("token_id_a_yes") or ""): ("a", "A YES"),
+        str(rel.get("token_id_a_no") or ""): ("a", "A NO"),
+        str(rel.get("token_id_b_yes") or ""): ("b", "B YES"),
+        str(rel.get("token_id_b_no") or ""): ("b", "B NO"),
+    }
+    if token_id in token_map and token_id:
+        return token_map[token_id]
+    if market_id == str(rel.get("market_id_a") or ""):
+        return "a", f"A {side}"
+    if market_id == str(rel.get("market_id_b") or ""):
+        return "b", f"B {side}"
+    return "", side
+
+
+def _position_leg_mtm(
+    *,
+    side: Any,
+    entry_price: Any,
+    current_price: Any,
+    size: Any,
+) -> float | None:
+    entry = _float_or_none(entry_price)
+    current = _float_or_none(current_price)
+    qty = _float_or_none(size)
+    if entry is None or current is None or qty is None:
+        return None
+    if str(side or "").lower().startswith("sell"):
+        return (entry - current) * qty
+    return (current - entry) * qty
+
+
+def _question_excerpt(value: Any, *, limit: int = 60) -> str:
+    text = " ".join(str(value or "").split())
+    if len(text) <= limit:
+        return text
+    return text[: limit - 3] + "..."
 
 
 __all__ = ["DuckDBQueryService"]
