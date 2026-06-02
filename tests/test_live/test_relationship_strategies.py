@@ -28,6 +28,7 @@ def _rel(
     token_id_a_no: str | None = "a_no",
     token_id_b_yes: str | None = "b_yes",
     token_id_b_no: str | None = "b_no",
+    final_confidence: float = 0.9,
 ) -> RelationshipCandidateRow:
     return RelationshipCandidateRow(
         relationship_id=relationship_id,
@@ -49,7 +50,7 @@ def _rel(
         semantic_similarity_score=None,
         deterministic_confidence=0.8,
         model_confidence=1.0,
-        final_confidence=0.8,
+        final_confidence=final_confidence,
         validation_status=validation_status,
         rejection_reasons_json="[]",
         rationale_summary="test relationship",
@@ -226,3 +227,25 @@ def test_relationship_aggressive_accepts_signal_diagnostic_rejects(tmp_data_root
 
     assert diagnostic(state) == []
     assert len(aggressive(state)) == 2
+
+
+def test_relationship_aggressive_skips_low_confidence_relationships(tmp_data_root) -> None:
+    _seed_orderbook_snapshots(tmp_data_root, "a_yes", "b_yes")
+    repo = ParquetRelationshipCandidatesRepository(tmp_data_root)
+    repo.append_many([
+        _rel(
+            relationship_type="nested_a_implies_b",
+            final_confidence=0.84,
+        )
+    ])
+    state = _state(
+        _book("a_yes", bid="0.53", ask="0.55"),
+        _book("b_yes", bid="0.49", ask="0.51"),
+    )
+    aggressive = live._build_strategy(
+        "relationship_aggressive",
+        data_root=tmp_data_root,
+        run_id="live_test_agg",
+    )
+
+    assert aggressive(state) == []

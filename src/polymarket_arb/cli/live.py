@@ -46,6 +46,7 @@ class _RelationshipStrategyConfig:
     slippage_bps: Decimal = Decimal("50")
     max_pairs_per_tick: int = 5
     min_liquidity_usdc: Decimal = Decimal("10")
+    min_confidence: float = 0.85
 
 
 def _noop_strategy(_state: AgentState) -> list[OrderIntent]:
@@ -67,6 +68,7 @@ _STRATEGIES: dict[str, StrategyFn | _RelationshipStrategyConfig] = {
         min_gross_edge=0.03,
         min_net_edge=0.01,
         max_pairs_per_tick=5,
+        min_confidence=0.85,
     ),
 }
 
@@ -371,8 +373,12 @@ def _make_relationship_strategy(
             cached_relationships = _load_live_relationships(data_root)
         tick_count += 1
 
+        candidates = [
+            rel for rel in cached_relationships
+            if rel.final_confidence >= config.min_confidence
+        ]
         scored: list[tuple[float, list[OrderIntent], str]] = []
-        for rel in cached_relationships:
+        for rel in candidates:
             # Cooldown: skip if same pair traded within the window
             last_ts = last_traded.get(rel.relationship_id, 0)
             if state.ts_ms - last_ts < _COOLDOWN_MS:

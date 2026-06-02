@@ -27,7 +27,7 @@ _TS = 1_700_000_000_000
 def _rel(
     relationship_id: str = "rel_001",
     *,
-    final_confidence: float = 0.8,
+    final_confidence: float = 0.9,
     token_id_a_yes: str = "a_yes",
     token_id_b_yes: str = "b_yes",
     market_id_a: str = "market_a",
