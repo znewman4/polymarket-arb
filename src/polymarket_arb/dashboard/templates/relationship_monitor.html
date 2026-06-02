@@ -1,0 +1,190 @@
+{% extends "base.html" %}
+{% block title %}Relationship Monitor - polymarket-arb{% endblock %}
+{% block content %}
+<h1>Relationship Monitor <span class="pill neutral">confidence &gt;= {{ "%.2f"|format(summary.min_confidence) }}</span></h1>
+
+<div class="cards">
+  <div class="card">
+    <div class="label">Accepted Relationships</div>
+    <div class="value">{{ summary.total_accepted }}</div>
+    <div class="sub">confidence &gt;= {{ "%.2f"|format(summary.min_confidence) }}</div>
+  </div>
+  <div class="card">
+    <div class="label">Open Trades</div>
+    <div class="value">{{ summary.open_trades }}</div>
+  </div>
+  <div class="card">
+    <div class="label">Closed Trades</div>
+    <div class="value">{{ summary.closed_trades }}</div>
+  </div>
+  <div class="card">
+    <div class="label">Realised PnL</div>
+    <div class="value mono" style="color: {{ 'var(--good)' if summary.realised_pnl > 0 else 'var(--bad)' if summary.realised_pnl < 0 else 'var(--fg)' }}">
+      {{ "%+.4f"|format(summary.realised_pnl) }}
+    </div>
+  </div>
+</div>
+
+<div class="panel" style="margin-bottom: 16px;">
+  <h2>Open Trades</h2>
+  {% if open_trades %}
+  <div class="table-scroll">
+  <table>
+    <thead>
+      <tr>
+        <th>Question A</th>
+        <th>Question B</th>
+        <th>Type</th>
+        <th style="text-align:right">Confidence</th>
+        <th style="text-align:right">Entry Price A</th>
+        <th style="text-align:right">Entry Price B</th>
+        <th style="text-align:right">Gross Edge</th>
+        <th>Time Open</th>
+        <th style="text-align:right">Days to Expiry</th>
+        <th style="text-align:right">Current MTM</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for trade in open_trades %}
+      {% set type_class = 'inverse' if trade.type_bucket == 'inverse' else 'nested' if trade.type_bucket == 'nested' else 'exclusive' if trade.type_bucket == 'mutually_exclusive' else 'clock' if trade.type_bucket == 'same_reference_clock' else 'neutral' %}
+      <tr>
+        <td title="{{ trade.question_a }}">
+          {{ trade.question_a[:70] }}{% if trade.question_a|length > 70 %}...{% endif %}
+        </td>
+        <td title="{{ trade.question_b }}">
+          {{ trade.question_b[:70] }}{% if trade.question_b|length > 70 %}...{% endif %}
+        </td>
+        <td><span class="pill {{ type_class }}">{{ trade.type_bucket.replace("_", " ") }}</span></td>
+        <td style="text-align:right; color: {{ 'var(--good)' if trade.confidence is not none and trade.confidence >= 0.9 else 'var(--warn)' if trade.confidence is not none and trade.confidence >= 0.85 else 'var(--fg-dim)' }}" class="mono">
+          {{ "%.3f"|format(trade.confidence) if trade.confidence is not none else "-" }}
+        </td>
+        <td style="text-align:right" class="mono">
+          {{ "%.4f"|format(trade.entry_price_a) if trade.entry_price_a is not none else "-" }}
+        </td>
+        <td style="text-align:right" class="mono">
+          {{ "%.4f"|format(trade.entry_price_b) if trade.entry_price_b is not none else "-" }}
+        </td>
+        <td style="text-align:right" class="mono">
+          {{ "%.4f"|format(trade.gross_edge) if trade.gross_edge is not none else "-" }}
+        </td>
+        <td>
+          {{ trade.time_open_label }}
+          <span class="sub mono" style="display:block;">{{ (trade.open_ts_ms // 1000) | int | datetimeformat if trade.open_ts_ms else "-" }}</span>
+        </td>
+        <td style="text-align:right" class="mono">
+          {{ "%.1f"|format(trade.days_to_expiry) if trade.days_to_expiry is not none else "-" }}
+        </td>
+        <td style="text-align:right; color: {{ 'var(--good)' if trade.current_mtm is not none and trade.current_mtm > 0 else 'var(--bad)' if trade.current_mtm is not none and trade.current_mtm < 0 else 'var(--fg-dim)' }}" class="mono">
+          {{ "%+.4f"|format(trade.current_mtm) if trade.current_mtm is not none else "-" }}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  {% else %}
+    <div class="empty">No open relationship_aggressive trades yet.</div>
+  {% endif %}
+</div>
+
+<div class="panel" style="margin-bottom: 16px;">
+  <h2>Closed Trades</h2>
+  {% if closed_trades %}
+  <div class="table-scroll">
+  <table>
+    <thead>
+      <tr>
+        <th>Question A</th>
+        <th>Question B</th>
+        <th>Type</th>
+        <th style="text-align:right">Confidence</th>
+        <th style="text-align:right">Realised PnL</th>
+        <th>Hold Duration</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for trade in closed_trades %}
+      {% set type_class = 'inverse' if trade.type_bucket == 'inverse' else 'nested' if trade.type_bucket == 'nested' else 'exclusive' if trade.type_bucket == 'mutually_exclusive' else 'clock' if trade.type_bucket == 'same_reference_clock' else 'neutral' %}
+      <tr>
+        <td title="{{ trade.question_a }}">
+          {{ trade.question_a[:70] }}{% if trade.question_a|length > 70 %}...{% endif %}
+        </td>
+        <td title="{{ trade.question_b }}">
+          {{ trade.question_b[:70] }}{% if trade.question_b|length > 70 %}...{% endif %}
+        </td>
+        <td><span class="pill {{ type_class }}">{{ trade.type_bucket.replace("_", " ") }}</span></td>
+        <td style="text-align:right; color: {{ 'var(--good)' if trade.confidence is not none and trade.confidence >= 0.9 else 'var(--warn)' if trade.confidence is not none and trade.confidence >= 0.85 else 'var(--fg-dim)' }}" class="mono">
+          {{ "%.3f"|format(trade.confidence) if trade.confidence is not none else "-" }}
+        </td>
+        <td style="text-align:right; color: {{ 'var(--good)' if trade.realised_pnl > 0 else 'var(--bad)' if trade.realised_pnl < 0 else 'var(--fg-dim)' }}" class="mono">
+          {{ "%+.4f"|format(trade.realised_pnl) }}
+        </td>
+        <td>
+          {{ trade.hold_duration_label }}
+          <span class="sub mono" style="display:block;">{{ (trade.exit_ts_ms // 1000) | int | datetimeformat if trade.exit_ts_ms else "-" }}</span>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  {% else %}
+    <div class="empty">No closed relationship_aggressive trades yet.</div>
+  {% endif %}
+</div>
+
+<div class="panel">
+  <h2>Relationship Browser</h2>
+  {% if browser.rows %}
+  <div class="table-scroll">
+  <table>
+    <thead>
+      <tr>
+        <th>Question A</th>
+        <th>Question B</th>
+        <th>Type</th>
+        <th style="text-align:right">Confidence</th>
+        <th>Traded</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for rel in browser.rows %}
+      {% set type_class = 'inverse' if rel.type_bucket == 'inverse' else 'nested' if rel.type_bucket == 'nested' else 'exclusive' if rel.type_bucket == 'mutually_exclusive' else 'clock' if rel.type_bucket == 'same_reference_clock' else 'neutral' %}
+      <tr>
+        <td title="{{ rel.question_a }}">{{ rel.question_a_short }}</td>
+        <td title="{{ rel.question_b }}">{{ rel.question_b_short }}</td>
+        <td><span class="pill {{ type_class }}">{{ rel.type_bucket.replace("_", " ") }}</span></td>
+        <td style="text-align:right; color: {{ 'var(--good)' if rel.final_confidence >= 0.9 else 'var(--warn)' if rel.final_confidence >= 0.85 else 'var(--fg-dim)' }}" class="mono">
+          {{ "%.3f"|format(rel.final_confidence) }}
+        </td>
+        <td>
+          {% if rel.trade_status == "open" %}
+            <span class="pill good">traded</span>
+            <span class="pill warn">open</span>
+          {% elif rel.trade_status == "closed" %}
+            <span class="pill good">traded</span>
+            <span class="pill neutral">closed</span>
+          {% else %}
+            <span class="pill neutral">untraded</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  <div class="pagination">
+    <span>{{ browser.total }} relationships</span>
+    {% if browser.page > 1 %}
+      <a href="/relationships?page={{ browser.page - 1 }}">Previous</a>
+    {% endif %}
+    <span>Page {{ browser.page }} of {{ browser.pages or 1 }}</span>
+    {% if browser.page < browser.pages %}
+      <a href="/relationships?page={{ browser.page + 1 }}">Next</a>
+    {% endif %}
+  </div>
+  {% else %}
+    <div class="empty">No accepted relationships at this confidence threshold.</div>
+  {% endif %}
+</div>
+{% endblock %}

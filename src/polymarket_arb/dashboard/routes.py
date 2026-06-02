@@ -7,6 +7,7 @@ CSV).  All data-shape logic lives in ``queries.py``.
 
 from __future__ import annotations
 
+import copy
 import csv
 import io
 from datetime import datetime, timezone
@@ -35,8 +36,9 @@ _LOADING_PAGE = (
 
 @bp.route("/")
 def overview() -> str:
-    qs = _qs()
-    summary = qs.overview_summary()
+    summary = copy.deepcopy(_cache().get("overview_summary"))
+    if not summary:
+        summary = _qs().overview_summary()
     summary["limitless_arb"]["mode"] = (
         "PAPER" if current_app.config.get("LIMITLESS_PAPER_MODE", True) else "LIVE"
     )
@@ -221,36 +223,34 @@ def arb_positions() -> str:
 
 
 @bp.route("/relationships")
-def relationships() -> str:
+def relationship_monitor() -> str:
     qs = _qs()
     try:
         page = max(1, int(request.args.get("page", "1")))
     except ValueError:
         page = 1
-    try:
-        min_confidence = float(request.args.get("min_confidence", "0.85"))
-    except ValueError:
-        min_confidence = 0.85
+    min_confidence = 0.85
+    summary = qs.relationship_candidates_summary(min_confidence=min_confidence)
     open_trades = qs.relationship_open_trades()
     closed_trades = qs.relationship_closed_trades()
     realised = [float(row.get("realised_pnl") or 0.0) for row in closed_trades]
-    wins = sum(1 for pnl in realised if pnl > 0)
+    browser = qs.relationship_browser(
+        min_confidence=min_confidence,
+        page=page,
+        per_page=50,
+    )
+    summary = {
+        **summary,
+        "open_trades": len(open_trades),
+        "closed_trades": len(closed_trades),
+        "realised_pnl": round(sum(realised), 4),
+    }
     return render_template(
-        "relationships.html",
-        candidate_summary=qs.relationship_candidates_summary(min_confidence=min_confidence),
+        "relationship_monitor.html",
+        summary=summary,
         open_trades=open_trades,
         closed_trades=closed_trades,
-        browser=qs.relationship_browser(
-            min_confidence=min_confidence,
-            page=page,
-            per_page=50,
-        ),
-        stats={
-            "open_count": len(open_trades),
-            "closed_count": len(closed_trades),
-            "total_realised_pnl": round(sum(realised), 4),
-            "win_rate_pct": round((wins / len(realised) * 100.0) if realised else 0.0, 1),
-        },
+        browser=browser,
         active_page="relationships",
         auto_refresh_seconds=60,
     )

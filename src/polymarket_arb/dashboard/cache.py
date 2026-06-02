@@ -43,6 +43,7 @@ class DashboardCache:
         clear_query_cache()
         methods: dict[str, Any] = {
             "overview_counters": lambda: self._qs.overview_counters(),
+            "overview_summary": lambda: self._qs.overview_summary(),
             "signals_by_strategy": lambda: self._qs.signals_by_strategy(),
             "signals_per_hour_last_24h": lambda: self._qs.signals_per_hour_last_24h(),
             "top_markets_by_signal": lambda: self._qs.top_markets_by_signal(limit=10),
