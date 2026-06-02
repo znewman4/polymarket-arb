@@ -32,6 +32,7 @@ from ..limitless.arb_scanner import (
 )
 from ..limitless.models import ArbMatch, LimitlessArbPosition
 from ..live.order_client import OrderClient
+from ..monitoring import kill_switch
 from ..settings import Settings
 from ..storage.parquet.orders_log_repo import ParquetOrdersLogRepository
 from ..storage.parquet.positions_repo import ParquetPositionsRepository
@@ -225,6 +226,7 @@ async def _run_execute(
             limitless_host=settings.limitless_host,
             http=http,
             kill_switch_path=settings.killswitch_path,
+            strategy_kill_switch_path=Path(kill_switch.LIMITLESS_ARB_PATH),
             paper_mode=paper_mode,
             key_id=key_id,
             key_secret=key_secret,

@@ -26,6 +26,8 @@ from typing import Any
 
 import duckdb
 
+from ..monitoring import kill_switch
+
 _QUERY_CACHE_TTL_S = 60.0
 _QUERY_CACHE: dict[str, tuple[Any, float]] = {}
 _QUERY_CACHE_LOCK = threading.Lock()
@@ -864,6 +866,166 @@ class DuckDBQueryService:
         except OSError:
             return False
 
+    # ─── arb monitor ────────────────────────────────────────────────────────
+
+    def arb_kill_switch_status(self) -> list[dict]:
+        """Return global and per-strategy kill-switch file states."""
+        paths = [
+            ("Global", self._data_root / ".killswitch"),
+            ("Limitless arb", self._data_root / Path(kill_switch.LIMITLESS_ARB_PATH).name),
+            ("Relationship agent", self._data_root / Path(kill_switch.AGENT_PATH).name),
+        ]
+        return [
+            {
+                "label": label,
+                "path": str(path),
+                "active": path.exists(),
+            }
+            for label, path in paths
+        ]
+
+    def open_arb_positions(self) -> list[dict]:
+        """Open limitless_arb positions from positions parquet."""
+        if not self._has_data("positions"):
+            return []
+
+        rows = self._fetchall_dict(
+            "SELECT position_id, strategy_id, market_id, token_id, side, open_ts_ms, "
+            "entry_price, size, notional_usdc, gross_edge, relationship_id, "
+            "relationship_type, notes, status, ingested_ts_ms "
+            f"FROM read_parquet({self._glob_recent('positions', days=90)}, "
+            "hive_partitioning=true, union_by_name=true) "
+            "WHERE strategy_id = 'limitless_arb' "
+            "ORDER BY COALESCE(ingested_ts_ms, open_ts_ms) DESC"
+        )
+        latest_by_position: dict[str, dict] = {}
+        snapshots_by_relationship: dict[str, dict] = {}
+        for row in rows:
+            row["ingested_ts_ms"] = row.get("ingested_ts_ms") or row.get("open_ts_ms") or 0
+            position_id = str(row.get("position_id") or "")
+            if not position_id:
+                continue
+            current = latest_by_position.get(position_id)
+            if current is None or int(row["ingested_ts_ms"]) > int(current["ingested_ts_ms"]):
+                latest_by_position[position_id] = row
+            if row.get("side") == "snapshot":
+                rel_id = str(row.get("relationship_id") or position_id)
+                snap = snapshots_by_relationship.get(rel_id)
+                if snap is None or int(row["ingested_ts_ms"]) > int(snap["ingested_ts_ms"]):
+                    snapshots_by_relationship[rel_id] = row
+
+        grouped: dict[str, dict] = {}
+        for row in latest_by_position.values():
+            if row.get("status") != "open" or row.get("side") == "snapshot":
+                continue
+            rel_id = str(row.get("relationship_id") or _arb_relationship_id(row))
+            if not rel_id:
+                continue
+            notes = row.get("notes") or ""
+            group = grouped.setdefault(
+                rel_id,
+                {
+                    "position_id": rel_id,
+                    "market_slug": _note_value(notes, "slug") or row.get("market_id") or "",
+                    "entry_arb_gap": _float_or_none(row.get("gross_edge"))
+                    or _note_float(notes, "arb_gap"),
+                    "lim_entry_price": _note_float(notes, "lim_entry"),
+                    "poly_yes_entry_price": _note_float(notes, "poly_yes_entry"),
+                    "stake_usdc": 0.0,
+                    "open_ts_ms": int(row.get("open_ts_ms") or 0),
+                    "current_mtm": None,
+                    "snapshot_ts_ms": None,
+                },
+            )
+            group["open_ts_ms"] = min(group["open_ts_ms"], int(row.get("open_ts_ms") or 0))
+            if not group["market_slug"]:
+                group["market_slug"] = _note_value(notes, "slug") or row.get("market_id") or ""
+            if group["entry_arb_gap"] is None:
+                group["entry_arb_gap"] = _float_or_none(row.get("gross_edge")) or _note_float(notes, "arb_gap")
+            if group["lim_entry_price"] is None:
+                group["lim_entry_price"] = _note_float(notes, "lim_entry")
+            if group["poly_yes_entry_price"] is None:
+                group["poly_yes_entry_price"] = _note_float(notes, "poly_yes_entry")
+            group["stake_usdc"] = max(
+                float(group["stake_usdc"] or 0.0),
+                _float_or_none(row.get("notional_usdc")) or _float_or_none(row.get("size")) or 0.0,
+            )
+
+        now_ms = int(datetime.now(timezone.utc).timestamp() * 1000)
+        out: list[dict] = []
+        for rel_id, group in grouped.items():
+            snap = snapshots_by_relationship.get(rel_id)
+            if snap is not None:
+                notes = snap.get("notes") or ""
+                group["current_mtm"] = (
+                    _float_or_none(snap.get("gross_edge"))
+                    if snap.get("gross_edge") not in (None, "")
+                    else _note_float(notes, "unrealised")
+                )
+                group["snapshot_ts_ms"] = int(snap.get("ingested_ts_ms") or snap.get("open_ts_ms") or 0)
+            open_ms = int(group["open_ts_ms"] or 0)
+            group["time_open_seconds"] = max(0, (now_ms - open_ms) // 1000) if open_ms else None
+            group["time_open_label"] = _format_duration(group["time_open_seconds"])
+            out.append(group)
+        return sorted(out, key=lambda row: int(row.get("open_ts_ms") or 0), reverse=True)
+
+    def closed_arb_positions(self) -> list[dict]:
+        """Closed positions with realised PnL parsed from orders_log exit rows."""
+        if not self._has_data("orders_log"):
+            return []
+
+        rows = self._fetchall_dict(
+            "SELECT ts_ms, market_id, side, avg_fill_price, status, "
+            "source_relationship_id, notes "
+            f"FROM read_parquet({self._glob_recent('orders_log', days=90)}, "
+            "hive_partitioning=true) "
+            "WHERE strategy_id = 'limitless_arb_exit' "
+            "ORDER BY ts_ms DESC"
+        )
+        grouped: dict[str, dict] = {}
+        for row in rows:
+            notes = row.get("notes") or ""
+            rel_id = str(row.get("source_relationship_id") or _note_value(notes, "position_id") or "")
+            if not rel_id:
+                rel_id = f"{row.get('market_id') or ''}:{row.get('ts_ms') or ''}"
+            group = grouped.setdefault(
+                rel_id,
+                {
+                    "position_id": rel_id,
+                    "market_slug": "",
+                    "realised_profit": None,
+                    "exit_ts_ms": int(row.get("ts_ms") or 0),
+                    "lim_exit_price": None,
+                    "poly_exit_price": None,
+                    "status": row.get("status") or "",
+                },
+            )
+            group["exit_ts_ms"] = max(group["exit_ts_ms"], int(row.get("ts_ms") or 0))
+            realised = _note_float(notes, "realised_profit")
+            if realised is not None:
+                group["realised_profit"] = realised
+            side = str(row.get("side") or "").lower()
+            if side == "sell_yes":
+                group["market_slug"] = str(row.get("market_id") or group["market_slug"])
+                group["lim_exit_price"] = _note_float(notes, "lim_exit") or _float_or_none(
+                    row.get("avg_fill_price")
+                )
+            elif side in {"sell", "sell_no"}:
+                group["poly_exit_price"] = _float_or_none(row.get("avg_fill_price"))
+                if group["poly_exit_price"] is None:
+                    poly_yes = _note_float(notes, "poly_yes_current")
+                    if poly_yes is not None:
+                        group["poly_exit_price"] = 1.0 - poly_yes
+            if not group["market_slug"] and _note_value(notes, "slug"):
+                group["market_slug"] = _note_value(notes, "slug") or ""
+
+        out = []
+        for group in grouped.values():
+            if group["realised_profit"] is None:
+                group["realised_profit"] = 0.0
+            out.append(group)
+        return sorted(out, key=lambda row: int(row.get("exit_ts_ms") or 0), reverse=True)
+
 
 def _empty_hour_buckets() -> list[dict]:
     now = datetime.now(timezone.utc).replace(minute=0, second=0, microsecond=0)
@@ -880,6 +1042,49 @@ def _is_fresh(last_ts_ms: int | None, *, max_age_s: int) -> bool:
         return False
     now_ms = int(datetime.now(timezone.utc).timestamp() * 1000)
     return (now_ms - last_ts_ms) <= max_age_s * 1000
+
+
+def _note_value(notes: str, key: str) -> str | None:
+    match = re.search(rf"(?:^|\s){re.escape(key)}=([^\s]+)", notes or "")
+    return match.group(1) if match else None
+
+
+def _note_float(notes: str, key: str) -> float | None:
+    value = _note_value(notes, key)
+    return _float_or_none(value)
+
+
+def _float_or_none(value: Any) -> float | None:
+    try:
+        if value is None or value == "":
+            return None
+        out = float(value)
+    except (TypeError, ValueError):
+        return None
+    if math.isfinite(out):
+        return out
+    return None
+
+
+def _arb_relationship_id(row: dict) -> str:
+    position_id = str(row.get("position_id") or "")
+    for suffix in ("_lim", "_poly"):
+        if position_id.endswith(suffix):
+            return position_id[: -len(suffix)]
+    return position_id
+
+
+def _format_duration(seconds: int | None) -> str:
+    if seconds is None:
+        return "-"
+    days, rem = divmod(max(0, int(seconds)), 86_400)
+    hours, rem = divmod(rem, 3_600)
+    minutes, _ = divmod(rem, 60)
+    if days:
+        return f"{days}d {hours}h"
+    if hours:
+        return f"{hours}h {minutes}m"
+    return f"{minutes}m"
 
 
 __all__ = ["DuckDBQueryService"]

@@ -38,6 +38,8 @@ data/runs/
 data/backtests/
 !data/**/.gitkeep
 data/.killswitch
+data/.killswitch_limitless_arb
+data/.killswitch_agent
 data/.live_approved_*
 *.parquet
 

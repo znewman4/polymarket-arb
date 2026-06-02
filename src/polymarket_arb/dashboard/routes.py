@@ -199,6 +199,33 @@ def live_monitor() -> str:
     )
 
 
+@bp.route("/arb")
+def arb_positions() -> str:
+    qs = _qs()
+    open_positions = qs.open_arb_positions()
+    closed_positions = qs.closed_arb_positions()
+    realised = [
+        float(row.get("realised_profit") or 0.0)
+        for row in closed_positions
+    ]
+    wins = sum(1 for pnl in realised if pnl > 0)
+    summary = {
+        "total_realised_pnl": round(sum(realised), 4),
+        "open_count": len(open_positions),
+        "closed_count": len(closed_positions),
+        "win_rate_pct": round((wins / len(realised) * 100.0) if realised else 0.0, 1),
+    }
+    return render_template(
+        "arb_positions.html",
+        kill_switches=qs.arb_kill_switch_status(),
+        open_positions=open_positions,
+        closed_positions=closed_positions,
+        summary=summary,
+        active_page="arb",
+        auto_refresh_seconds=30,
+    )
+
+
 @bp.route("/signals")
 def signals() -> str:
     cache = _cache()

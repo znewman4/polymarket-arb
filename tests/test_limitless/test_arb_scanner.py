@@ -649,6 +649,17 @@ class _CollectingLogRepo:
 class _PaperLimOrderClient:
     _paper_mode = True
 
+    async def sell_yes(self, market, size_usdc: float, price: float):
+        return LimitlessOrderResult(
+            status="paper_filled",
+            order_id="lim-exit",
+            side="SELL_YES",
+            price=price,
+            size_usdc=size_usdc,
+            market_slug=market.slug,
+            error=None,
+        )
+
 
 @pytest.mark.asyncio
 async def test_scan_and_exit_positions_exits_when_converged(monkeypatch):
@@ -682,7 +693,7 @@ async def test_scan_and_exit_positions_exits_when_converged(monkeypatch):
     # Two rows logged: limitless exit + polymarket exit placeholder.
     assert len(repo.rows) == 2
     statuses = {r.status for r in repo.rows}
-    assert "paper_exit_filled" in statuses
+    assert "paper_filled" in statuses
     assert "exit_not_implemented" in statuses
 
 

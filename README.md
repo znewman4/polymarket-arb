@@ -193,6 +193,27 @@ tests/                  mirror of src/ — pytest + respx + tmp_path
 - Dashboard positions now ignore snapshot rows when selecting open position state, and dashboard refresh is 30s.
 - Live trading is deployable but intentionally gated. Keep paper mode and orders disallowed until `.env`, Secrets Manager, signer health, and a small end-to-end test order are confirmed.
 
+## Kill Switches
+
+All live and paper order-routing paths still honour the global kill switch:
+
+```bash
+touch data/.killswitch
+```
+
+Strategy-specific files pause one lane without stopping everything else:
+
+- `data/.killswitch_limitless_arb` stops only the Limitless × Polymarket arb executor.
+- `data/.killswitch_agent` stops only the `relationship_aggressive` live agent strategy.
+
+Remove the relevant file to resume:
+
+```bash
+rm data/.killswitch
+rm data/.killswitch_limitless_arb
+rm data/.killswitch_agent
+```
+
 Useful live-signer checks after deploy:
 
 ```bash

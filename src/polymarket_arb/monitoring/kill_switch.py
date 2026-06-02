@@ -17,6 +17,9 @@ from loguru import logger
 _LOCK = threading.Lock()
 _LATCHED = False
 
+LIMITLESS_ARB_PATH = "data/.killswitch_limitless_arb"
+AGENT_PATH = "data/.killswitch_agent"
+
 
 def _on_sigusr1(signum: int, frame: object | None) -> None:  # pragma: no cover
     global _LATCHED
@@ -41,6 +44,12 @@ def is_active(killswitch_path: Path) -> bool:
     with _LOCK:
         latched = _LATCHED
     return latched or killswitch_path.exists()
+
+
+def is_active_for_strategy(global_path: Path, strategy_path: Path) -> bool:
+    """Return True if the global kill switch OR the strategy-specific one is active."""
+
+    return is_active(global_path) or strategy_path.exists()
 
 
 def reset_for_tests() -> None:

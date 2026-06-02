@@ -55,7 +55,10 @@ def client(app):
 # ─── Empty lake: every route renders ──────────────────────────────────────────
 
 
-@pytest.mark.parametrize("path", ["/", "/orders", "/positions", "/live", "/signals", "/markets", "/health"])
+@pytest.mark.parametrize(
+    "path",
+    ["/", "/orders", "/positions", "/live", "/arb", "/signals", "/markets", "/health"],
+)
 def test_routes_200_on_empty_lake(client, path: str) -> None:
     resp = client.get(path)
     assert resp.status_code == 200, resp.data
@@ -458,3 +461,120 @@ def test_live_monitor_page_renders_today_activity(
     assert "limitless_arb" in body
     assert "live_submitted" in body
     assert "touch ~/polymarket-arb/data/.killswitch" in body
+
+
+def test_arb_monitor_page_renders_positions_exits_and_kill_switches(
+    client, app, tmp_data_root: Path
+) -> None:
+    positions_repo = ParquetPositionsRepository(tmp_data_root)
+    orders_repo = ParquetOrdersLogRepository(tmp_data_root)
+    now_ms = int(datetime.now(timezone.utc).timestamp() * 1000)
+    rel_id = "arb-rel-1"
+    slug = "very-long-limitless-market-slug-for-dashboard-truncation-check"
+
+    positions_repo.append_many([
+        _position_row(
+            position_id=f"{rel_id}_lim",
+            relationship_id=rel_id,
+            market_id=slug,
+            token_id="0xLIMITLESS",
+            entry_price="0.35",
+            size="1",
+            notional_usdc="1",
+            gross_edge="0.25",
+            notes=(
+                f"arb_gap=0.2500 slug={slug} lim_entry=0.3500 "
+                "poly_yes_entry=0.4000 similarity=0.900"
+            ),
+            open_ts_ms=now_ms - 3_600_000,
+            ingested_ts_ms=now_ms - 3_600_000,
+        ),
+        _position_row(
+            position_id=f"{rel_id}_poly",
+            relationship_id=rel_id,
+            market_id="0xCOND",
+            token_id="tok_no",
+            entry_price="0.60",
+            size="1",
+            notional_usdc="1",
+            gross_edge="0.25",
+            notes=(
+                f"arb_gap=0.2500 slug={slug} lim_entry=0.3500 "
+                "poly_yes_entry=0.4000 similarity=0.900"
+            ),
+            open_ts_ms=now_ms - 3_600_000,
+            ingested_ts_ms=now_ms - 3_600_000,
+        ),
+        _position_row(
+            position_id=rel_id,
+            relationship_id=rel_id,
+            side="snapshot",
+            market_id=slug,
+            token_id="tok_no",
+            gross_edge="0.1000",
+            notes="snap lim_now=0.4800 poly_yes_now=0.4800 unrealised=0.1000",
+            open_ts_ms=now_ms - 3_600_000,
+            ingested_ts_ms=now_ms - 600_000,
+        ),
+    ])
+    orders_repo.append_many([
+        _orders_log_row(
+            intent_id="lim-exit",
+            ts_ms=now_ms - 300_000,
+            strategy_id="limitless_arb_exit",
+            market_id=slug,
+            side="SELL_YES",
+            avg_fill_price="0.4800",
+            status="paper_filled",
+            source_relationship_id=rel_id,
+            notes=(
+                "exit_leg=limitless position_id=arb-rel-1 lim_entry=0.3500 "
+                "lim_exit=0.4800 gross_profit=0.0500 fees_usdc=0.0400 "
+                "realised_profit=0.0100"
+            ),
+        ),
+        _orders_log_row(
+            intent_id="poly-exit",
+            ts_ms=now_ms - 299_000,
+            strategy_id="limitless_arb_exit",
+            market_id="0xCOND",
+            side="sell",
+            avg_fill_price="0.5200",
+            status="paper_filled",
+            source_relationship_id=rel_id,
+            notes=(
+                "exit_leg=polymarket position_id=arb-rel-1 poly_entry=0.4000 "
+                "poly_yes_current=0.4800 gross_profit=0.0500 fees_usdc=0.0400 "
+                "realised_profit=0.0100"
+            ),
+        ),
+    ])
+    (tmp_data_root / ".killswitch_limitless_arb").write_text("halt\n")
+
+    qs = app.extensions["dashboard_db"]
+    open_rows = qs.open_arb_positions()
+    closed_rows = qs.closed_arb_positions()
+    assert len(open_rows) == 1
+    assert open_rows[0]["market_slug"] == slug
+    assert open_rows[0]["entry_arb_gap"] == pytest.approx(0.25)
+    assert open_rows[0]["lim_entry_price"] == pytest.approx(0.35)
+    assert open_rows[0]["poly_yes_entry_price"] == pytest.approx(0.40)
+    assert open_rows[0]["stake_usdc"] == pytest.approx(1.0)
+    assert open_rows[0]["current_mtm"] == pytest.approx(0.10)
+    assert len(closed_rows) == 1
+    assert closed_rows[0]["realised_profit"] == pytest.approx(0.01)
+    assert closed_rows[0]["lim_exit_price"] == pytest.approx(0.48)
+    assert closed_rows[0]["poly_exit_price"] == pytest.approx(0.52)
+
+    body = client.get("/arb").data.decode()
+    assert "Limitless Arb Monitor" in body
+    assert "Realised PnL" in body
+    assert "+0.0100" in body
+    assert "Open Positions" in body
+    assert "Closed Positions" in body
+    assert "Limitless arb" in body
+    assert "Active" in body
+    assert "0.2500" in body
+    assert "0.1000" in body
+    assert 'href="/arb" class="active"' in body
+    assert 'http-equiv="refresh" content="30"' in body

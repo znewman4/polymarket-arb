@@ -275,6 +275,33 @@ class OrderClient:
                 detail={},
             )
 
+        side = intent.side.lower()
+        if side not in {"buy", "sell"}:
+            return self._record_and_return(
+                intent=intent,
+                ts=ts,
+                strategy_id=strategy_id,
+                market_id=market_id,
+                source_lane=source_lane,
+                source_relationship_id=source_relationship_id,
+                source_hypothesis_id=source_hypothesis_id,
+                paper_mode=False,
+                kill_switch_active=False,
+                orders_allowed=orders_allowed,
+                preflight_passed=preflight_passed,
+                preflight_token_id=preflight_token_id,
+                status="rejected_unsupported_side",
+                reason=f"side={intent.side!r} is not supported (buy or sell only)",
+                filled_size=Decimal("0"),
+                avg_fill_price=None,
+                notional=Decimal("0"),
+                fees=Decimal("0"),
+                submitted=False,
+                http_status=None,
+                notes=notes,
+                detail={},
+            )
+
         try:
             try:
                 import httpx as _httpx
@@ -297,7 +324,7 @@ class OrderClient:
                 token_id=intent.token_id,
                 price=intent.price,
                 size=intent.size,
-                side=intent.side,
+                side=side,
                 tick_size=tick_size,
                 neg_risk=neg_risk,
             )

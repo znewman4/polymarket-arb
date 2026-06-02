@@ -35,8 +35,10 @@ from pathlib import Path
 from loguru import logger
 from web3 import Web3
 
+from ..backtest.execution_sim import simulate_sell_from_orderbook
 from ..http.client import AsyncHttpClient, HttpError
 from ..monitoring import kill_switch
+from ..storage.base import OrderbookLevel, OrderbookSnapshot
 from .eip712 import build_signed_order
 from .models import LimitlessMarketEntry, LimitlessOrderResult
 from .signing import sign_request
@@ -46,6 +48,7 @@ _PROFILES_PATH = "/profiles"
 _BASE_MAINNET_RPC_URL = "https://mainnet.base.org"
 _BASE_USDC_ADDRESS = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
 _USDC_SCALE = Decimal("1000000")
+_PAPER_SELL_FEE_BPS = Decimal("200")
 _MAX_UINT256 = (1 << 256) - 1
 _ERC20_APPROVAL_ABI = [
     {
@@ -84,6 +87,7 @@ class LimitlessOrderClient:
         limitless_host: str,
         http: AsyncHttpClient,
         kill_switch_path: Path,
+        strategy_kill_switch_path: Path | None = None,
         paper_mode: bool = True,
         key_id: str | None = None,
         key_secret: str | None = None,
@@ -93,6 +97,7 @@ class LimitlessOrderClient:
         self._host = limitless_host.rstrip("/")
         self._http = http
         self._ks_path = kill_switch_path
+        self._strategy_ks_path = strategy_kill_switch_path
         self._paper_mode = paper_mode
         self._key_id = key_id
         self._key_secret = key_secret
@@ -125,7 +130,10 @@ class LimitlessOrderClient:
         side = side.upper()
         price = market.yes_price if side == "YES" else (1.0 - market.yes_price)
 
-        if kill_switch.is_active(self._ks_path):
+        ks_active = kill_switch.is_active(self._ks_path)
+        if not ks_active and self._strategy_ks_path:
+            ks_active = self._strategy_ks_path.exists()
+        if ks_active:
             logger.warning("limitless order rejected: kill switch active ({})", market.slug)
             return LimitlessOrderResult(
                 status="rejected_kill_switch",
@@ -141,6 +149,44 @@ class LimitlessOrderClient:
             return self._paper_fill(market=market, side=side, price=price, size_usdc=size_usdc)
 
         return await self._live_submit(market=market, side=side, price=price, size_usdc=size_usdc)
+
+    async def sell_yes(
+        self,
+        market: LimitlessMarketEntry,
+        size_usdc: float,
+        price: float,
+    ) -> LimitlessOrderResult:
+        """Sell YES tokens back to the Limitless CLOB at market price.
+
+        Uses the same EIP-712 signing flow as ``_live_submit`` with
+        side=SELL. In paper mode, simulates via ``simulate_sell_from_orderbook``
+        with 200 bps fees.
+        """
+        ks_active = kill_switch.is_active(self._ks_path)
+        if not ks_active and self._strategy_ks_path:
+            ks_active = self._strategy_ks_path.exists()
+        if ks_active:
+            logger.warning("limitless sell rejected: kill switch active ({})", market.slug)
+            return LimitlessOrderResult(
+                status="rejected_kill_switch",
+                order_id=None,
+                side="SELL_YES",
+                price=price,
+                size_usdc=size_usdc,
+                market_slug=market.slug,
+                error="kill switch active",
+            )
+
+        if self._paper_mode:
+            return self._paper_sell_yes(market=market, size_usdc=size_usdc, price=price)
+
+        return await self._live_submit(
+            market=market,
+            side="YES",
+            price=price,
+            size_usdc=size_usdc,
+            order_side="SELL",
+        )
 
     def _paper_fill(
         self,
@@ -162,6 +208,53 @@ class LimitlessOrderClient:
             size_usdc=size_usdc,
             market_slug=market.slug,
             error=None,
+        )
+
+    def _paper_sell_yes(
+        self,
+        *,
+        market: LimitlessMarketEntry,
+        size_usdc: float,
+        price: float,
+    ) -> LimitlessOrderResult:
+        requested = Decimal(str(size_usdc))
+        bid_price = Decimal(str(price))
+        book = OrderbookSnapshot(
+            token_id=market.token_id_yes,
+            condition_id=None,
+            market_slug=market.slug,
+            timestamp_ms=0,
+            bids=[OrderbookLevel(price=bid_price, size=requested)],
+            asks=[],
+            book_hash=None,
+            source="limitless_paper_exit",
+            schema_version=1,
+            ingested_ts_ms=0,
+        )
+        filled, notional, fees, partial, reason = simulate_sell_from_orderbook(
+            book,
+            requested,
+            fee_bps=_PAPER_SELL_FEE_BPS,
+        )
+        avg_price = float(notional / filled) if filled else price
+        if filled == 0:
+            status = "paper_no_fill"
+        elif partial:
+            status = "paper_partial"
+        else:
+            status = "paper_filled"
+        logger.info(
+            "limitless paper sell: YES {} @ {:.4f} ({}) fees={}",
+            float(filled), avg_price, market.slug, fees,
+        )
+        return LimitlessOrderResult(
+            status=status,
+            order_id=uuid.uuid4().hex if filled > 0 else None,
+            side="SELL_YES",
+            price=avg_price,
+            size_usdc=float(filled),
+            market_slug=market.slug,
+            error=None if filled > 0 else reason,
         )
 
     async def _get_owner_id(self) -> int | None:
@@ -279,25 +372,28 @@ class LimitlessOrderClient:
         side: str,
         price: float,
         size_usdc: float,
+        order_side: str = "BUY",
     ) -> LimitlessOrderResult:
+        order_side = order_side.upper()
+        result_side = side if order_side == "BUY" else f"{order_side}_{side}"
         # --- preflight checks ---
         if not self._key_id or not self._key_secret:
             return LimitlessOrderResult(
-                status="failed", order_id=None, side=side, price=price,
+                status="failed", order_id=None, side=result_side, price=price,
                 size_usdc=size_usdc, market_slug=market.slug,
                 error="limitless credentials not configured",
             )
 
         if not self._private_key:
             return LimitlessOrderResult(
-                status="failed", order_id=None, side=side, price=price,
+                status="failed", order_id=None, side=result_side, price=price,
                 size_usdc=size_usdc, market_slug=market.slug,
                 error="private_key not configured for EIP-712 signing",
             )
 
         if not self._wallet_address:
             return LimitlessOrderResult(
-                status="failed", order_id=None, side=side, price=price,
+                status="failed", order_id=None, side=result_side, price=price,
                 size_usdc=size_usdc, market_slug=market.slug,
                 error="wallet_address not configured",
             )
@@ -305,7 +401,7 @@ class LimitlessOrderClient:
         token_id = market.token_id_yes if side == "YES" else market.token_id_no
         if not token_id:
             return LimitlessOrderResult(
-                status="failed", order_id=None, side=side, price=price,
+                status="failed", order_id=None, side=result_side, price=price,
                 size_usdc=size_usdc, market_slug=market.slug,
                 error=f"token_id_{side.lower()} not populated on market {market.slug!r}",
             )
@@ -316,7 +412,7 @@ class LimitlessOrderClient:
                 market.slug,
             )
             return LimitlessOrderResult(
-                status="failed", order_id=None, side=side, price=price,
+                status="failed", order_id=None, side=result_side, price=price,
                 size_usdc=size_usdc, market_slug=market.slug,
                 error=f"exchange_address (market.address) not populated for {market.slug!r}",
             )
@@ -324,7 +420,7 @@ class LimitlessOrderClient:
         owner_id = await self._get_owner_id()
         if owner_id is None:
             return LimitlessOrderResult(
-                status="failed", order_id=None, side=side, price=price,
+                status="failed", order_id=None, side=result_side, price=price,
                 size_usdc=size_usdc, market_slug=market.slug,
                 error="could not resolve owner_id (wallet_address not configured or profile fetch failed)",
             )
@@ -339,7 +435,7 @@ class LimitlessOrderClient:
         except Exception as exc:
             logger.exception("limitless collateral approval failed for {}", market.slug)
             return LimitlessOrderResult(
-                status="failed", order_id=None, side=side, price=price,
+                status="failed", order_id=None, side=result_side, price=price,
                 size_usdc=size_usdc, market_slug=market.slug,
                 error=f"collateral approval failed: {exc}",
             )
@@ -353,7 +449,7 @@ class LimitlessOrderClient:
             token_id=token_id,
             price=price,
             size_usdc=size_usdc,
-            side="BUY",
+            side=order_side,
             order_type="GTC",
             exchange_address=market.address,
             private_key=self._private_key,
@@ -393,12 +489,12 @@ class LimitlessOrderClient:
                 )
             logger.info(
                 "limitless live submit: {} {} @ {:.4f} ({}) order_id={}",
-                side, size_usdc, price, market.slug, order_id,
+                result_side, size_usdc, price, market.slug, order_id,
             )
             return LimitlessOrderResult(
                 status="live_submitted",
                 order_id=str(order_id) if order_id else None,
-                side=side,
+                side=result_side,
                 price=price,
                 size_usdc=size_usdc,
                 market_slug=market.slug,
@@ -415,7 +511,7 @@ class LimitlessOrderClient:
             return LimitlessOrderResult(
                 status="failed",
                 order_id=None,
-                side=side,
+                side=result_side,
                 price=price,
                 size_usdc=size_usdc,
                 market_slug=market.slug,

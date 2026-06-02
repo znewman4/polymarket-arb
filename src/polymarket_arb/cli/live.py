@@ -16,9 +16,11 @@ from decimal import Decimal
 from pathlib import Path
 
 import click
+from loguru import logger
 
 from ..live.agent_loop import AgentState, StrategyFn, run_agent_loop
 from ..live.order_client import healthcheck as agent_healthcheck
+from ..monitoring import kill_switch
 from ..risk.models import OrderIntent
 from ..settings import Settings
 from ..storage.base import (
@@ -350,9 +352,21 @@ def _make_relationship_strategy(
     cached_relationships: list[RelationshipCandidateRow] = []
     tick_count = 0
     last_traded: dict[str, int] = {}  # relationship_id -> ts_ms
+    strategy_kill_switch_path = (
+        Path(kill_switch.AGENT_PATH)
+        if config.strategy_id == "relationship_aggressive"
+        else None
+    )
 
     def strategy(state: AgentState) -> list[OrderIntent]:
         nonlocal cached_relationships, tick_count
+        if strategy_kill_switch_path is not None and strategy_kill_switch_path.exists():
+            logger.warning(
+                "{} skipped: strategy kill switch active ({})",
+                config.strategy_id,
+                strategy_kill_switch_path,
+            )
+            return []
         if tick_count % _RELATIONSHIP_RELOAD_INTERVAL == 0:
             cached_relationships = _load_live_relationships(data_root)
         tick_count += 1

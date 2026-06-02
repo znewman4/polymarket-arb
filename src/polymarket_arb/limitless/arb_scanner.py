@@ -25,6 +25,7 @@ import json
 import re
 import time
 import uuid
+from dataclasses import replace
 from decimal import Decimal
 from typing import TYPE_CHECKING
 
@@ -65,6 +66,7 @@ _TITLE_PREFIX_WORDS = frozenset({
     "who",
     "will",
 })
+_EXIT_FEE_BPS = Decimal("200")
 
 
 def _normalise(text: str) -> str:
@@ -610,6 +612,28 @@ async def _fetch_limitless_current_price(
     return yes_price
 
 
+async def _fetch_limitless_market_entry(
+    slug: str,
+    limitless_host: str = "https://api.limitless.exchange",
+) -> LimitlessMarketEntry | None:
+    """Fetch and parse the current Limitless market detail by slug."""
+    import httpx
+
+    from ..ingest.limitless.parser import parse_limitless_market
+
+    url = f"{limitless_host.rstrip('/')}/markets/{slug}"
+    try:
+        async with httpx.AsyncClient(timeout=5.0) as client:
+            response = await client.get(url)
+            response.raise_for_status()
+            data = response.json()
+    except Exception as exc:
+        logger.warning("limitless detail fetch failed for {}: {}", slug, exc)
+        return None
+
+    return parse_limitless_market(data)
+
+
 async def _fetch_limitless_market_address(
     slug: str,
     limitless_host: str = "https://api.limitless.exchange",
@@ -695,51 +719,103 @@ async def _exit_both_legs(
     orders_log_repo,
     poly_client=None,
     positions_repo=None,
+    limitless_host: str = "https://api.limitless.exchange",
 ) -> bool:
     """Exit both legs of an open arb position.
 
-    The Limitless leg is logged directly because Limitless sell support is not
-    implemented on its order client. The Polymarket leg goes through
-    OrderClient so paper/live behavior and audit logging stay centralised.
+    Both legs go through their order clients so paper/live behavior and audit
+    logging stay centralised.
     """
-    realised_lim_proceeds = current_lim_yes * position.stake_usdc
-    entry_cost_lim = position.lim_entry_price * position.stake_usdc
-    realised_poly_proceeds = (1.0 - current_poly_yes) * position.stake_usdc
-    entry_cost_poly = (1.0 - position.poly_yes_entry) * position.stake_usdc
-    realised_profit = (
-        (realised_lim_proceeds - entry_cost_lim)
-        + (realised_poly_proceeds - entry_cost_poly)
+    stake = Decimal(str(position.stake_usdc))
+    lim_entry = Decimal(str(position.lim_entry_price))
+    lim_exit = Decimal(str(current_lim_yes))
+    poly_yes_entry = Decimal(str(position.poly_yes_entry))
+    poly_yes_exit = Decimal(str(current_poly_yes))
+    fee_rate = _EXIT_FEE_BPS / Decimal("10000")
+
+    realised_lim_proceeds_dec = lim_exit * stake
+    entry_cost_lim_dec = lim_entry * stake
+    realised_poly_proceeds_dec = (Decimal("1") - poly_yes_exit) * stake
+    entry_cost_poly_dec = (Decimal("1") - poly_yes_entry) * stake
+    gross_profit_dec = (
+        (realised_lim_proceeds_dec - entry_cost_lim_dec)
+        + (realised_poly_proceeds_dec - entry_cost_poly_dec)
     )
+    entry_fees_dec = (entry_cost_lim_dec + entry_cost_poly_dec) * fee_rate
+    exit_fees_dec = (realised_lim_proceeds_dec + realised_poly_proceeds_dec) * fee_rate
+    total_fees_dec = entry_fees_dec + exit_fees_dec
+    realised_profit_dec = gross_profit_dec - total_fees_dec
+
+    realised_lim_proceeds = float(realised_lim_proceeds_dec)
+    realised_poly_proceeds = float(realised_poly_proceeds_dec)
+    realised_profit = float(realised_profit_dec)
+    lim_exit_fee = float(realised_lim_proceeds_dec * fee_rate)
     exit_ts = int(time.time() * 1000)
     exit_notes_lim = (
         f"exit_leg=limitless position_id={position.position_id} "
         f"lim_entry={position.lim_entry_price:.4f} "
         f"lim_exit={current_lim_yes:.4f} "
+        f"gross_profit={float(gross_profit_dec):.4f} "
+        f"fees_usdc={float(total_fees_dec):.4f} "
         f"realised_profit={realised_profit:.4f}"
     )
     exit_notes_poly = (
         f"exit_leg=polymarket position_id={position.position_id} "
         f"poly_entry={position.poly_yes_entry:.4f} "
         f"poly_yes_current={current_poly_yes:.4f} "
+        f"gross_profit={float(gross_profit_dec):.4f} "
+        f"fees_usdc={float(total_fees_dec):.4f} "
         f"realised_profit={realised_profit:.4f}"
     )
 
+    lim_paper_mode = bool(getattr(lim_client, "paper_mode", getattr(lim_client, "_paper_mode", True)))
+    lim_market = LimitlessMarketEntry(
+        slug=position.limitless_slug,
+        title=position.limitless_slug,
+        yes_price=current_lim_yes,
+        address="",
+        token_id_yes="",
+        token_id_no="",
+    )
+    if not lim_paper_mode:
+        fetched_market = await _fetch_limitless_market_entry(
+            position.limitless_slug,
+            limitless_host=limitless_host,
+        )
+        if fetched_market is not None:
+            lim_market = replace(fetched_market, yes_price=current_lim_yes)
+
+    lim_exit_result = await lim_client.sell_yes(
+        lim_market,
+        size_usdc=position.stake_usdc,
+        price=current_lim_yes,
+    )
+    lim_exit_success = lim_exit_result.status in {"paper_filled", "live_submitted"}
+
     lim_row = OrdersLogRow(
-        intent_id=uuid.uuid4().hex,
+        intent_id=lim_exit_result.order_id or uuid.uuid4().hex,
         ts_ms=exit_ts,
         strategy_id="limitless_arb_exit",
-        token_id="",
+        token_id=lim_market.token_id_yes,
         market_id=position.limitless_slug,
         side="SELL_YES",
         requested_size=str(round(position.stake_usdc, 6)),
-        filled_size=str(round(position.stake_usdc, 6)),
-        avg_fill_price=str(round(current_lim_yes, 6)),
-        notional_usdc=str(round(realised_lim_proceeds, 6)),
-        fees_usdc="0",
-        status="paper_exit_filled" if lim_client._paper_mode else "live_exit_not_implemented",
-        reason="",
-        paper_mode=lim_client._paper_mode,
-        kill_switch_active=False,
+        filled_size=(
+            str(round(lim_exit_result.size_usdc, 6))
+            if lim_exit_success
+            else "0"
+        ),
+        avg_fill_price=str(round(lim_exit_result.price, 6)),
+        notional_usdc=(
+            str(round(lim_exit_result.price * lim_exit_result.size_usdc, 6))
+            if lim_exit_success
+            else "0"
+        ),
+        fees_usdc=str(round(lim_exit_fee, 6)) if lim_exit_success else "0",
+        status=lim_exit_result.status,
+        reason=lim_exit_result.error or "",
+        paper_mode=lim_paper_mode,
+        kill_switch_active=(lim_exit_result.status == "rejected_kill_switch"),
         orders_allowed=True,
         preflight_passed=True,
         preflight_token_id=None,
@@ -958,6 +1034,7 @@ async def scan_and_exit_positions(
             orders_log_repo=orders_log_repo,
             poly_client=poly_client,
             positions_repo=positions_repo,
+            limitless_host=limitless_host,
         ):
             exited += 1
 

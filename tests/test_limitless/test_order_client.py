@@ -87,6 +87,17 @@ async def test_paper_fill_no_side_uses_no_price():
 
 
 @pytest.mark.asyncio
+async def test_paper_sell_yes_returns_paper_filled_status():
+    client = _make_client(paper_mode=True)
+    result = await client.sell_yes(_make_market(yes_price=0.48), size_usdc=10.0, price=0.48)
+    assert result.status == "paper_filled"
+    assert result.side == "SELL_YES"
+    assert result.price == 0.48
+    assert result.size_usdc == 10.0
+    assert result.order_id is not None
+
+
+@pytest.mark.asyncio
 async def test_kill_switch_blocks_order():
     _KILL_SWITCH.touch()
     try:
@@ -328,6 +339,28 @@ async def test_live_submit_passes_correct_args_to_build_signed_order():
     assert kwargs["exchange_address"] == "0xEXCHANGE"
     assert kwargs["private_key"] == _TEST_PRIVATE_KEY
     assert kwargs["wallet_address"] == _TEST_WALLET
+
+
+@pytest.mark.asyncio
+async def test_sell_yes_live_passes_sell_side_to_build_signed_order():
+    http = MagicMock()
+    http.request_json = AsyncMock(side_effect=[{"id": 3}, {"order": {"id": "sell-x"}}])
+
+    with patch(
+        "polymarket_arb.limitless.order_client.build_signed_order",
+        return_value=_FAKE_SIGNED_ORDER,
+    ) as mock_build:
+        client = _make_client(http=http)
+        market = _make_market(yes_price=0.48, token_id_yes="TOK_YES_999")
+        result = await client.sell_yes(market, size_usdc=20.0, price=0.48)
+
+    assert result.status == "live_submitted"
+    assert result.side == "SELL_YES"
+    kwargs = mock_build.call_args.kwargs
+    assert kwargs["token_id"] == "TOK_YES_999"
+    assert abs(kwargs["price"] - 0.48) < 1e-9
+    assert kwargs["size_usdc"] == 20.0
+    assert kwargs["side"] == "SELL"
 
 
 @pytest.mark.asyncio

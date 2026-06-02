@@ -235,6 +235,43 @@ def test_live_mode_submits_via_signer(
     assert result.notional_usdc == Decimal("5.0")
 
 
+def test_live_mode_submits_sell_via_signer(
+    settings, tmp_data_root, monkeypatch
+) -> None:
+    s = settings.model_copy(update={
+        "paper_mode": False,
+        "orders_allowed": True,
+    })
+    monkeypatch.setattr(
+        "httpx.get",
+        lambda *a, **kw: type(
+            "Response",
+            (),
+            {
+                "raise_for_status": lambda self: None,
+                "json": lambda self: {"neg_risk": False, "minimum_tick_size": "0.01"},
+            },
+        )(),
+    )
+    signer_calls: list[dict] = []
+
+    def _post_order_via_signer(*args, **kwargs):
+        signer_calls.append(kwargs)
+        return {"orderID": "sell-abc"}
+
+    monkeypatch.setattr(
+        "polymarket_arb.live.order_client.post_order_via_signer",
+        _post_order_via_signer,
+    )
+    client = OrderClient(s)
+    result = client.place_order(_intent(side="sell", size=10.0, price=0.5))
+
+    assert result.status == "live_submitted"
+    assert result.submitted is True
+    assert signer_calls[0]["side"] == "sell"
+    assert signer_calls[0]["token_id"] == "tok-a"
+
+
 def test_live_mode_accepts_order_hash_response(
     settings, tmp_data_root, monkeypatch
 ) -> None:

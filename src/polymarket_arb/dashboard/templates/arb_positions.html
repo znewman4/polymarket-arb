@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+{% block title %}Arb Monitor - polymarket-arb{% endblock %}
+{% block content %}
+<h1>Limitless Arb Monitor</h1>
+
+<div class="cards">
+  <div class="card">
+    <div class="label">Realised PnL (USDC)</div>
+    <div class="value mono" style="color: {{ 'var(--good)' if summary.total_realised_pnl > 0 else 'var(--bad)' if summary.total_realised_pnl < 0 else 'var(--fg)' }}">
+      {{ "%+.4f"|format(summary.total_realised_pnl) }}
+    </div>
+  </div>
+  <div class="card">
+    <div class="label">Open Positions</div>
+    <div class="value">{{ summary.open_count }}</div>
+  </div>
+  <div class="card">
+    <div class="label">Closed Positions</div>
+    <div class="value">{{ summary.closed_count }}</div>
+  </div>
+  <div class="card">
+    <div class="label">Win Rate</div>
+    <div class="value mono">{{ "%.1f"|format(summary.win_rate_pct) }}%</div>
+  </div>
+</div>
+
+<div class="panel" style="margin-bottom: 16px;">
+  <h2>Kill Switches</h2>
+  <div class="cards" style="margin-bottom: 0;">
+    {% for ks in kill_switches %}
+    <div class="card">
+      <div class="label">{{ ks.label }}</div>
+      <div class="value">
+        {% if ks.active %}
+          <span class="pill bad">Active</span>
+        {% else %}
+          <span class="pill good">Clear</span>
+        {% endif %}
+      </div>
+      <div class="sub mono">{{ ks.path }}</div>
+    </div>
+    {% endfor %}
+  </div>
+</div>
+
+<div class="panel" style="margin-bottom: 16px;">
+  <h2>Open Positions</h2>
+  {% if open_positions %}
+  <table>
+    <thead>
+      <tr>
+        <th>Market Slug</th>
+        <th style="text-align:right">Entry Gap</th>
+        <th style="text-align:right">Lim Entry</th>
+        <th style="text-align:right">Poly YES Entry</th>
+        <th style="text-align:right">Stake</th>
+        <th>Time Open</th>
+        <th style="text-align:right">Current MTM</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for p in open_positions %}
+      <tr>
+        <td class="mono" title="{{ p.market_slug }}">
+          {{ p.market_slug[:48] }}{% if p.market_slug|length > 48 %}...{% endif %}
+        </td>
+        <td style="text-align:right" class="mono">
+          {{ "%.4f"|format(p.entry_arb_gap) if p.entry_arb_gap is not none else "-" }}
+        </td>
+        <td style="text-align:right" class="mono">
+          {{ "%.4f"|format(p.lim_entry_price) if p.lim_entry_price is not none else "-" }}
+        </td>
+        <td style="text-align:right" class="mono">
+          {{ "%.4f"|format(p.poly_yes_entry_price) if p.poly_yes_entry_price is not none else "-" }}
+        </td>
+        <td style="text-align:right" class="mono">{{ "%.2f"|format(p.stake_usdc) }}</td>
+        <td>
+          {{ p.time_open_label }}
+          <span class="sub mono" style="display:block;">
+            {{ (p.open_ts_ms // 1000) | int | datetimeformat if p.open_ts_ms else "-" }}
+          </span>
+        </td>
+        <td style="text-align:right; color: {{ 'var(--good)' if p.current_mtm is not none and p.current_mtm > 0 else 'var(--bad)' if p.current_mtm is not none and p.current_mtm < 0 else 'var(--fg-dim)' }}" class="mono">
+          {{ "%+.4f"|format(p.current_mtm) if p.current_mtm is not none else "-" }}
+          {% if p.snapshot_ts_ms %}
+          <span class="sub" style="display:block;">snapshot {{ (p.snapshot_ts_ms // 1000) | int | datetimeformat }}</span>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+    <div class="empty">No open limitless_arb positions.</div>
+  {% endif %}
+</div>
+
+<div class="panel">
+  <h2>Closed Positions</h2>
+  {% if closed_positions %}
+  <table>
+    <thead>
+      <tr>
+        <th>Market Slug</th>
+        <th style="text-align:right">Realised PnL</th>
+        <th>Exit Time</th>
+        <th style="text-align:right">Lim Exit</th>
+        <th style="text-align:right">Poly Exit</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for p in closed_positions %}
+      <tr>
+        <td class="mono" title="{{ p.market_slug }}">
+          {{ p.market_slug[:48] }}{% if p.market_slug|length > 48 %}...{% endif %}
+        </td>
+        <td style="text-align:right; color: {{ 'var(--good)' if p.realised_profit > 0 else 'var(--bad)' if p.realised_profit < 0 else 'var(--fg-dim)' }}" class="mono">
+          {{ "%+.4f"|format(p.realised_profit) }}
+        </td>
+        <td class="mono">{{ (p.exit_ts_ms // 1000) | int | datetimeformat if p.exit_ts_ms else "-" }}</td>
+        <td style="text-align:right" class="mono">
+          {{ "%.4f"|format(p.lim_exit_price) if p.lim_exit_price is not none else "-" }}
+        </td>
+        <td style="text-align:right" class="mono">
+          {{ "%.4f"|format(p.poly_exit_price) if p.poly_exit_price is not none else "-" }}
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+    <div class="empty">No closed limitless_arb exits.</div>
+  {% endif %}
+</div>
+{% endblock %}
