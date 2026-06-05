@@ -97,10 +97,47 @@ class DuckDBQueryService:
     if we ever need real concurrency, swap this for a tiny connection pool.
     """
 
-    def __init__(self, data_root: Path) -> None:
+    def __init__(
+        self,
+        data_root: Path,
+        *,
+        limitless_paper_mode: bool = True,
+        limitless_poly_paper_mode: bool = True,
+        relationship_paper_mode: bool = True,
+    ) -> None:
         self._data_root = Path(data_root)
         self._con = duckdb.connect(database=":memory:")
         self._lock = threading.Lock()
+        self._limitless_paper_mode = limitless_paper_mode
+        self._limitless_poly_paper_mode = limitless_poly_paper_mode
+        self._relationship_paper_mode = relationship_paper_mode
+
+    def _limitless_mode_label(self) -> str:
+        lim_live = not self._limitless_paper_mode
+        poly_live = not self._limitless_poly_paper_mode
+        if lim_live and poly_live:
+            return "LIVE"
+        if lim_live and not poly_live:
+            return "LIVE (Limitless) / PAPER (Poly)"
+        if not lim_live and poly_live:
+            return "PAPER (Limitless) / LIVE (Poly)"
+        return "PAPER"
+
+    def _relationship_mode_label(self) -> str:
+        if not self._relationship_paper_mode:
+            return "LIVE"
+        return "PAPER"
+
+    def mode_flags(self) -> dict:
+        return {
+            "limitless_label": self._limitless_mode_label(),
+            "relationship_label": self._relationship_mode_label(),
+            "limitless_any_live": (
+                not self._limitless_paper_mode
+                or not self._limitless_poly_paper_mode
+            ),
+            "relationship_any_live": not self._relationship_paper_mode,
+        }
 
     # ─── housekeeping ────────────────────────────────────────────────────────
 
@@ -378,7 +415,7 @@ class DuckDBQueryService:
             "today_utc": health.get("today_utc"),
             "limitless_arb": {
                 "display_name": "Limitless Arb",
-                "mode": "PAPER",
+                "mode": self._limitless_mode_label(),
                 "kill_switch_active": global_active or limitless_active,
                 "kill_switches": [
                     kill_by_label.get("Global"),
@@ -391,7 +428,7 @@ class DuckDBQueryService:
             },
             "relationship_agent": {
                 "display_name": "Relationship Aggressive",
-                "mode": "PAPER",
+                "mode": self._relationship_mode_label(),
                 "kill_switch_active": global_active or relationship_active,
                 "kill_switches": [
                     kill_by_label.get("Global"),

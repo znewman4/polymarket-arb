@@ -14,7 +14,14 @@ from .routes import bp as dashboard_bp
 
 def create_app(settings: Settings) -> Flask:
     app = Flask(__name__)
-    qs = DuckDBQueryService(settings.data_root)
+    qs = DuckDBQueryService(
+        settings.data_root,
+        limitless_paper_mode=settings.limitless_paper_mode,
+        limitless_poly_paper_mode=getattr(
+            settings, "limitless_poly_paper_mode", settings.paper_mode
+        ),
+        relationship_paper_mode=settings.paper_mode,
+    )
     app.extensions["dashboard_db"] = qs
     app.extensions["dashboard_cache"] = DashboardCache(qs)
     app.config["LIMITLESS_PAPER_MODE"] = settings.limitless_paper_mode
