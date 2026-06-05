@@ -218,7 +218,16 @@ async def _run_execute(
     positions_repo = ParquetPositionsRepository(settings.data_root)
     poly_client = OrderClient(settings, positions_repo=positions_repo)
     open_positions = _load_open_limitless_positions(settings, paper_mode=paper_mode)
-    open_pairs = {(p.limitless_slug, p.poly_condition_id) for p in open_positions}
+    console.log(
+        f"[cyan]Open positions: {len(open_positions)} "
+        f"({len([p for p in open_positions if not p.poly_condition_id])} naked)[/cyan]"
+    )
+    open_slugs = {p.limitless_slug for p in open_positions}
+    open_pairs = {
+        (p.limitless_slug, p.poly_condition_id)
+        for p in open_positions
+        if p.poly_condition_id
+    }
 
     async with AsyncHttpClient(settings.http) as http:
         from ..limitless.order_client import LimitlessOrderClient
@@ -235,6 +244,12 @@ async def _run_execute(
         )
 
         for match in opps:
+            if match.limitless.slug in open_slugs:
+                console.log(
+                    f"  [dim]{match.limitless.slug[:40]}: skipped — "
+                    f"open position already exists for this slug[/dim]"
+                )
+                continue
             if (match.limitless.slug, match.poly.condition_id) in open_pairs:
                 console.log(f"  [dim]{match.limitless.slug[:40]}: skipped — already open[/dim]")
                 continue
@@ -266,7 +281,12 @@ async def _run_execute(
                 poly_res is not None and poly_res.status in ("paper_filled", "live_submitted")
             ):
                 open_positions = _load_open_limitless_positions(settings, paper_mode=paper_mode)
-                open_pairs = {(p.limitless_slug, p.poly_condition_id) for p in open_positions}
+                open_slugs = {p.limitless_slug for p in open_positions}
+                open_pairs = {
+                    (p.limitless_slug, p.poly_condition_id)
+                    for p in open_positions
+                    if p.poly_condition_id
+                }
 
         # Convergence-based early-exit pass: load open positions, check whether
         # both legs have moved enough since entry to lock in profit now.
@@ -304,7 +324,7 @@ def _load_open_limitless_positions(
     positions: list[LimitlessArbPosition] = []
     try:
         for row in repo.iter_open(strategy_id="limitless_arb"):
-            if row.side == "snapshot" or row.token_id.startswith("0x"):
+            if row.side == "snapshot":
                 continue
             kv = dict(_re.findall(r"(\w+)=([\S]+)", row.notes or ""))
             try:
@@ -314,10 +334,11 @@ def _load_open_limitless_positions(
                 slug = kv.get("slug", "")
             except (KeyError, ValueError):
                 continue
+            poly_condition_id = kv.get("poly_condition_id") or kv.get("condition_id") or ""
             positions.append(LimitlessArbPosition(
                 position_id=row.relationship_id,
                 limitless_slug=slug,
-                poly_condition_id=row.market_id,
+                poly_condition_id=poly_condition_id,
                 poly_token_id_no=row.token_id,
                 lim_entry_price=lim_entry,
                 poly_yes_entry=poly_yes_entry,
