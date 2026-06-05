@@ -1,14 +1,13 @@
 """Limitless x Polymarket cross-market arbitrage scanner and executor.
 
 Arb mechanic:
-  Both markets cover the same event.  If lim_yes + poly_yes < 1.0, a risk-free
-  arb exists: buy YES on Limitless and buy NO on Polymarket (or vice versa).
-  The arb gap = 1.0 - (lim_yes + poly_yes) represents the guaranteed profit per
-  dollar wagered, before fees and slippage.
+  Both markets cover the same event.  If poly_yes > lim_yes, a risk-free
+  arb exists: buy YES on Limitless (cheaper) and buy NO on Polymarket (cheaper).
+  Edge = poly_yes - lim_yes = guaranteed profit per share before fees.
 
-  Example: lim_yes=0.40, poly_yes=0.45 → gap=0.15
-    Buy YES on Limitless at $0.40 + Buy NO on Polymarket at $0.55 = $0.95 cost
-    Guaranteed payout: $1.00 (whichever outcome resolves)
+  Example: lim_yes=0.40, poly_yes=0.55
+    Buy YES on Limitless at $0.40 + Buy NO on Polymarket at $0.45 = $0.85 cost
+    Guaranteed payout: $1.00 — profit = $0.15 = poly_yes - lim_yes
 
 Direction assumption:
   We assume matched markets are directionally aligned (both ask the same yes/no
@@ -214,7 +213,7 @@ def match_markets(
                 best_score = score
                 best_poly = p
         if best_poly is not None and best_score >= threshold:
-            arb_gap = round(1.0 - (lim.yes_price + best_poly.yes_price), 6)
+            arb_gap = round(best_poly.yes_price - lim.yes_price, 6)
             if arb_gap > 0.30:
                 continue  # almost certainly a false positive (price mismatch, not real arb)
             matches.append(ArbMatch(
@@ -737,6 +736,7 @@ async def _exit_both_legs(
     entry_cost_lim_dec = lim_entry * stake
     realised_poly_proceeds_dec = (Decimal("1") - poly_yes_exit) * stake
     entry_cost_poly_dec = (Decimal("1") - poly_yes_entry) * stake
+    # Valid entries require lim_entry < poly_yes_entry for a positive YES+NO edge.
     gross_profit_dec = (
         (realised_lim_proceeds_dec - entry_cost_lim_dec)
         + (realised_poly_proceeds_dec - entry_cost_poly_dec)
@@ -953,6 +953,14 @@ async def scan_and_exit_positions(
 
     exited = 0
     for position in positions:
+        if position.lim_entry_price >= position.poly_yes_entry:
+            logger.warning(
+                "position {} was entered with inverted prices "
+                "(lim_entry >= poly_yes_entry) — skipping convergence exit",
+                position.limitless_slug,
+            )
+            continue
+
         current_lim = await _fetch_limitless_current_price(
             position.limitless_slug, limitless_host=limitless_host,
         )
