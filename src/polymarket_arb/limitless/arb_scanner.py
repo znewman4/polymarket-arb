@@ -273,6 +273,10 @@ async def _fetch_live_poly_best_ask(token_id: str) -> float | None:
     return None
 
 
+# Legs are executed sequentially (Limitless first, then Polymarket)
+# rather than concurrently so that a Polymarket failure can trigger
+# an immediate Limitless rollback. Concurrent execution via
+# asyncio.gather would make rollback impossible.
 async def execute_arb(
     match: ArbMatch,
     *,
@@ -283,7 +287,7 @@ async def execute_arb(
     orders_log_repo=None,
     positions_repo=None,
 ) -> tuple[LimitlessOrderResult, object]:
-    """Execute both legs of an arb simultaneously.
+    """Execute both legs of an arb with rollback protection.
 
     Buys YES on Limitless and NO on Polymarket.  Checks min_net_edge before
     submitting.  Both results are logged to orders_log if a repo is supplied.
@@ -398,6 +402,25 @@ async def execute_arb(
             match.poly.condition_id,
         )
 
+    lim_yes_price = match.limitless.yes_price
+    if lim_yes_price <= 0:
+        logger.warning(
+            "execute_arb: skipping {} — lim_yes_price is zero or negative",
+            match.limitless.slug,
+        )
+        dummy_lim = LimitlessOrderResult(
+            status="skipped_invalid_price",
+            order_id=None,
+            side="YES",
+            price=lim_yes_price,
+            size_usdc=stake_usdc,
+            market_slug=match.limitless.slug,
+            error="lim_yes_price <= 0",
+        )
+        return dummy_lim, None
+
+    n_shares = round(stake_usdc / lim_yes_price, 6)
+
     live_ask = await _fetch_live_poly_best_ask(match.poly.token_id_no)
     if live_ask is None:
         logger.warning("execute_arb: no live poly book for {}", match.limitless.slug)
@@ -414,29 +437,92 @@ async def execute_arb(
         market_id=match.poly.condition_id,
         side="buy",
         price=live_price,
-        size=Decimal(str(round(stake_usdc, 6))),
+        size=Decimal(str(n_shares)),
     )
 
-    lim_result, poly_result = await asyncio.gather(
-        lim_client.place_order(match.limitless, side="YES", size_usdc=stake_usdc),
-        asyncio.to_thread(
-            poly_client.place_order,
-            intent,
-            strategy_id="limitless_arb",
-            market_id=match.poly.condition_id,
-            preflight_book=preflight_book,
-            notes=(
-                f"arb_gap={match.arb_gap:.4f} slug={match.limitless.slug} "
-                f"lim_entry={match.limitless.yes_price:.4f} "
-                f"poly_yes_entry={match.poly.yes_price:.4f} "
-                f"similarity={match.similarity:.3f}"
-            ),
-        ),
+    lim_result = await lim_client.place_order(
+        match.limitless, side="YES", size_usdc=n_shares
     )
+
+    lim_filled = lim_result.status in {"paper_filled", "live_submitted"}
+
+    if not lim_filled:
+        logger.warning(
+            "execute_arb: lim leg failed for {} — status={} error={}",
+            match.limitless.slug, lim_result.status, lim_result.error,
+        )
+        poly_result = None
+    else:
+        try:
+            poly_result = await asyncio.to_thread(
+                poly_client.place_order,
+                intent,
+                strategy_id="limitless_arb",
+                market_id=match.poly.condition_id,
+                preflight_book=preflight_book,
+                notes=(
+                    f"arb_gap={match.arb_gap:.4f} slug={match.limitless.slug} "
+                    f"lim_entry={match.limitless.yes_price:.4f} "
+                    f"poly_yes_entry={match.poly.yes_price:.4f} "
+                    f"similarity={match.similarity:.3f} "
+                    f"n_shares={n_shares:.6f} stake_usdc={stake_usdc:.4f}"
+                ),
+            )
+            poly_failure_status = poly_result.status
+        except Exception as exc:
+            poly_result = None
+            poly_failure_status = f"exception: {exc}"
+
+        poly_filled = (
+            poly_result is not None
+            and poly_result.status in {"paper_filled", "live_submitted"}
+        )
+
+        if not poly_filled:
+            logger.error(
+                "execute_arb: poly leg failed for {} (status={}) — "
+                "attempting Limitless rollback",
+                match.limitless.slug, poly_failure_status,
+            )
+            rollback_market = LimitlessMarketEntry(
+                slug=match.limitless.slug,
+                title=match.limitless.title,
+                yes_price=match.limitless.yes_price,
+                address=match.limitless.address,
+                token_id_yes=match.limitless.token_id_yes,
+                token_id_no=match.limitless.token_id_no,
+            )
+            try:
+                rollback_result = await lim_client.sell_yes(
+                    rollback_market,
+                    size_usdc=n_shares,
+                    price=match.limitless.yes_price,
+                )
+                if rollback_result.status in {"paper_filled", "live_submitted"}:
+                    logger.info(
+                        "execute_arb: Limitless rollback succeeded for {}",
+                        match.limitless.slug,
+                    )
+                else:
+                    logger.critical(
+                        "execute_arb: NAKED POSITION — Limitless rollback FAILED "
+                        "for {} (status={} error={}) — manual intervention required",
+                        match.limitless.slug,
+                        rollback_result.status,
+                        rollback_result.error,
+                    )
+            except Exception as exc:
+                logger.critical(
+                    "execute_arb: NAKED POSITION — Limitless rollback raised "
+                    "exception for {}: {} — manual intervention required",
+                    match.limitless.slug, exc,
+                )
 
     logger.info(
         "execute_arb: lim={} poly={} slug={}",
-        lim_result.status, poly_result.status, match.limitless.slug,
+        lim_result.status,
+        poly_result.status if poly_result is not None else "skipped",
+        match.limitless.slug,
     )
 
     position_id = hashlib.sha256(
@@ -448,12 +534,13 @@ async def execute_arb(
             position_id=position_id,
             match=match,
             stake_usdc=stake_usdc,
+            n_shares=n_shares,
             lim_result=lim_result,
             poly_result=poly_result,
         )
 
     if orders_log_repo is not None:
-        _log_limitless_leg(lim_result, match, orders_log_repo)
+        _log_limitless_leg(lim_result, match, orders_log_repo, n_shares=n_shares)
 
     return lim_result, poly_result
 
@@ -473,11 +560,15 @@ def _write_entry_positions(
     position_id: str,
     match: ArbMatch,
     stake_usdc: float,
+    n_shares: float,
     lim_result: LimitlessOrderResult,
     poly_result,
 ) -> None:
     ts = int(time.time() * 1000)
-    notes = _entry_notes(match)
+    notes = (
+        f"{_entry_notes(match)} "
+        f"n_shares={n_shares:.6f} stake_usdc={stake_usdc:.4f}"
+    )
     if lim_result.status in ("paper_filled", "live_submitted"):
         try:
             positions_repo.append(PositionRow(
@@ -488,8 +579,8 @@ def _write_entry_positions(
                 side="buy",
                 open_ts_ms=ts,
                 entry_price=str(round(match.limitless.yes_price, 6)),
-                size=str(round(stake_usdc, 6)),
-                notional_usdc=str(round(stake_usdc, 6)),
+                size=str(round(n_shares, 6)),
+                notional_usdc=str(round(n_shares * match.limitless.yes_price, 6)),
                 gross_edge=str(round(match.arb_gap, 6)),
                 relationship_id=position_id,
                 relationship_type="limitless_poly_arb",
@@ -511,8 +602,8 @@ def _write_entry_positions(
                 side="buy",
                 open_ts_ms=ts,
                 entry_price=str(round(1.0 - match.poly.yes_price, 6)),
-                size=str(round(stake_usdc, 6)),
-                notional_usdc=str(round(stake_usdc, 6)),
+                size=str(round(n_shares, 6)),
+                notional_usdc=str(round(n_shares * (1.0 - match.poly.yes_price), 6)),
                 gross_edge=str(round(match.arb_gap, 6)),
                 relationship_id=position_id,
                 relationship_type="limitless_poly_arb",
@@ -529,8 +620,16 @@ def _log_limitless_leg(
     result: LimitlessOrderResult,
     match: ArbMatch,
     orders_log_repo,
+    n_shares: float = 1.0,
 ) -> None:
     import time as _time
+    _is_filled = result.status in {"paper_filled", "live_submitted"}
+    _notional = round(n_shares * result.price, 6) if _is_filled else 0.0
+    _fees = (
+        round(_notional * float(_EXIT_FEE_BPS) / 10000.0, 6)
+        if _is_filled
+        else 0.0
+    )
     row = OrdersLogRow(
         intent_id=result.order_id or uuid.uuid4().hex,
         ts_ms=int(_time.time() * 1000),
@@ -539,13 +638,13 @@ def _log_limitless_leg(
         market_id=match.limitless.slug,
         side=result.side,
         requested_size=str(round(result.size_usdc, 6)),
-        filled_size=str(round(result.size_usdc, 6)) if result.status == "paper_filled" else "0",
+        filled_size=str(round(n_shares, 6)) if _is_filled else "0",
         avg_fill_price=str(round(result.price, 6)),
-        notional_usdc=str(round(result.size_usdc, 6)) if result.status == "paper_filled" else "0",
-        fees_usdc="0",
+        notional_usdc=str(_notional),
+        fees_usdc=str(_fees),
         status=result.status,
         reason=result.error or "",
-        paper_mode=(result.status == "paper_filled"),
+        paper_mode=result.status == "paper_filled",
         kill_switch_active=(result.status == "rejected_kill_switch"),
         orders_allowed=True,
         preflight_passed=True,
@@ -557,7 +656,8 @@ def _log_limitless_leg(
             f"arb_gap={match.arb_gap:.4f} slug={match.limitless.slug} "
             f"lim_entry={match.limitless.yes_price:.4f} "
             f"poly_yes_entry={match.poly.yes_price:.4f} "
-            f"similarity={match.similarity:.3f}"
+            f"similarity={match.similarity:.3f} "
+            f"n_shares={n_shares:.6f} stake_usdc={_notional:.4f}"
         ),
     )
     try:
@@ -800,6 +900,8 @@ async def _exit_both_legs(
         market_id=position.limitless_slug,
         side="SELL_YES",
         requested_size=str(round(position.stake_usdc, 6)),
+        # size_usdc holds share count post Prompt-5 refactor;
+        # notional is computed separately as price * size below.
         filled_size=(
             str(round(lim_exit_result.size_usdc, 6))
             if lim_exit_success
